@@ -1,0 +1,2154 @@
+/*
+ * TIKRAS One UI inspired skin.
+ * Loaded last so legacy PHP screens receive a cohesive modern interface.
+ */
+
+:root {
+  --one-sidebar: 224px;
+  --one-navbar: 62px;
+  --one-radius: 8px;
+  --one-gap: 14px;
+  --one-primary: #0b63ff;
+  --one-primary-strong: #0048c7;
+  --one-primary-soft: #e8f1ff;
+  --one-cyan: #00a7d8;
+  --one-green: #16a34a;
+  --one-amber: #d97706;
+  --one-red: #e11d48;
+  --one-font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+}
+
+body[data-theme],
+body[data-theme="light"],
+body[data-theme="blue"] {
+  --one-bg: #f5f7fb;
+  --one-bg-soft: #eef4ff;
+  --one-bg-elevated: #ffffff;
+  --one-surface: rgba(255, 255, 255, 0.92);
+  --one-surface-strong: #ffffff;
+  --one-surface-soft: #f0f5ff;
+  --one-line: #dbe5f1;
+  --one-line-strong: #c6d4e5;
+  --one-text: #101828;
+  --one-text-soft: #475467;
+  --one-muted: #667085;
+  --one-nav: rgba(255, 255, 255, 0.9);
+  --one-side: #ffffff;
+  --one-side-soft: #f3f7fd;
+  --one-shadow: 0 18px 42px rgba(16, 24, 40, 0.10);
+  --one-shadow-sm: 0 8px 22px rgba(16, 24, 40, 0.08);
+  color-scheme: light;
+}
+
+body[data-theme="dark"] {
+  --one-bg: #07111f;
+  --one-bg-soft: #101e33;
+  --one-bg-elevated: #0d1728;
+  --one-surface: rgba(17, 28, 46, 0.92);
+  --one-surface-strong: #111c2e;
+  --one-surface-soft: #17243a;
+  --one-line: #27364f;
+  --one-line-strong: #3a4b68;
+  --one-text: #eef4ff;
+  --one-text-soft: #c8d3e5;
+  --one-muted: #93a4bf;
+  --one-nav: rgba(10, 20, 35, 0.92);
+  --one-side: #0b1628;
+  --one-side-soft: #101e33;
+  --one-shadow: 0 22px 48px rgba(0, 0, 0, 0.34);
+  --one-shadow-sm: 0 10px 26px rgba(0, 0, 0, 0.25);
+  color-scheme: dark;
+}
+
+html,
+body[data-theme] {
+  min-height: 100%;
+  font-family: var(--one-font);
+  color: var(--one-text) !important;
+  background: var(--one-bg) !important;
+  letter-spacing: 0;
+}
+
+body[data-theme] *,
+body[data-theme] *::before,
+body[data-theme] *::after {
+  box-sizing: border-box;
+  letter-spacing: 0;
+}
+
+body[data-theme] .wrapper {
+  min-height: 100vh;
+  background: var(--one-bg) !important;
+}
+
+body[data-theme] a {
+  color: var(--one-primary);
+}
+
+body[data-theme] a:hover {
+  color: var(--one-primary-strong);
+}
+
+body[data-theme] #navbar,
+body[data-theme] .navbar {
+  position: fixed;
+  inset: 0 0 auto 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  height: var(--one-navbar);
+  overflow: visible;
+  color: var(--one-text) !important;
+  background: var(--one-nav) !important;
+  border-bottom: 1px solid var(--one-line) !important;
+  box-shadow: var(--one-shadow-sm);
+  backdrop-filter: blur(16px);
+}
+
+body[data-theme] .navbar-left,
+body[data-theme] .navbar-right {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  height: var(--one-navbar);
+}
+
+body[data-theme] .navbar-left {
+  flex: 1 1 auto;
+}
+
+body[data-theme] .navbar-right {
+  flex: 0 1 auto;
+  justify-content: flex-end;
+  gap: 8px;
+  padding-right: 14px;
+  overflow: hidden;
+}
+
+body[data-theme] .navbar a,
+body[data-theme] .navbar-left a,
+body[data-theme] .navbar-right a {
+  display: inline-flex;
+  float: none !important;
+  align-items: center;
+  justify-content: center;
+  min-width: 40px;
+  height: 42px;
+  padding: 0 12px;
+  color: var(--one-text) !important;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+  border-radius: var(--one-radius);
+}
+
+body[data-theme] .navbar a:hover,
+body[data-theme] .navbar-hover:hover {
+  color: var(--one-primary) !important;
+  background: var(--one-primary-soft) !important;
+}
+
+body[data-theme="dark"] .navbar a:hover,
+body[data-theme="dark"] .navbar-hover:hover {
+  background: rgba(11, 99, 255, 0.20) !important;
+}
+
+body[data-theme] #brand {
+  flex: 0 0 var(--one-sidebar);
+  min-width: var(--one-sidebar);
+  justify-content: flex-start;
+  gap: 10px;
+  height: var(--one-navbar);
+  padding: 0 18px !important;
+  color: var(--one-text) !important;
+  font-size: 0;
+  font-weight: 900;
+}
+
+body[data-theme] #brand::before {
+  display: inline-flex;
+  flex: 0 0 auto;
+  width: 30px;
+  height: 30px;
+  content: "";
+  background:
+    linear-gradient(135deg, #ffffff 0 32%, transparent 33%),
+    linear-gradient(135deg, #5fc6ff 0%, var(--one-primary) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  border-radius: var(--one-radius);
+  box-shadow: 0 8px 18px rgba(11, 99, 255, 0.22);
+}
+
+body[data-theme] #brand::after {
+  content: "TIKRAS IT";
+  color: var(--one-text);
+  font-size: 16px;
+  font-weight: 900;
+}
+
+body[data-theme] #openNav,
+body[data-theme] #closeNav {
+  width: 46px;
+  padding: 0 !important;
+}
+
+body[data-theme] #cpage {
+  flex: 0 1 240px;
+  justify-content: flex-start;
+  min-width: 72px;
+  max-width: 240px;
+  overflow: hidden;
+  color: var(--one-text) !important;
+  font-size: 13px;
+  font-weight: 900;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+}
+
+body[data-theme] .ses,
+body[data-theme] .dropd,
+body[data-theme] .router-search {
+  float: none !important;
+  flex: 0 1 auto;
+  width: auto;
+  max-width: 190px;
+  height: 40px;
+  min-width: 0;
+  margin: 0 !important;
+  padding: 0 12px !important;
+  color: var(--one-text) !important;
+  background: var(--one-surface-strong) !important;
+  border: 1px solid var(--one-line) !important;
+  border-radius: var(--one-radius) !important;
+  box-shadow: none !important;
+}
+
+body[data-theme] .router-search {
+  width: clamp(140px, 17vw, 220px);
+}
+
+body[data-theme] .router-select {
+  width: clamp(150px, 18vw, 230px);
+}
+
+body[data-theme] #sidenav,
+body[data-theme] .sidenav {
+  position: fixed;
+  z-index: 25;
+  top: 0;
+  left: 0;
+  width: var(--one-sidebar);
+  height: calc(100vh - var(--one-navbar));
+  margin-top: var(--one-navbar);
+  padding: 12px 10px 20px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  color: var(--one-text);
+  background: var(--one-side) !important;
+  border-right: 1px solid var(--one-line) !important;
+  box-shadow: 10px 0 28px rgba(16, 24, 40, 0.06);
+  transition: width .22s ease, transform .22s ease;
+}
+
+body[data-theme] .sidenav .card-header,
+body[data-theme] .sidenav .menu.text-center {
+  display: flex;
+  align-items: center;
+  min-height: 52px;
+  margin: 0 0 10px;
+  padding: 10px 12px !important;
+  color: var(--one-text) !important;
+  background: var(--one-side-soft) !important;
+  border: 1px solid var(--one-line) !important;
+  border-radius: var(--one-radius) !important;
+}
+
+body[data-theme] .sidenav h3 {
+  width: 100%;
+  overflow: hidden;
+  color: var(--one-text) !important;
+  font-size: 13px;
+  font-weight: 900;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+body[data-theme] .sidenav a,
+body[data-theme] .dropdown-btn {
+  display: flex;
+  align-items: center;
+  width: 100% !important;
+  min-height: 42px;
+  margin: 3px 0 !important;
+  padding: 9px 11px !important;
+  color: var(--one-text-soft) !important;
+  font-size: 14px;
+  font-weight: 650;
+  line-height: 1.2;
+  text-align: left;
+  white-space: normal;
+  background: transparent !important;
+  border: 1px solid transparent !important;
+  border-radius: var(--one-radius) !important;
+}
+
+body[data-theme] .sidenav i,
+body[data-theme] .dropdown-btn i {
+  flex: 0 0 24px;
+  margin: 0 8px 0 0 !important;
+  padding: 0 !important;
+  color: var(--one-muted);
+  font-size: 16px;
+  text-align: center;
+}
+
+body[data-theme] .dropdown-container i {
+  padding-left: 0 !important;
+}
+
+body[data-theme] .fa-caret-down,
+body[data-theme] .fa-caret-left {
+  margin-left: auto !important;
+  color: var(--one-muted) !important;
+}
+
+body[data-theme] .dropdown-btn:hover,
+body[data-theme] .sidenav a:hover,
+body[data-theme] .active {
+  color: var(--one-primary) !important;
+  background: var(--one-primary-soft) !important;
+  border-color: rgba(11, 99, 255, 0.18) !important;
+}
+
+body[data-theme="dark"] .dropdown-btn:hover,
+body[data-theme="dark"] .sidenav a:hover,
+body[data-theme="dark"] .active {
+  background: rgba(11, 99, 255, 0.18) !important;
+}
+
+body[data-theme] .active i,
+body[data-theme] .dropdown-btn:hover i,
+body[data-theme] .sidenav a:hover i {
+  color: var(--one-primary) !important;
+}
+
+body[data-theme] .dropdown-container {
+  margin: 2px 0 8px 12px;
+  padding-left: 8px;
+  border-left: 1px solid var(--one-line);
+}
+
+body[data-theme] #main {
+  min-height: calc(100vh - var(--one-navbar));
+  margin-top: var(--one-navbar) !important;
+  margin-left: var(--one-sidebar) !important;
+  padding: 16px;
+  background: var(--one-bg) !important;
+}
+
+body[data-theme] .main-container {
+  max-width: 1500px;
+  margin: 0 auto;
+  padding: 0 !important;
+}
+
+body[data-theme] .row {
+  margin-right: -7px;
+  margin-left: -7px;
+}
+
+body[data-theme] [class*="col-"] {
+  padding-right: 7px;
+  padding-left: 7px;
+}
+
+body[data-theme] .card,
+body[data-theme] .box,
+body[data-theme] .modal-window > div,
+body[data-theme] .tikras-panel,
+body[data-theme] .tikras-page-header,
+body[data-theme] .report-hero,
+body[data-theme] .report-stat,
+body[data-theme] .report-panel,
+body[data-theme] .report-toolbar,
+body[data-theme] .report-filters,
+body[data-theme] .report-table-wrap,
+body[data-theme] .tikras-router-card,
+body[data-theme] .tikras-follow-item,
+body[data-theme] .tikras-sales-item {
+  color: var(--one-text) !important;
+  background: var(--one-surface) !important;
+  border: 1px solid var(--one-line) !important;
+  border-radius: var(--one-radius) !important;
+  box-shadow: var(--one-shadow-sm) !important;
+}
+
+body[data-theme] .card,
+body[data-theme] .box {
+  margin: 7px;
+}
+
+body[data-theme] .card .card {
+  background: var(--one-surface-strong) !important;
+  box-shadow: none !important;
+}
+
+body[data-theme] .card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 50px;
+  margin: 0 !important;
+  padding: 13px 16px !important;
+  color: var(--one-text) !important;
+  background: transparent !important;
+  border: 0 !important;
+  border-bottom: 1px solid var(--one-line) !important;
+  border-radius: var(--one-radius) var(--one-radius) 0 0 !important;
+}
+
+body[data-theme] .card-header h3,
+body[data-theme] .card-title,
+body[data-theme] .tikras-page-title h2,
+body[data-theme] .report-title,
+body[data-theme] .report-panel h3 {
+  margin: 0;
+  overflow: hidden;
+  color: var(--one-text) !important;
+  font-size: 17px;
+  font-weight: 850;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+}
+
+body[data-theme] .card-header h3 i,
+body[data-theme] .card-title i,
+body[data-theme] .report-title i {
+  color: var(--one-primary);
+}
+
+body[data-theme] .card-body,
+body[data-theme] .tikras-panel-body {
+  padding: 14px 16px !important;
+  color: var(--one-text) !important;
+}
+
+body[data-theme] .box {
+  min-height: 94px;
+  padding: 14px !important;
+}
+
+body[data-theme] .box h1 {
+  font-size: clamp(24px, 2.4vw, 34px);
+  font-weight: 900;
+}
+
+body[data-theme] .box-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+body[data-theme] .box-group > div {
+  display: block;
+}
+
+body[data-theme] .box-group-icon,
+body[data-theme] .tikras-page-icon,
+body[data-theme] .tikras-router-icon,
+body[data-theme] .tikras-login-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  min-width: 42px;
+  color: #ffffff !important;
+  background: var(--one-primary) !important;
+  border: 0 !important;
+  border-radius: var(--one-radius) !important;
+}
+
+body[data-theme] .bg-primary,
+body[data-theme] .bg-blue,
+body[data-theme] .bg-info,
+body[data-theme] .bg-light-blue,
+body[data-theme] .bg-cyan {
+  color: #ffffff !important;
+  background: var(--one-primary) !important;
+}
+
+body[data-theme] .bg-success,
+body[data-theme] .bg-green,
+body[data-theme] .bg-teal {
+  color: #ffffff !important;
+  background: var(--one-green) !important;
+}
+
+body[data-theme] .bg-warning,
+body[data-theme] .bg-yellow,
+body[data-theme] .bg-orange {
+  color: #ffffff !important;
+  background: var(--one-amber) !important;
+}
+
+body[data-theme] .bg-danger,
+body[data-theme] .bg-red {
+  color: #ffffff !important;
+  background: var(--one-red) !important;
+}
+
+body[data-theme] .bg-secondary,
+body[data-theme] .bg-grey,
+body[data-theme] .bg-grey-dark,
+body[data-theme] .bg-dark {
+  color: #ffffff !important;
+  background: #52677f !important;
+}
+
+body[data-theme] .bg-light,
+body[data-theme] .bg-white {
+  color: var(--one-text) !important;
+  background: var(--one-surface-soft) !important;
+}
+
+body[data-theme] .btn,
+body[data-theme] .btn-login,
+body[data-theme] button,
+body[data-theme] .tikras-btn,
+body[data-theme] input[type="submit"].group-item {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 38px;
+  gap: 8px;
+  padding: 8px 13px !important;
+  color: #ffffff !important;
+  font-size: 14px;
+  font-weight: 750;
+  line-height: 1;
+  text-decoration: none !important;
+  white-space: nowrap;
+  background: var(--one-primary) !important;
+  border: 1px solid transparent !important;
+  border-radius: var(--one-radius) !important;
+  box-shadow: none !important;
+  cursor: pointer;
+  transition: background .18s ease, border-color .18s ease, color .18s ease, transform .18s ease;
+}
+
+body[data-theme] .btn:hover,
+body[data-theme] .btn-login:hover,
+body[data-theme] button:hover,
+body[data-theme] .tikras-btn:hover,
+body[data-theme] input[type="submit"].group-item:hover {
+  transform: translateY(-1px);
+}
+
+body[data-theme] .tikras-btn-muted,
+body[data-theme] .btn.bg-secondary,
+body[data-theme] .btn.bg-light {
+  color: var(--one-text) !important;
+  background: var(--one-surface-soft) !important;
+  border-color: var(--one-line) !important;
+}
+
+body[data-theme] .tikras-btn-danger,
+body[data-theme] .btn.bg-danger {
+  color: #ffffff !important;
+  background: var(--one-red) !important;
+}
+
+body[data-theme] .form-control,
+body[data-theme] .group-item,
+body[data-theme] input,
+body[data-theme] select,
+body[data-theme] textarea {
+  color: var(--one-text) !important;
+  background: var(--one-bg-elevated) !important;
+  border: 1px solid var(--one-line-strong) !important;
+  border-radius: var(--one-radius) !important;
+  box-shadow: none !important;
+}
+
+body[data-theme] .form-control,
+body[data-theme] .group-item {
+  min-height: 40px;
+  padding: 8px 11px;
+}
+
+body[data-theme] textarea.form-control,
+body[data-theme] textarea.group-item {
+  min-height: 96px;
+}
+
+body[data-theme] .form-control:focus,
+body[data-theme] .group-item:focus,
+body[data-theme] input:focus,
+body[data-theme] select:focus,
+body[data-theme] textarea:focus {
+  border-color: var(--one-primary) !important;
+  outline: 0 !important;
+  box-shadow: 0 0 0 3px rgba(11, 99, 255, 0.14) !important;
+}
+
+body[data-theme] .form-control:disabled,
+body[data-theme] .group-item:disabled,
+body[data-theme] input:disabled,
+body[data-theme] select:disabled,
+body[data-theme] textarea:disabled {
+  color: var(--one-muted) !important;
+  background: var(--one-surface-soft) !important;
+  cursor: not-allowed;
+  opacity: 0.72;
+}
+
+body[data-theme] ::placeholder {
+  color: var(--one-muted) !important;
+  opacity: 1;
+}
+
+body[data-theme] .input-group {
+  display: flex;
+  align-items: stretch;
+  width: 100%;
+}
+
+body[data-theme] .input-group [class*="input-group-"] {
+  float: none;
+}
+
+body[data-theme] .table {
+  width: 100%;
+  color: var(--one-text) !important;
+  background: transparent !important;
+  border-collapse: separate !important;
+  border-spacing: 0;
+}
+
+body[data-theme] .table th,
+body[data-theme] th {
+  padding: 11px 12px !important;
+  color: var(--one-text-soft) !important;
+  font-size: 12px;
+  font-weight: 850;
+  text-transform: uppercase;
+  background: var(--one-surface-soft) !important;
+  border-color: var(--one-line) !important;
+}
+
+body[data-theme] .table td {
+  padding: 10px 12px !important;
+  color: var(--one-text) !important;
+  border-color: var(--one-line) !important;
+}
+
+body[data-theme] .table td a,
+body[data-theme] .table th a {
+  color: var(--one-primary) !important;
+}
+
+body[data-theme] .table-hover:hover tbody tr:hover,
+body[data-theme] .table-hover tbody tr:hover td {
+  background: rgba(11, 99, 255, 0.08) !important;
+}
+
+body[data-theme] .overflow,
+body[data-theme] .tikras-data-table-wrap,
+body[data-theme] .report-table-scroll {
+  border: 1px solid var(--one-line) !important;
+  border-radius: var(--one-radius) !important;
+  background: var(--one-surface-strong) !important;
+}
+
+body[data-theme] .tikras-page-header,
+body[data-theme] .report-hero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0 7px 14px;
+  padding: 16px !important;
+}
+
+body[data-theme] .tikras-page-title,
+body[data-theme] .tikras-router-main,
+body[data-theme] .tikras-login-brand {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  gap: 12px;
+}
+
+body[data-theme] .tikras-page-title p,
+body[data-theme] .tikras-router-copy p,
+body[data-theme] .report-meta,
+body[data-theme] .report-stat small,
+body[data-theme] .tikras-version-note,
+body[data-theme] small {
+  color: var(--one-muted) !important;
+}
+
+body[data-theme] .tikras-page-actions,
+body[data-theme] .tikras-router-actions,
+body[data-theme] .tikras-form-actions,
+body[data-theme] .report-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+body[data-theme] .tikras-admin-grid,
+body[data-theme] .report-stat-grid,
+body[data-theme] .tikras-follow-grid,
+body[data-theme] .tikras-sales-grid,
+body[data-theme] .report-insights {
+  display: grid;
+  gap: var(--one-gap);
+}
+
+body[data-theme] .tikras-admin-grid {
+  grid-template-columns: minmax(0, 1.55fr) minmax(320px, .8fr);
+}
+
+body[data-theme] .tikras-router-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(440px, 1fr));
+  gap: 12px;
+}
+
+body[data-theme] .tikras-router-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(118px, auto);
+  align-items: stretch;
+  gap: 14px;
+  margin: 0;
+  padding: 14px;
+}
+
+body[data-theme] .tikras-router-copy {
+  min-width: 0;
+}
+
+body[data-theme] .tikras-router-copy h3 {
+  margin: 0 0 4px;
+  overflow-wrap: anywhere;
+  color: var(--one-text) !important;
+  font-size: 18px;
+  font-weight: 900;
+  line-height: 1.2;
+  text-overflow: clip;
+  white-space: normal;
+}
+
+body[data-theme] .tikras-router-copy p {
+  margin: 0;
+  overflow-wrap: anywhere;
+  color: var(--one-text-soft) !important;
+  font-size: 13px;
+  line-height: 1.35;
+  text-overflow: clip;
+  white-space: normal;
+}
+
+body[data-theme] .tikras-router-copy p span {
+  color: var(--one-muted);
+  font-weight: 750;
+}
+
+body[data-theme] .tikras-router-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+body[data-theme] .tikras-router-meta span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  max-width: 100%;
+  padding: 4px 7px;
+  color: var(--one-text-soft) !important;
+  background: var(--one-surface-soft);
+  border-radius: var(--one-radius);
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+body[data-theme] .tikras-router-actions {
+  align-content: flex-start;
+  align-items: stretch;
+  flex-direction: column;
+  flex-wrap: nowrap;
+  justify-content: flex-start;
+}
+
+body[data-theme] .tikras-router-actions .tikras-btn {
+  justify-content: center;
+  min-height: 38px;
+  width: 100%;
+}
+
+body[data-theme] .report-toolbar-row,
+body[data-theme] .report-filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+body[data-theme] .report-search {
+  flex: 1 1 260px;
+  min-width: min(100%, 260px);
+}
+
+body[data-theme] .report-filter-field,
+body[data-theme] .report-filter-field-wide {
+  display: grid;
+  gap: 5px;
+}
+
+body[data-theme] .report-filter-field {
+  flex: 1 1 128px;
+  min-width: 128px;
+}
+
+body[data-theme] .report-filter-field-wide {
+  flex: 1.35 1 190px;
+  min-width: 190px;
+}
+
+body[data-theme] .report-filter-row .btn {
+  min-height: 40px;
+}
+
+body[data-theme] .tikras-dashboard-main,
+body[data-theme] .tikras-dashboard-top {
+  align-items: stretch;
+}
+
+body[data-theme] .tikras-follow-item,
+body[data-theme] .tikras-sales-item,
+body[data-theme] .report-stat {
+  padding: 13px !important;
+}
+
+body[data-theme] .tikras-follow-item strong,
+body[data-theme] .tikras-sales-item strong,
+body[data-theme] .report-stat strong {
+  color: var(--one-text) !important;
+  font-size: 22px;
+  font-weight: 900;
+}
+
+body[data-theme] #notify {
+  top: calc(var(--one-navbar) + 12px);
+  color: #ffffff !important;
+  background: rgba(11, 99, 255, 0.90) !important;
+  border: 0 !important;
+  border-radius: var(--one-radius) !important;
+}
+
+body[data-theme] .tikras-dashboard-modern,
+body[data-theme] .tikras-traffic-page {
+  display: grid;
+  gap: var(--one-gap);
+}
+
+body[data-theme] .tikras-dashboard-hero,
+body[data-theme] .tikras-dashboard-card {
+  color: var(--one-text) !important;
+  background: var(--one-surface) !important;
+  border: 1px solid var(--one-line) !important;
+  border-radius: var(--one-radius) !important;
+  box-shadow: var(--one-shadow-sm) !important;
+}
+
+body[data-theme] .tikras-dashboard-hero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px;
+}
+
+body[data-theme] .tikras-dashboard-identity {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  gap: 14px;
+}
+
+body[data-theme] .tikras-dashboard-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  min-width: 52px;
+  color: #ffffff;
+  background: var(--one-primary);
+  border-radius: var(--one-radius);
+}
+
+body[data-theme] .tikras-dashboard-identity p,
+body[data-theme] .tikras-dashboard-identity h2 {
+  margin: 0;
+}
+
+body[data-theme] .tikras-dashboard-identity h2 {
+  overflow-wrap: anywhere;
+  font-size: 24px;
+  font-weight: 900;
+  line-height: 1.15;
+}
+
+body[data-theme] .tikras-dashboard-identity p,
+body[data-theme] .tikras-dashboard-identity span,
+body[data-theme] .tikras-dashboard-status span,
+body[data-theme] .tikras-mini-grid span,
+body[data-theme] .tikras-health-grid span,
+body[data-theme] .tikras-traffic-stats span {
+  color: var(--one-muted) !important;
+}
+
+body[data-theme] .tikras-dashboard-status {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(150px, 1fr));
+  gap: 10px;
+  min-width: min(100%, 360px);
+}
+
+body[data-theme] .tikras-dashboard-status > div,
+body[data-theme] .tikras-kpi-card,
+body[data-theme] .tikras-mini-grid > div,
+body[data-theme] .tikras-traffic-stats > div,
+body[data-theme] .tikras-health-grid > div {
+  background: var(--one-surface-soft);
+  border: 1px solid var(--one-line);
+  border-radius: var(--one-radius);
+}
+
+body[data-theme] .tikras-dashboard-status > div {
+  padding: 10px 12px;
+}
+
+body[data-theme] .tikras-dashboard-status strong {
+  display: block;
+  margin-top: 4px;
+  color: var(--one-text);
+  font-size: 15px;
+  overflow-wrap: anywhere;
+}
+
+body[data-theme] .tikras-dashboard-kpis {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--one-gap);
+}
+
+body[data-theme] .tikras-kpi-card {
+  display: grid;
+  gap: 8px;
+  min-height: 132px;
+  padding: 16px;
+  color: var(--one-text) !important;
+  text-decoration: none !important;
+}
+
+body[data-theme] .tikras-kpi-card:hover {
+  border-color: var(--one-primary) !important;
+  box-shadow: var(--one-shadow-sm) !important;
+}
+
+body[data-theme] .tikras-kpi-card span {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--one-text-soft);
+  font-weight: 800;
+}
+
+body[data-theme] .tikras-kpi-card span i {
+  color: var(--one-primary);
+}
+
+body[data-theme] .tikras-kpi-card strong {
+  color: var(--one-text);
+  font-size: 24px;
+  font-weight: 900;
+  line-height: 1.15;
+  overflow-wrap: anywhere;
+}
+
+body[data-theme] .tikras-kpi-card small {
+  color: var(--one-muted) !important;
+}
+
+body[data-theme] .tikras-dashboard-layout,
+body[data-theme] .tikras-traffic-shell {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(320px, .54fr);
+  gap: var(--one-gap);
+  align-items: stretch;
+}
+
+body[data-theme] .tikras-dashboard-card {
+  display: grid;
+  align-content: start;
+  gap: 14px;
+  min-width: 0;
+  padding: 16px;
+}
+
+body[data-theme] .tikras-traffic-card,
+body[data-theme] .tikras-traffic-main-card {
+  grid-row: span 2;
+}
+
+body[data-theme] .tikras-card-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
+}
+
+body[data-theme] .tikras-card-title h3 {
+  margin: 0;
+  color: var(--one-text) !important;
+  font-size: 17px;
+  font-weight: 900;
+  line-height: 1.25;
+}
+
+body[data-theme] .tikras-card-title h3 i,
+body[data-theme] .tikras-card-title a {
+  color: var(--one-primary) !important;
+}
+
+body[data-theme] .tikras-card-title > span {
+  color: var(--one-muted);
+  font-size: 12px;
+  font-weight: 750;
+}
+
+body[data-theme] .tikras-card-title select {
+  width: min(230px, 100%);
+}
+
+body[data-theme] .tikras-health-grid,
+body[data-theme] .tikras-mini-grid,
+body[data-theme] .tikras-traffic-stats {
+  display: grid;
+  gap: 10px;
+}
+
+body[data-theme] .tikras-health-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+body[data-theme] .tikras-mini-grid,
+body[data-theme] .tikras-traffic-stats {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+body[data-theme] .tikras-traffic-stats-large {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+body[data-theme] .tikras-health-grid > div,
+body[data-theme] .tikras-mini-grid > div,
+body[data-theme] .tikras-traffic-stats > div {
+  min-height: 86px;
+  padding: 12px;
+}
+
+body[data-theme] .tikras-health-grid strong,
+body[data-theme] .tikras-mini-grid strong,
+body[data-theme] .tikras-traffic-stats strong {
+  display: block;
+  margin: 5px 0;
+  color: var(--one-text);
+  font-size: 20px;
+  font-weight: 900;
+  overflow-wrap: anywhere;
+}
+
+body[data-theme] .tikras-traffic-stats small {
+  color: var(--one-muted);
+}
+
+body[data-theme] .tikras-meter {
+  width: 100%;
+  height: 8px;
+  overflow: hidden;
+  background: var(--one-line);
+  border-radius: 999px;
+}
+
+body[data-theme] .tikras-meter i {
+  display: block;
+  height: 100%;
+  background: var(--one-primary);
+  border-radius: inherit;
+}
+
+body[data-theme] .tikras-meter-green i {
+  background: var(--one-green);
+}
+
+body[data-theme] .tikras-meter-blue i {
+  background: var(--one-cyan);
+}
+
+body[data-theme] .tikras-traffic-chart,
+body[data-theme] .tikras-report-chart {
+  width: 100%;
+  min-height: 280px;
+}
+
+body[data-theme] .tikras-traffic-chart-large {
+  min-height: 430px;
+}
+
+body[data-theme] .tikras-action-strip,
+body[data-theme] .tikras-report-chart-grid {
+  display: grid;
+  gap: var(--one-gap);
+}
+
+body[data-theme] .tikras-action-strip {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+}
+
+body[data-theme] .tikras-action-strip a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 46px;
+  padding: 10px;
+  color: var(--one-text) !important;
+  text-decoration: none !important;
+  background: var(--one-surface) !important;
+  border: 1px solid var(--one-line) !important;
+  border-radius: var(--one-radius);
+  box-shadow: var(--one-shadow-sm);
+}
+
+body[data-theme] .tikras-action-strip a i {
+  color: var(--one-primary);
+}
+
+body[data-theme] .tikras-report-chart-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+body[data-theme] .tikras-storage-page {
+  display: grid;
+  gap: var(--one-gap);
+}
+
+body[data-theme] .tikras-storage-hero,
+body[data-theme] .tikras-storage-card,
+body[data-theme] .tikras-storage-mini,
+body[data-theme] .tikras-storage-panel,
+body[data-theme] .tikras-storage-alert {
+  background: var(--one-surface);
+  border: 1px solid var(--one-line);
+  border-radius: var(--one-radius);
+  box-shadow: var(--one-shadow-sm);
+}
+
+body[data-theme] .tikras-storage-hero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--one-gap);
+  padding: 20px;
+}
+
+body[data-theme] .tikras-storage-eyebrow {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--one-primary);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+body[data-theme] .tikras-storage-hero h2 {
+  margin: 0 0 8px;
+  color: var(--one-text);
+  font-size: 24px;
+}
+
+body[data-theme] .tikras-storage-hero p,
+body[data-theme] .tikras-storage-card small,
+body[data-theme] .tikras-storage-status span,
+body[data-theme] .tikras-storage-panel ul {
+  margin: 0;
+  color: var(--one-muted);
+}
+
+body[data-theme] .tikras-storage-status {
+  display: grid;
+  gap: 5px;
+  min-width: 180px;
+  padding: 16px;
+  border-radius: var(--one-radius);
+}
+
+body[data-theme] .tikras-storage-status.is-ok {
+  background: color-mix(in srgb, var(--one-green) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--one-green) 34%, transparent);
+}
+
+body[data-theme] .tikras-storage-status.is-error {
+  background: color-mix(in srgb, var(--one-red) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--one-red) 34%, transparent);
+}
+
+body[data-theme] .tikras-storage-status i {
+  color: var(--one-primary);
+  font-size: 22px;
+}
+
+body[data-theme] .tikras-storage-status strong,
+body[data-theme] .tikras-storage-card strong,
+body[data-theme] .tikras-storage-mini strong,
+body[data-theme] .tikras-storage-panel h3 {
+  color: var(--one-text);
+}
+
+body[data-theme] .tikras-storage-alert {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
+  color: var(--one-red);
+}
+
+body[data-theme] .tikras-storage-grid {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+body[data-theme] .tikras-storage-card,
+body[data-theme] .tikras-storage-mini {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  padding: 16px;
+}
+
+body[data-theme] .tikras-storage-card span,
+body[data-theme] .tikras-storage-mini span {
+  color: var(--one-muted);
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+body[data-theme] .tikras-storage-card strong {
+  overflow-wrap: anywhere;
+  font-size: 16px;
+}
+
+body[data-theme] .tikras-storage-path {
+  font-size: 13px !important;
+  line-height: 1.5;
+}
+
+body[data-theme] .tikras-storage-mini strong {
+  font-size: 26px;
+}
+
+body[data-theme] .tikras-storage-counts {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+}
+
+body[data-theme] .tikras-storage-columns {
+  display: grid;
+  gap: var(--one-gap);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+body[data-theme] .tikras-storage-panel {
+  padding: 18px;
+}
+
+body[data-theme] .tikras-storage-panel h3 {
+  margin: 0 0 14px;
+  font-size: 18px;
+}
+
+body[data-theme] .tikras-storage-panel ul {
+  padding-left: 18px;
+}
+
+body[data-theme] .tikras-storage-panel li {
+  margin: 8px 0;
+}
+
+body[data-theme] .tikras-storage-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+body[data-theme] .tikras-storage-tags span {
+  padding: 7px 10px;
+  color: var(--one-text);
+  background: var(--one-bg-soft);
+  border: 1px solid var(--one-line);
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+body[data-theme] .tikras-tickets-page {
+  display: grid;
+  gap: var(--one-gap);
+}
+
+body[data-theme] .tikras-tickets-hero,
+body[data-theme] .tikras-tickets-filters,
+body[data-theme] .tikras-tickets-panel,
+body[data-theme] .tikras-tickets-stats > div,
+body[data-theme] .tikras-batch-card {
+  background: var(--one-surface);
+  border: 1px solid var(--one-line);
+  border-radius: var(--one-radius);
+  box-shadow: var(--one-shadow-sm);
+}
+
+body[data-theme] .tikras-tickets-hero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--one-gap);
+  padding: 20px;
+}
+
+body[data-theme] .tikras-tickets-hero h2 {
+  margin: 0 0 8px;
+  color: var(--one-text);
+  font-size: 24px;
+}
+
+body[data-theme] .tikras-tickets-hero p {
+  margin: 0;
+  color: var(--one-muted);
+}
+
+body[data-theme] .tikras-tickets-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+body[data-theme] .tikras-tickets-stats {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+}
+
+body[data-theme] .tikras-tickets-stats > div {
+  display: grid;
+  gap: 8px;
+  padding: 16px;
+}
+
+body[data-theme] .tikras-tickets-stats span,
+body[data-theme] .tikras-tickets-filters span,
+body[data-theme] .tikras-tickets-panel-title span {
+  color: var(--one-muted);
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+body[data-theme] .tikras-tickets-stats strong {
+  color: var(--one-text);
+  font-size: 28px;
+}
+
+body[data-theme] .tikras-tickets-filters {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: minmax(220px, 2fr) minmax(160px, 1fr) minmax(150px, 1fr) minmax(170px, 1fr) auto auto;
+  padding: 16px;
+}
+
+body[data-theme] .tikras-tickets-filters label {
+  display: grid;
+  gap: 7px;
+  margin: 0;
+  min-width: 0;
+}
+
+body[data-theme] .tikras-tickets-filters .btn {
+  align-self: end;
+  min-height: 40px;
+}
+
+body[data-theme] .tikras-tickets-grid {
+  display: grid;
+  gap: var(--one-gap);
+  grid-template-columns: minmax(320px, .85fr) minmax(0, 1.35fr);
+}
+
+body[data-theme] .tikras-tickets-panel {
+  min-width: 0;
+  padding: 16px;
+}
+
+body[data-theme] .tikras-tickets-panel-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+body[data-theme] .tikras-tickets-panel-title h3 {
+  margin: 0;
+  color: var(--one-text);
+  font-size: 18px;
+}
+
+body[data-theme] .tikras-batch-card {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 12px;
+  padding: 14px;
+}
+
+body[data-theme] .tikras-batch-main {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+body[data-theme] .tikras-batch-main strong {
+  display: block;
+  color: var(--one-text);
+  overflow-wrap: anywhere;
+}
+
+body[data-theme] .tikras-batch-main span,
+body[data-theme] .tikras-batch-meta {
+  color: var(--one-muted);
+}
+
+body[data-theme] .tikras-batch-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  font-size: 12px;
+}
+
+body[data-theme] .tikras-route-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+body[data-theme] .tikras-route-tags span,
+body[data-theme] .tikras-status {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 24px;
+  padding: 4px 9px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 800;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+body[data-theme] .tikras-route-tags .is-ok,
+body[data-theme] .tikras-status-synced {
+  color: var(--one-green);
+  background: color-mix(in srgb, var(--one-green) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--one-green) 30%, transparent);
+}
+
+body[data-theme] .tikras-route-tags .is-error,
+body[data-theme] .tikras-status-error,
+body[data-theme] .tikras-status-partial {
+  color: var(--one-red);
+  background: color-mix(in srgb, var(--one-red) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--one-red) 30%, transparent);
+}
+
+body[data-theme] .tikras-status-created,
+body[data-theme] .tikras-status-sold,
+body[data-theme] .tikras-status-expired {
+  color: var(--one-primary);
+  background: color-mix(in srgb, var(--one-primary) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--one-primary) 30%, transparent);
+}
+
+body[data-theme] .tikras-empty-state {
+  display: grid;
+  gap: 6px;
+  padding: 24px;
+  color: var(--one-muted);
+  background: var(--one-bg-soft);
+  border: 1px dashed var(--one-line-strong);
+  border-radius: var(--one-radius);
+}
+
+body[data-theme] .tikras-empty-state strong {
+  color: var(--one-text);
+}
+
+body[data-theme] .tikras-table-wrap {
+  overflow-x: auto;
+}
+
+body[data-theme] .tikras-tickets-table {
+  min-width: 820px;
+}
+
+body[data-theme] .tikras-tickets-table th,
+body[data-theme] .tikras-tickets-table td {
+  vertical-align: middle;
+}
+
+body[data-theme] .tikras-backup-page {
+  display: grid;
+  gap: var(--one-gap);
+}
+
+body[data-theme] .tikras-backup-grid {
+  display: grid;
+  gap: var(--one-gap);
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+
+body[data-theme] .tikras-backup-facts {
+  display: grid;
+  gap: 12px;
+}
+
+body[data-theme] .tikras-backup-facts div {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  padding: 12px;
+  background: var(--one-bg-soft);
+  border: 1px solid var(--one-line);
+  border-radius: var(--one-radius);
+}
+
+body[data-theme] .tikras-backup-facts span {
+  color: var(--one-muted);
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+body[data-theme] .tikras-backup-facts strong {
+  color: var(--one-text);
+  overflow-wrap: anywhere;
+}
+
+body[data-theme] .tikras-backup-form {
+  display: grid;
+  gap: 12px;
+}
+
+body[data-theme] .tikras-backup-form .btn {
+  justify-self: start;
+}
+
+body[data-theme] .tikras-audit-table {
+  min-width: 980px;
+}
+
+body[data-theme] .tikras-audit-context {
+  display: block;
+  max-width: 360px;
+  overflow: hidden;
+  color: var(--one-text-soft);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+body[data-theme] .tikras-script-page {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--one-gap);
+  margin: 0;
+}
+
+body[data-theme] .tikras-script-page > .col-12 {
+  flex: 1 0 100%;
+  max-width: 100%;
+}
+
+body[data-theme] .tikras-script-page > .col-5 {
+  flex: 1 1 430px;
+  max-width: 520px;
+  min-width: 360px;
+}
+
+body[data-theme] .tikras-script-page > .col-7 {
+  flex: 2 1 560px;
+  min-width: 0;
+}
+
+body[data-theme] .tikras-script-hero,
+body[data-theme] .tikras-script-diagnostics,
+body[data-theme] .tikras-script-note,
+body[data-theme] .tikras-script-apply-guard {
+  background: var(--one-surface);
+  border: 1px solid var(--one-line);
+  border-radius: var(--one-radius);
+  box-shadow: var(--one-shadow-sm);
+}
+
+body[data-theme] .tikras-script-hero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--one-gap);
+  padding: 20px;
+}
+
+body[data-theme] .tikras-script-kicker {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--one-primary);
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+body[data-theme] .tikras-script-hero h2 {
+  margin: 0 0 8px;
+  color: var(--one-text);
+  font-size: 24px;
+}
+
+body[data-theme] .tikras-script-hero p {
+  margin: 0;
+  color: var(--one-muted);
+}
+
+body[data-theme] .tikras-script-hero-meta,
+body[data-theme] .tikras-script-actions,
+body[data-theme] .tikras-script-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+body[data-theme] .tikras-script-hero-meta {
+  justify-content: flex-end;
+  min-width: 220px;
+}
+
+body[data-theme] .tikras-script-hero-meta span,
+body[data-theme] .tikras-risk,
+body[data-theme] .tikras-script-model-card small {
+  color: var(--one-text-soft);
+}
+
+body[data-theme] .tikras-script-hero-meta span,
+body[data-theme] .tikras-risk {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 34px;
+  padding: 7px 10px;
+  background: var(--one-bg-soft);
+  border: 1px solid var(--one-line);
+  border-radius: var(--one-radius);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+body[data-theme] .tikras-script-diagnostics {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  padding: 14px;
+}
+
+body[data-theme] .tikras-script-diag {
+  display: flex;
+  gap: 10px;
+  min-width: 0;
+  padding: 12px;
+  background: var(--one-bg-soft);
+  border: 1px solid var(--one-line);
+  border-radius: var(--one-radius);
+}
+
+body[data-theme] .tikras-script-diag i {
+  color: var(--one-primary);
+  font-size: 18px;
+}
+
+body[data-theme] .tikras-script-diag span,
+body[data-theme] .tikras-script-summary span {
+  color: var(--one-muted);
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+body[data-theme] .tikras-script-diag strong,
+body[data-theme] .tikras-script-summary strong,
+body[data-theme] .tikras-script-note strong {
+  display: block;
+  color: var(--one-text);
+  overflow-wrap: anywhere;
+}
+
+body[data-theme] .tikras-script-diag small,
+body[data-theme] .tikras-script-help,
+body[data-theme] .tikras-script-apply-guard small {
+  color: var(--one-muted) !important;
+  line-height: 1.45;
+}
+
+body[data-theme] .tikras-script-model-grid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-bottom: 14px;
+}
+
+body[data-theme] .tikras-script-model-card {
+  display: grid;
+  gap: 6px;
+  min-height: 104px;
+  padding: 13px;
+  color: var(--one-text);
+  text-align: left;
+  background: var(--one-bg-soft);
+  border: 1px solid var(--one-line);
+  border-radius: var(--one-radius);
+  cursor: pointer;
+}
+
+body[data-theme] .tikras-script-model-card i {
+  color: var(--one-primary);
+  font-size: 19px;
+}
+
+body[data-theme] .tikras-script-model-card span {
+  color: var(--one-text);
+  font-weight: 850;
+  line-height: 1.25;
+}
+
+body[data-theme] .tikras-script-model-card.active {
+  border-color: var(--one-primary);
+  background: color-mix(in srgb, var(--one-primary) 12%, var(--one-surface-strong));
+  box-shadow: var(--one-shadow-sm);
+}
+
+body[data-theme] .tikras-risk-border-faible {
+  border-left: 4px solid var(--one-green) !important;
+}
+
+body[data-theme] .tikras-risk-border-modere,
+body[data-theme] .tikras-risk-border-modéré {
+  border-left: 4px solid var(--one-amber) !important;
+}
+
+body[data-theme] .tikras-risk-border-eleve,
+body[data-theme] .tikras-risk-border-élevé {
+  border-left: 4px solid var(--one-red) !important;
+}
+
+body[data-theme] .tikras-risk-text-faible,
+body[data-theme] .tikras-risk-faible {
+  color: var(--one-green) !important;
+}
+
+body[data-theme] .tikras-risk-text-modere,
+body[data-theme] .tikras-risk-modere {
+  color: var(--one-amber) !important;
+}
+
+body[data-theme] .tikras-risk-text-eleve,
+body[data-theme] .tikras-risk-eleve {
+  color: var(--one-red) !important;
+}
+
+body[data-theme] .tikras-script-section {
+  padding-top: 18px !important;
+  color: var(--one-primary) !important;
+  font-size: 13px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+body[data-theme] .tikras-script-note {
+  display: flex;
+  gap: 12px;
+  margin-top: var(--one-gap);
+  padding: 14px;
+}
+
+body[data-theme] .tikras-script-note i {
+  color: var(--one-primary);
+  font-size: 22px;
+}
+
+body[data-theme] .tikras-script-summary {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin-bottom: 14px;
+}
+
+body[data-theme] .tikras-script-summary > div {
+  min-width: 0;
+  padding: 12px;
+  background: var(--one-bg-soft);
+  border: 1px solid var(--one-line);
+  border-radius: var(--one-radius);
+}
+
+body[data-theme] .tikras-script-toolbar {
+  justify-content: flex-end;
+  margin-bottom: 12px;
+}
+
+body[data-theme] .tikras-script-preview {
+  width: 100%;
+  min-height: 620px;
+  padding: 14px;
+  color: var(--one-text);
+  background: var(--one-bg-elevated);
+  border: 1px solid var(--one-line);
+  border-radius: var(--one-radius);
+  font-family: Consolas, "SFMono-Regular", Menlo, monospace;
+  font-size: 12px;
+  line-height: 1.45;
+  resize: vertical;
+  white-space: pre;
+}
+
+body[data-theme] .tikras-script-apply-guard {
+  margin: 12px 0;
+  padding: 13px;
+}
+
+body[data-theme] .tikras-script-apply-guard label {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  margin: 0 0 6px;
+  color: var(--one-text);
+  font-weight: 800;
+}
+
+body[data-theme] .tikras-script-apply-guard input {
+  margin-top: 3px;
+}
+
+body[data-theme] #tikrasApplyButton:disabled {
+  cursor: not-allowed;
+  opacity: .55;
+}
+
+body.login-screen,
+body.login-screen[data-theme] {
+  color: var(--one-text) !important;
+  background: var(--one-bg) !important;
+}
+
+body.login-screen[data-theme] .wrapper {
+  display: grid !important;
+  place-items: center;
+  min-height: 100vh;
+  padding: 24px;
+}
+
+body.login-screen[data-theme] .login-box,
+body.login-screen[data-theme] .tikras-login-card {
+  width: min(420px, 100%) !important;
+  margin: 0 !important;
+  padding: 22px !important;
+  background: var(--one-surface-strong) !important;
+  border: 1px solid var(--one-line) !important;
+  border-radius: var(--one-radius) !important;
+  box-shadow: var(--one-shadow) !important;
+}
+
+body.login-screen[data-theme] .card {
+  margin: 0 !important;
+}
+
+body.login-screen[data-theme] .card-header {
+  justify-content: center;
+  min-height: 58px;
+  border-bottom: 0 !important;
+}
+
+body.login-screen[data-theme] .card-body {
+  padding-top: 4px !important;
+}
+
+body[data-theme] .text-primary,
+body[data-theme] .text-blue,
+body[data-theme] .text-info,
+body[data-theme] .text-cyan {
+  color: var(--one-primary) !important;
+}
+
+body[data-theme] .text-success,
+body[data-theme] .text-green,
+body[data-theme] .text-teal {
+  color: var(--one-green) !important;
+}
+
+body[data-theme] .text-warning,
+body[data-theme] .text-yellow,
+body[data-theme] .text-orange {
+  color: var(--one-amber) !important;
+}
+
+body[data-theme] .text-danger,
+body[data-theme] .text-red {
+  color: var(--one-red) !important;
+}
+
+body[data-theme] ::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+body[data-theme] ::-webkit-scrollbar-track {
+  background: var(--one-bg);
+}
+
+body[data-theme] ::-webkit-scrollbar-thumb {
+  background: var(--one-line-strong);
+  border: 2px solid var(--one-bg);
+  border-radius: 999px;
+}
+
+@media screen and (max-width: 1180px) {
+  body[data-theme] #cpage {
+    flex-basis: 150px;
+    max-width: 150px;
+  }
+
+  body[data-theme] .ses,
+  body[data-theme] .router-select {
+    max-width: 150px;
+  }
+
+  body[data-theme] .tikras-admin-grid {
+    grid-template-columns: 1fr;
+  }
+
+  body[data-theme] .tikras-dashboard-kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  body[data-theme] .tikras-dashboard-layout,
+  body[data-theme] .tikras-traffic-shell,
+  body[data-theme] .tikras-report-chart-grid {
+    grid-template-columns: 1fr;
+  }
+
+  body[data-theme] .tikras-storage-grid,
+  body[data-theme] .tikras-storage-counts,
+  body[data-theme] .tikras-storage-columns,
+  body[data-theme] .tikras-backup-grid,
+  body[data-theme] .tikras-script-diagnostics,
+  body[data-theme] .tikras-script-summary,
+  body[data-theme] .tikras-tickets-stats,
+  body[data-theme] .tikras-tickets-filters,
+  body[data-theme] .tikras-tickets-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  body[data-theme] .tikras-action-strip {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media screen and (max-width: 750px) {
+  :root {
+    --one-navbar: 58px;
+  }
+
+  body[data-theme] #brand,
+  body[data-theme] #cpage,
+  body[data-theme] #closeNav {
+    display: none !important;
+  }
+
+  body[data-theme] #openNav {
+    display: inline-flex !important;
+  }
+
+  body[data-theme] .navbar-left {
+    flex: 0 0 auto;
+  }
+
+  body[data-theme] .navbar-right {
+    flex: 1 1 auto;
+    gap: 6px;
+    padding-right: 8px;
+  }
+
+  body[data-theme] #logout {
+    font-size: 0;
+  }
+
+  body[data-theme] #logout i {
+    margin-right: 0;
+    font-size: 16px;
+  }
+
+  body[data-theme] .ses,
+  body[data-theme] .router-search,
+  body[data-theme] .router-select {
+    max-width: 124px;
+    height: 38px;
+    padding-right: 8px !important;
+    padding-left: 8px !important;
+    font-size: 12px;
+  }
+
+  body[data-theme] #sidenav,
+  body[data-theme] .sidenav {
+    width: 0;
+    padding-right: 0;
+    padding-left: 0;
+    border-right: 0 !important;
+  }
+
+  body[data-theme] #main {
+    margin-left: 0 !important;
+    padding: 10px;
+  }
+
+  body[data-theme] [class*="col-"] {
+    width: 100%;
+  }
+
+  body[data-theme] .tikras-page-header,
+  body[data-theme] .report-hero,
+  body[data-theme] .card-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  body[data-theme] .tikras-page-actions,
+  body[data-theme] .tikras-router-actions,
+  body[data-theme] .report-actions {
+    justify-content: flex-start;
+    width: 100%;
+  }
+
+  body[data-theme] .tikras-router-card {
+    align-items: flex-start;
+    grid-template-columns: 1fr;
+  }
+
+  body[data-theme] .tikras-router-list {
+    grid-template-columns: 1fr;
+  }
+
+  body[data-theme] .tikras-dashboard-hero,
+  body[data-theme] .tikras-card-title,
+  body[data-theme] .tikras-storage-hero,
+  body[data-theme] .tikras-tickets-hero,
+  body[data-theme] .tikras-script-hero,
+  body[data-theme] .tikras-batch-main {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  body[data-theme] .tikras-script-page > .col-5,
+  body[data-theme] .tikras-script-page > .col-7 {
+    flex-basis: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  body[data-theme] .tikras-dashboard-status,
+  body[data-theme] .tikras-health-grid,
+  body[data-theme] .tikras-mini-grid,
+  body[data-theme] .tikras-traffic-stats,
+  body[data-theme] .tikras-traffic-stats-large {
+    grid-template-columns: 1fr;
+  }
+
+  body[data-theme] .tikras-card-title select {
+    width: 100%;
+  }
+}
+
+@media screen and (max-width: 480px) {
+  body[data-theme] .router-search {
+    display: none;
+  }
+
+  body[data-theme] .ses,
+  body[data-theme] .router-select {
+    max-width: 112px;
+  }
+
+  body[data-theme] .btn,
+  body[data-theme] .tikras-btn {
+    width: 100%;
+  }
+
+  body[data-theme] .tikras-dashboard-kpis,
+  body[data-theme] .tikras-action-strip,
+  body[data-theme] .tikras-storage-grid,
+  body[data-theme] .tikras-storage-counts,
+  body[data-theme] .tikras-storage-columns,
+  body[data-theme] .tikras-backup-grid,
+  body[data-theme] .tikras-script-diagnostics,
+  body[data-theme] .tikras-script-model-grid,
+  body[data-theme] .tikras-script-summary,
+  body[data-theme] .tikras-tickets-stats,
+  body[data-theme] .tikras-tickets-filters,
+  body[data-theme] .tikras-tickets-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Accessibilite : anneau de focus clavier visible (ajout TIKRAS) */
+a:focus-visible,
+button:focus-visible,
+.btn:focus-visible,
+.tikras-btn:focus-visible,
+.sidenav a:focus-visible,
+.navbar a:focus-visible,
+.tikras-kpi-card:focus-visible,
+.tikras-router-card a:focus-visible,
+select:focus-visible,
+input:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid #0b63ff;
+  outline-offset: 2px;
+  border-radius: 6px;
+}

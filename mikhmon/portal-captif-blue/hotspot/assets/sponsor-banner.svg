@@ -1,0 +1,10 @@
+<svg width="900" height="190" viewBox="0 0 900 190" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="900" height="190" rx="18" fill="#E8F7FF"/>
+  <path d="M0 150C140 90 276 100 420 132C560 164 710 160 900 92V190H0V150Z" fill="#BCEBFF"/>
+  <rect x="48" y="44" width="98" height="98" rx="24" fill="#0872C7"/>
+  <path d="M68 101C82 87 112 87 126 101" stroke="white" stroke-width="9" stroke-linecap="round"/>
+  <path d="M80 115C90 106 104 106 114 115" stroke="#DFF4FF" stroke-width="8" stroke-linecap="round"/>
+  <circle cx="97" cy="128" r="6" fill="white"/>
+  <text x="174" y="82" font-family="Inter, Arial, sans-serif" font-size="34" font-weight="800" fill="#082F63">Votre sponsor ici</text>
+  <text x="174" y="120" font-family="Inter, Arial, sans-serif" font-size="20" font-weight="600" fill="#07599F">Annonce locale, promotion ou information client</text>
+</svg>

@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="pragma" content="no-cache">
+  <meta http-equiv="expires" content="-1">
+  <title>Portail WiFi</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  $(if chap-id)
+  <form name="sendin" action="$(link-login-only)" method="post" hidden>
+    <input type="hidden" name="username">
+    <input type="hidden" name="password">
+    <input type="hidden" name="dst" value="$(link-orig)">
+    <input type="hidden" name="popup" value="true">
+  </form>
+  <script src="md5.js"></script>
+  <script>
+    function doLogin() {
+      document.sendin.username.value = document.login.username.value;
+      document.sendin.password.value = hexMD5('$(chap-id)' + document.login.password.value + '$(chap-challenge)');
+      document.sendin.submit();
+      return false;
+    }
+  </script>
+  $(endif)
+
+  <main class="portal-shell">
+    <section class="hero-panel" aria-label="Offres WiFi">
+      <header class="portal-topbar">
+        <a class="brand" href="$(link-login-only)" aria-label="Accueil WiFi">
+          <img src="assets/logo.svg" alt="" class="brand-mark">
+          <span class="brand-name" data-i18n="brand">TIKRAS IT</span>
+        </a>
+        <div class="top-actions" aria-label="Actions rapides">
+          <button class="icon-button" type="button" data-lang="fr" aria-label="Francais">FR</button>
+          <button class="icon-button" type="button" data-lang="en" aria-label="English">EN</button>
+          <button class="icon-button" type="button" id="darkModeBtn" aria-label="Mode nuit">N</button>
+        </div>
+      </header>
+
+      <div class="hero-grid">
+        <div class="hero-copy">
+          <p class="eyebrow" data-i18n="eyebrow">WiFi haut debit securise</p>
+          <h1 data-i18n="headline">Connectez-vous en quelques secondes.</h1>
+          <p class="lead" data-i18n="lead">Achetez un voucher, saisissez vos identifiants et profitez d'une connexion rapide depuis tous vos appareils.</p>
+          <div class="hero-actions">
+            <a class="primary-link" href="pay.html" data-i18n="buy">Acheter un voucher</a>
+            <a class="secondary-link" href="https://wa.me/22700000000" data-i18n="support">Support WhatsApp</a>
+          </div>
+        </div>
+        <div class="network-visual" aria-hidden="true">
+          <img src="assets/network.svg" alt="">
+        </div>
+      </div>
+
+      <div class="offers" id="offers" aria-label="Forfaits WiFi">
+        <article class="offer-card">
+          <span class="offer-name">Express</span>
+          <strong>1h</strong>
+          <span>100 FCFA</span>
+        </article>
+        <article class="offer-card featured">
+          <span class="offer-name">Journee</span>
+          <strong>24h</strong>
+          <span>500 FCFA</span>
+        </article>
+        <article class="offer-card">
+          <span class="offer-name">Semaine</span>
+          <strong>7j</strong>
+          <span>2 500 FCFA</span>
+        </article>
+      </div>
+    </section>
+
+    <section class="login-panel" aria-label="Connexion hotspot">
+      <div class="card login-card">
+        <div class="card-heading">
+          <p class="eyebrow" data-i18n="access">Acces client</p>
+          <h2 data-i18n="loginTitle">Entrer mon voucher</h2>
+        </div>
+
+        $(if error)
+        <div class="alert" role="alert">$(error)</div>
+        $(endif)
+
+        <form class="login-form" name="login" action="$(link-login-only)" method="post" $(if chap-id) onsubmit="return doLogin()" $(endif)>
+          <input type="hidden" name="dst" value="$(link-orig)">
+          <input type="hidden" name="popup" value="true">
+
+          <label for="username" data-i18n="voucherLabel">Code voucher</label>
+          <input id="username" name="username" type="text" value="$(username)" autocomplete="username" inputmode="text" required>
+
+          <label for="password" data-i18n="passwordLabel">Mot de passe</label>
+          <input id="password" name="password" type="password" autocomplete="current-password">
+
+          <button class="submit-button" type="submit" data-i18n="connect">Se connecter</button>
+        </form>
+
+        <div class="quick-row">
+          <a href="pay.html" data-i18n="needVoucher">Besoin d'un code ?</a>
+          <a href="tickets/ticket.html" data-i18n="printTicket">Ticket imprimable</a>
+        </div>
+
+        <div class="status-strip">
+          <div>
+            <span data-i18n="session">Session</span>
+            <strong id="countdown" data-duration="3600">60:00</strong>
+          </div>
+          <div>
+            <span data-i18n="network">Reseau</span>
+            <strong>2.4G / 5G</strong>
+          </div>
+          <div>
+            <span data-i18n="payment">Paiement</span>
+            <strong>Mobile Money</strong>
+          </div>
+        </div>
+      </div>
+
+      <aside class="card side-card">
+        <img class="qr-image" src="assets/qr-placeholder.svg" alt="QR voucher">
+        <div>
+          <p class="eyebrow" data-i18n="qrTitle">Connexion QR</p>
+          <p data-i18n="qrText">Scannez le QR d'un ticket valide ou demandez un code au support.</p>
+        </div>
+      </aside>
+
+      <aside class="sponsor-banner" aria-label="Sponsor">
+        <img src="assets/sponsor-banner.svg" alt="Sponsor">
+      </aside>
+    </section>
+  </main>
+
+  <footer class="portal-footer">
+    <span data-i18n="footer">Disponible 24h/24. Pour assistance, contactez le support.</span>
+  </footer>
+
+  <script src="script.js"></script>
+  <script src="darkmode.js"></script>
+</body>
+</html>

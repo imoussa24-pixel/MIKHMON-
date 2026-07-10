@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ticket WiFi</title>
+  <style>
+    body{margin:0;background:#eef8ff;font-family:Arial,sans-serif;color:#0d2338;display:grid;place-items:center;min-height:100vh;padding:18px}.ticket{width:280px;background:#fff;border:1px solid #bce7ff;border-radius:8px;padding:18px;text-align:center}.brand{font-weight:800;color:#07599f}.code{font-size:28px;font-weight:900;letter-spacing:2px;margin:16px 0;color:#082f63}.meta{display:grid;gap:6px;text-align:left;font-size:14px}.btn{margin-top:16px;border:0;border-radius:8px;background:#0872c7;color:white;font-weight:800;padding:12px 16px;cursor:pointer}@media print{body{background:white}.btn{display:none}.ticket{box-shadow:none}}
+  </style>
+</head>
+<body>
+  <article class="ticket">
+    <div class="brand">TIKRAS IT</div>
+    <div class="code">VOUCHER</div>
+    <div class="meta">
+      <span>Forfait : 24h</span>
+      <span>Prix : 500 FCFA</span>
+      <span>Support : +227 00 00 00 00</span>
+    </div>
+    <button class="btn" onclick="window.print()">Imprimer</button>
+  </article>
+</body>
+</html>

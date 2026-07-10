@@ -1,0 +1,29 @@
+# ==========================================================================
+#  SECRETS — real production data. NEVER commit or push these.
+# ==========================================================================
+# Live router credentials (~60 routers: IPs, admin/router passwords)
+mikhmon/include/config.php
+# Notification tokens (Telegram/WhatsApp) if configured at runtime
+# mikhmon/include/notify_config.php   # currently empty defaults — review before pushing
+
+# ==========================================================================
+#  Runtime-generated data (per-deployment, may contain customer data)
+# ==========================================================================
+mikhmon/share/logs/
+mikhmon/share/tickets/*.pdf
+# keep the guard index files
+!mikhmon/share/tickets/index.php
+
+# ==========================================================================
+#  Bundled binaries / runtime (not source code)
+# ==========================================================================
+php8/
+lanceur.exe
+*.exe
+
+# ==========================================================================
+#  Noise
+# ==========================================================================
+*.log
+.DS_Store
+Thumbs.db

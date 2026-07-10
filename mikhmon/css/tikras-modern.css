@@ -1,0 +1,918 @@
+/*
+ * TIKRAS modern UI layer.
+ * Loaded after the legacy theme so pages can be refreshed progressively.
+ */
+
+body[data-theme] {
+  --modern-radius: 8px;
+  --modern-gap: 14px;
+  --modern-surface: #ffffff;
+  --modern-soft: #f8fafc;
+  --modern-border: #dce4ee;
+  --modern-border-strong: #cbd5e1;
+  --modern-text: #172033;
+  --modern-muted: #64748b;
+  --modern-accent: #0b63ff;
+  --modern-danger: #be123c;
+  --modern-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
+}
+
+body[data-theme="dark"] {
+  --modern-surface: #111827;
+  --modern-soft: #1f2937;
+  --modern-border: #334155;
+  --modern-border-strong: #475569;
+  --modern-text: #e5edf6;
+  --modern-muted: #a7b3c3;
+  --modern-accent: #14b8a6;
+  --modern-danger: #f43f5e;
+  --modern-shadow: 0 16px 34px rgba(0, 0, 0, 0.28);
+}
+
+.tikras-page-header,
+.tikras-page-header *,
+.tikras-login-shell,
+.tikras-login-shell *,
+.tikras-admin-grid,
+.tikras-admin-grid *,
+.tikras-panel,
+.tikras-panel *,
+.tikras-router-card,
+.tikras-router-card *,
+.tikras-ticket-page,
+.tikras-ticket-page *,
+.tikras-btn,
+.tikras-btn * {
+  box-sizing: border-box;
+}
+
+.tikras-page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--modern-gap);
+  margin: 0 0 14px;
+  padding: 16px 18px;
+  color: var(--modern-text);
+  background: var(--modern-surface);
+  border: 1px solid var(--modern-border);
+  border-radius: var(--modern-radius);
+  box-shadow: var(--modern-shadow);
+}
+
+.tikras-page-title {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  gap: 12px;
+}
+
+.tikras-page-icon,
+.tikras-router-icon,
+.tikras-login-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 42px;
+  height: 42px;
+  color: #ffffff;
+  background: var(--modern-accent);
+  border-radius: var(--modern-radius);
+}
+
+.tikras-page-title h2,
+.tikras-router-copy h3 {
+  margin: 0;
+  color: var(--modern-text);
+  font-size: 19px;
+  line-height: 1.2;
+  letter-spacing: 0;
+}
+
+.tikras-page-title p,
+.tikras-router-copy p {
+  margin: 4px 0 0;
+  color: var(--modern-muted);
+  font-size: 13px;
+}
+
+.tikras-page-actions,
+.tikras-router-actions,
+.tikras-form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.tikras-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 34px;
+  gap: 7px;
+  padding: 7px 11px;
+  color: var(--modern-text);
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+  background: var(--modern-soft);
+  border: 1px solid var(--modern-border);
+  border-radius: var(--modern-radius);
+}
+
+.tikras-btn:hover {
+  text-decoration: none;
+  transform: translateY(-1px);
+}
+
+.tikras-btn-primary {
+  color: #ffffff !important;
+  background: var(--modern-accent);
+  border-color: var(--modern-accent);
+}
+
+.tikras-btn-muted {
+  color: var(--modern-text) !important;
+}
+
+.tikras-btn-danger {
+  color: #ffffff !important;
+  background: var(--modern-danger);
+  border-color: var(--modern-danger);
+}
+
+.tikras-alert {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+  padding: 11px 13px;
+  border-radius: var(--modern-radius);
+  border: 1px solid var(--modern-border);
+  background: var(--modern-soft);
+}
+
+.tikras-alert-danger {
+  color: #ffffff;
+  background: var(--modern-danger);
+  border-color: var(--modern-danger);
+}
+
+.tikras-login-shell {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  min-height: 100vh;
+  padding: 22px;
+}
+
+body.login-screen,
+body.login-screen[data-theme],
+body.login-screen[data-theme="light"],
+body.login-screen[data-theme="dark"] {
+  color: #172033 !important;
+  background: linear-gradient(135deg, #eef6ff 0%, #f8fafc 48%, #e8f0f7 100%) !important;
+}
+
+body.login-screen::before,
+body.login-screen[data-theme]::before,
+body.login-screen[data-theme="light"]::before,
+body.login-screen[data-theme="dark"]::before {
+  display: none !important;
+}
+
+body.login-screen[data-theme] .wrapper {
+  display: block !important;
+  width: 100vw !important;
+  max-width: 100vw !important;
+  min-height: 100vh;
+  overflow-x: hidden !important;
+}
+
+.tikras-login-card {
+  width: min(410px, 100%);
+  padding: 24px;
+  color: #172033 !important;
+  background: #ffffff !important;
+  border: 1px solid var(--modern-border);
+  border-radius: var(--modern-radius);
+  box-shadow: 0 24px 70px rgba(15, 23, 42, 0.16);
+}
+
+body.login-screen[data-theme] .tikras-login-card {
+  color: #172033 !important;
+  background: #ffffff !important;
+  border-color: #dbe4ee !important;
+  box-shadow: 0 24px 70px rgba(15, 23, 42, 0.16) !important;
+}
+
+.tikras-login-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 22px;
+}
+
+.tikras-login-brand h1 {
+  margin: 0;
+  color: #172033 !important;
+  font-size: 22px;
+  line-height: 1.15;
+  letter-spacing: 0;
+}
+
+.tikras-login-brand p {
+  margin: 3px 0 0;
+  color: #64748b !important;
+}
+
+.tikras-login-form {
+  display: grid;
+  gap: 12px;
+}
+
+.tikras-login-form .form-control,
+.tikras-login-form input[type="text"],
+.tikras-login-form input[type="password"] {
+  width: 100%;
+  min-height: 42px;
+  padding: 9px 11px;
+  color: #172033 !important;
+  background: #f8fafc !important;
+  border: 1px solid #cbd5e1 !important;
+  border-radius: var(--modern-radius);
+  box-shadow: none !important;
+}
+
+.tikras-login-form .form-control::placeholder,
+.tikras-login-form input[type="text"]::placeholder,
+.tikras-login-form input[type="password"]::placeholder {
+  color: #64748b !important;
+}
+
+.tikras-login-submit {
+  width: 100%;
+  min-height: 42px;
+  cursor: pointer;
+  font-weight: 700;
+  color: #ffffff !important;
+  background: var(--modern-accent);
+  border: 1px solid var(--modern-accent);
+  border-radius: var(--modern-radius);
+}
+
+body.login-screen[data-theme] .tikras-login-submit {
+  color: #ffffff !important;
+  background: #0b63ff !important;
+  border-color: #0b63ff !important;
+}
+
+.tikras-admin-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) minmax(320px, 0.8fr);
+  gap: var(--modern-gap);
+}
+
+.tikras-panel {
+  color: var(--modern-text);
+  background: var(--modern-surface);
+  border: 1px solid var(--modern-border);
+  border-radius: var(--modern-radius);
+  box-shadow: var(--modern-shadow);
+}
+
+.tikras-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--modern-border);
+}
+
+.tikras-panel-header h3 {
+  margin: 0;
+  font-size: 16px;
+  letter-spacing: 0;
+}
+
+.tikras-panel-body {
+  padding: 14px 16px;
+}
+
+.tikras-router-tools {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.tikras-router-tools input {
+  flex: 1 1 auto;
+}
+
+.tikras-panel .form-control,
+.tikras-panel select,
+.tikras-panel input[type="text"],
+.tikras-panel input[type="password"],
+.tikras-panel input[type="search"],
+.tikras-panel .group-item {
+  color: var(--modern-text) !important;
+  background: var(--modern-soft) !important;
+  border-color: var(--modern-border-strong) !important;
+  box-shadow: none !important;
+}
+
+.tikras-panel .form-control::placeholder,
+.tikras-panel input[type="search"]::placeholder {
+  color: var(--modern-muted) !important;
+}
+
+.tikras-router-list {
+  display: grid;
+  gap: 10px;
+  max-height: 70vh;
+  overflow: auto;
+  padding-right: 4px;
+}
+
+.tikras-router-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: var(--modern-soft);
+  border: 1px solid var(--modern-border);
+  border-radius: var(--modern-radius);
+}
+
+.tikras-router-card:hover {
+  border-color: var(--modern-accent);
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.10);
+}
+
+.tikras-router-main {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  gap: 11px;
+}
+
+.tikras-router-copy {
+  min-width: 0;
+}
+
+.tikras-router-copy h3,
+.tikras-router-copy p {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tikras-router-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+  color: var(--modern-muted);
+  font-size: 12px;
+}
+
+.tikras-router-meta span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.tikras-admin-form {
+  display: grid;
+  gap: 12px;
+}
+
+.tikras-field label {
+  display: block;
+  margin-bottom: 5px;
+  color: var(--modern-muted);
+  font-weight: 600;
+}
+
+.tikras-field .form-control,
+.tikras-field select,
+.tikras-field input[type="text"],
+.tikras-field input[type="password"] {
+  width: 100%;
+}
+
+.tikras-version-note {
+  margin-top: 12px;
+  color: var(--modern-muted);
+  font-size: 12px;
+}
+
+.tikras-ticket-page {
+  display: grid !important;
+  grid-template-columns: minmax(0, 2fr) minmax(320px, 0.95fr);
+  align-items: start;
+  gap: 14px;
+  margin: 0;
+}
+
+.tikras-ticket-page::before,
+.tikras-ticket-page::after {
+  display: none !important;
+  content: none !important;
+}
+
+.tikras-ticket-page > .col-8,
+.tikras-ticket-page > .col-4 {
+  float: none !important;
+  width: auto !important;
+  max-width: none !important;
+  padding-right: 0 !important;
+  padding-left: 0 !important;
+}
+
+.tikras-ticket-page .card,
+body[data-theme] .tikras-ticket-page .card {
+  color: var(--modern-text) !important;
+  background: var(--modern-surface) !important;
+  border: 1px solid var(--modern-border) !important;
+  border-radius: var(--modern-radius) !important;
+  box-shadow: var(--modern-shadow);
+}
+
+.tikras-ticket-page .card-header,
+.tikras-ticket-page .card-body,
+body[data-theme] .tikras-ticket-page .card-header,
+body[data-theme] .tikras-ticket-page .card-body {
+  color: var(--modern-text) !important;
+  background: var(--modern-surface) !important;
+}
+
+.tikras-ticket-page .card-header,
+body[data-theme] .tikras-ticket-page .card-header {
+  border-bottom: 1px solid var(--modern-border) !important;
+}
+
+.tikras-ticket-page .card-header h3,
+body[data-theme] .tikras-ticket-page .card-header h3 {
+  color: var(--modern-text) !important;
+}
+
+.tikras-ticket-page .btn[class*="bg-"],
+.tikras-ticket-page a.btn[class*="bg-"],
+.tikras-ticket-page button.btn[class*="bg-"] {
+  color: #ffffff !important;
+}
+
+.tikras-ticket-form > div:first-child,
+.tikras-ticket-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.tikras-ticket-form .table,
+.tikras-ticket-page .table {
+  margin-bottom: 0;
+  color: var(--modern-text) !important;
+  background: var(--modern-surface) !important;
+}
+
+.tikras-ticket-form .table td,
+.tikras-ticket-page .table td,
+.tikras-ticket-page .table th {
+  color: var(--modern-text) !important;
+  border-color: var(--modern-border) !important;
+  vertical-align: middle;
+}
+
+.tikras-ticket-form .form-control,
+.tikras-ticket-form select,
+.tikras-ticket-form input[type="text"],
+.tikras-ticket-form input[type="number"],
+.tikras-ticket-form input[type="email"],
+.tikras-ticket-form .group-item {
+  color: var(--modern-text) !important;
+  background: var(--modern-soft) !important;
+  border: 1px solid var(--modern-border-strong) !important;
+  border-radius: var(--modern-radius) !important;
+  box-shadow: none !important;
+}
+
+.tikras-ticket-section {
+  color: var(--modern-text) !important;
+  background: var(--modern-soft) !important;
+  border-top: 1px solid var(--modern-border) !important;
+  border-bottom: 1px solid var(--modern-border) !important;
+  font-weight: 800;
+}
+
+.tikras-ticket-preview-card {
+  margin-bottom: 14px;
+}
+
+.tikras-ticket-preview-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.tikras-ticket-preview-grid > div {
+  min-width: 0;
+  padding: 10px;
+  background: var(--modern-soft);
+  border: 1px solid var(--modern-border);
+  border-radius: var(--modern-radius);
+}
+
+.tikras-ticket-preview-grid span {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--modern-muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.tikras-ticket-preview-grid strong {
+  display: block;
+  overflow-wrap: anywhere;
+  color: var(--modern-text);
+  font-size: 13px;
+  line-height: 1.25;
+}
+
+.tikras-ticket-preview-note {
+  margin-top: 10px;
+  padding: 9px 10px;
+  border: 1px solid var(--modern-border);
+  border-radius: var(--modern-radius);
+  font-weight: 700;
+}
+
+.tikras-ticket-preview-note.is-ready {
+  color: #0b63ff;
+  background: rgba(20, 184, 166, 0.10);
+  border-color: rgba(20, 184, 166, 0.30);
+}
+
+.tikras-ticket-preview-note.is-warning {
+  color: #92400e;
+  background: rgba(245, 158, 11, 0.12);
+  border-color: rgba(245, 158, 11, 0.34);
+}
+
+.tikras-ticket-warnings {
+  display: grid;
+  gap: 7px;
+  margin: 10px 0 0;
+  padding-left: 18px;
+  color: #92400e;
+}
+
+.tikras-ticket-link,
+.tikras-ticket-share-text {
+  width: 100%;
+  color: var(--modern-text) !important;
+  background: var(--modern-soft) !important;
+  border: 1px solid var(--modern-border-strong) !important;
+  border-radius: var(--modern-radius) !important;
+}
+
+.tikras-ticket-share-text {
+  min-height: 150px;
+  margin-top: 10px;
+  padding: 10px;
+  resize: vertical;
+}
+
+.tikras-ticket-list {
+  border-color: var(--modern-border) !important;
+  border-radius: var(--modern-radius);
+}
+
+.tikras-roaming-dashboard-card .card-header,
+body[data-theme] .tikras-roaming-dashboard-card .card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.tikras-roaming-dashboard-actions a,
+body[data-theme] .tikras-roaming-dashboard-actions a {
+  color: var(--modern-accent) !important;
+}
+
+.tikras-data-page {
+  display: block;
+}
+
+.tikras-data-page .card,
+body[data-theme] .tikras-data-page .card,
+.tikras-data-card,
+body[data-theme] .tikras-data-card {
+  color: var(--modern-text) !important;
+  background: var(--modern-surface) !important;
+  border: 1px solid var(--modern-border) !important;
+  border-radius: var(--modern-radius) !important;
+  box-shadow: var(--modern-shadow);
+}
+
+.tikras-data-page .card-header,
+body[data-theme] .tikras-data-page .card-header,
+.tikras-data-page .card-body,
+body[data-theme] .tikras-data-page .card-body,
+.tikras-data-card .card-header {
+  color: var(--modern-text) !important;
+  background: var(--modern-surface) !important;
+}
+
+.tikras-data-page .card-header,
+body[data-theme] .tikras-data-page .card-header,
+.tikras-data-card .card-header {
+  border-bottom: 1px solid var(--modern-border) !important;
+}
+
+.tikras-data-page .card-header h3,
+.tikras-data-card .card-header h3,
+body[data-theme] .tikras-data-page .card-header h3,
+body[data-theme] .tikras-data-page .card-title {
+  color: var(--modern-text) !important;
+}
+
+body[data-theme] .tikras-data-page .card a {
+  color: var(--modern-accent) !important;
+}
+
+body[data-theme] .tikras-data-page .btn[class*="bg-"],
+body[data-theme] .tikras-data-page a.btn[class*="bg-"],
+body[data-theme] .tikras-data-page button.btn[class*="bg-"] {
+  color: #ffffff !important;
+}
+
+.tikras-data-toolbar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.tikras-data-filters {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(150px, 1fr));
+  gap: 8px;
+}
+
+.tikras-data-filters > [class*="input-group-"] {
+  float: none !important;
+  width: 100% !important;
+}
+
+.tikras-data-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.tikras-data-page .group-item,
+.tikras-data-page .form-control,
+.tikras-data-page select,
+.tikras-data-page input[type="text"],
+.tikras-data-page input[type="search"] {
+  color: var(--modern-text) !important;
+  background: var(--modern-soft) !important;
+  border: 1px solid var(--modern-border-strong) !important;
+  border-radius: var(--modern-radius) !important;
+  box-shadow: none !important;
+}
+
+.tikras-data-table-wrap {
+  max-height: 75vh;
+  overflow: auto;
+  border: 1px solid var(--modern-border);
+  border-radius: var(--modern-radius);
+  background: var(--modern-surface);
+}
+
+.tikras-data-table-wrap .table,
+body[data-theme] .tikras-data-table-wrap .table {
+  margin: 0;
+  color: var(--modern-text) !important;
+  background: var(--modern-surface) !important;
+  border-collapse: separate !important;
+  border-spacing: 0;
+}
+
+.tikras-data-table-wrap .table th,
+body[data-theme] .tikras-data-table-wrap .table th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  color: var(--modern-text) !important;
+  background: var(--modern-soft) !important;
+  border-color: var(--modern-border) !important;
+  box-shadow: 0 1px 0 var(--modern-border);
+}
+
+.tikras-data-table-wrap .table td,
+body[data-theme] .tikras-data-table-wrap .table td {
+  color: var(--modern-text) !important;
+  background: var(--modern-surface) !important;
+  border-color: var(--modern-border) !important;
+  vertical-align: middle;
+}
+
+.tikras-data-table-wrap .table tbody tr:nth-child(even) {
+  background: rgba(148, 163, 184, 0.08);
+}
+
+.tikras-data-table-wrap .table tbody tr:hover {
+  background: rgba(20, 184, 166, 0.10) !important;
+}
+
+.tikras-data-table-wrap .table a,
+body[data-theme] .tikras-data-table-wrap .table a {
+  color: var(--modern-accent) !important;
+}
+
+.tikras-data-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  min-height: 28px;
+  padding: 4px 9px;
+  color: #ffffff;
+  font-weight: 800;
+  background: var(--modern-accent);
+  border-radius: var(--modern-radius);
+}
+
+.tikras-log-topic {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 3px 8px;
+  color: var(--modern-text);
+  background: var(--modern-soft);
+  border: 1px solid var(--modern-border);
+  border-radius: var(--modern-radius);
+}
+
+body[data-theme] #reloadHome .card,
+body[data-theme] #reloadHome .box:not([class*="bg-"]) {
+  color: var(--modern-text) !important;
+  background: var(--modern-surface) !important;
+  border-color: var(--modern-border) !important;
+  border-radius: var(--modern-radius) !important;
+  box-shadow: var(--modern-shadow);
+}
+
+body[data-theme] #reloadHome .card-header {
+  color: var(--modern-text) !important;
+  background: var(--modern-surface) !important;
+  border-bottom: 1px solid var(--modern-border) !important;
+}
+
+body[data-theme] #reloadHome .card-header h3,
+body[data-theme] #reloadHome .box:not([class*="bg-"]) h1,
+body[data-theme] #reloadHome .box:not([class*="bg-"]) span {
+  color: var(--modern-text) !important;
+}
+
+body[data-theme] #reloadHome .tikras-follow-item,
+body[data-theme] #reloadHome .tikras-sales-item {
+  color: var(--modern-text) !important;
+  background: var(--modern-soft) !important;
+  border: 1px solid var(--modern-border) !important;
+  border-radius: var(--modern-radius);
+}
+
+body[data-theme] #reloadHome .tikras-follow-item span,
+body[data-theme] #reloadHome .tikras-sales-item span,
+body[data-theme] #reloadHome .tikras-follow-item strong,
+body[data-theme] #reloadHome .tikras-sales-item strong,
+body[data-theme] #reloadHome .tikras-follow-item small,
+body[data-theme] #reloadHome .tikras-sales-item small {
+  color: var(--modern-text) !important;
+}
+
+body[data-theme] #reloadHome .tikras-follow-item span,
+body[data-theme] #reloadHome .tikras-sales-item span,
+body[data-theme] #reloadHome .tikras-follow-item small,
+body[data-theme] #reloadHome .tikras-sales-item small {
+  color: var(--modern-muted) !important;
+}
+
+body[data-theme] #reloadHome .table {
+  color: var(--modern-text) !important;
+  background: var(--modern-surface) !important;
+}
+
+body[data-theme] #reloadHome .table td,
+body[data-theme] #reloadHome .table th {
+  color: var(--modern-text) !important;
+  border-color: var(--modern-border) !important;
+}
+
+body[data-theme] #reloadHome .box[class*="bg-"],
+body[data-theme] #reloadHome .box[class*="bg-"] a,
+body[data-theme] #reloadHome .box[class*="bg-"] h1,
+body[data-theme] #reloadHome .box[class*="bg-"] span,
+body[data-theme] #reloadHome .box[class*="bg-"] div {
+  color: #ffffff !important;
+}
+
+@media (max-width: 980px) {
+  .tikras-admin-grid,
+  .tikras-router-card,
+  .tikras-ticket-page {
+    grid-template-columns: 1fr;
+  }
+
+  .tikras-data-toolbar,
+  .tikras-data-filters {
+    grid-template-columns: 1fr;
+  }
+
+  .tikras-page-header,
+  .tikras-router-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .tikras-router-actions .tikras-btn {
+    width: 100%;
+  }
+}
+
+@media (max-width: 680px) {
+  body[data-theme] #main {
+    overflow-x: hidden;
+  }
+
+  body[data-theme] .main-container {
+    max-width: 100vw;
+    overflow-x: hidden;
+    padding-right: 8px !important;
+    padding-left: 8px !important;
+  }
+
+  .tikras-login-shell {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    max-width: 100vw;
+    overflow: hidden;
+    padding: 24px;
+  }
+
+  .tikras-login-card {
+    width: 100%;
+    max-width: 342px;
+    padding: 18px;
+  }
+
+  .tikras-page-header,
+  .tikras-panel-header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .tikras-page-actions,
+  .tikras-form-actions {
+    justify-content: stretch;
+  }
+
+  .tikras-page-actions .tikras-btn,
+  .tikras-form-actions .tikras-btn,
+  .tikras-data-actions .tikras-btn,
+  .tikras-data-actions .btn,
+  .tikras-ticket-form .btn {
+    flex: 1 1 100%;
+    width: 100%;
+  }
+
+  .tikras-ticket-preview-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .tikras-panel-body {
+    padding: 12px;
+  }
+
+  .tikras-router-list {
+    max-height: none;
+    overflow: visible;
+    padding-right: 0;
+  }
+}

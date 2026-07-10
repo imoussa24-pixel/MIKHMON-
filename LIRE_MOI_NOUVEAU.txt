@@ -1,0 +1,19 @@
+NOUVEAU PAQUET MIKHMON PHP 8
+
+Lancer: lanceur.exe
+Runtime: php8/php.exe
+URL: http://127.0.0.1:8081/admin.php?id=login
+Dossier web: mikhmon
+
+Nouveautes finalisees:
+- base locale SQLite dans %LOCALAPPDATA%/MikhmonProAdmin/storage;
+- historique tickets roaming et lots generes;
+- cache des rapports, journal RouterOS local et statuts routeurs;
+- page Sauvegarde pour exporter/restaurer configuration + base locale.
+- page Journal systeme pour suivre les actions locales.
+
+Correction anti-calage incluse:
+- ouverture des routeurs par vraie navigation, pas en AJAX cache;
+- RouterOS API limitee a 1 tentative courte par defaut;
+- retour propre a la liste des sessions si le routeur ne repond pas;
+- les delais sont reglables dans mikhmon/include/routeros.php.

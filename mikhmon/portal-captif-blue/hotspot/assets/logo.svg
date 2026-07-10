@@ -1,0 +1,7 @@
+<svg width="128" height="128" viewBox="0 0 128 128" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Mikhmon WiFi">
+  <rect x="10" y="10" width="108" height="108" rx="24" fill="#0872C7"/>
+  <path d="M34 66C50 50 78 50 94 66" stroke="white" stroke-width="9" stroke-linecap="round"/>
+  <path d="M47 79C56 70 72 70 81 79" stroke="#DFF4FF" stroke-width="9" stroke-linecap="round"/>
+  <circle cx="64" cy="94" r="7" fill="white"/>
+  <path d="M31 38H97" stroke="#35B3FF" stroke-width="8" stroke-linecap="round"/>
+</svg>
