@@ -25,6 +25,16 @@ if (substr(tikras_server("REQUEST_URI"), -11) == "readcfg.php") {
 };
 // read config
 
+// Serveur en ligne: si include/config.php est absent (secrets non versionnes),
+// la liste des routeurs vit dans le stockage persistant (TIKRAS_DATA_DIR).
+if (!isset($data) || !is_array($data) || count($data) < 1) {
+    if (!function_exists('tikras_config_apply_local')) {
+        require_once(dirname(__DIR__) . '/lib/tikras_config_store.php');
+    }
+    $data = array();
+    tikras_config_apply_local($data);
+}
+
 if (!function_exists('tikras_cfg_value')) {
     function tikras_cfg_value($data, $session, $index, $separator, $default)
     {

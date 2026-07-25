@@ -206,9 +206,37 @@
     }
   }
 
+  /*
+   * Soft cron: while an admin keeps the panel open, ping cron.php so the
+   * automations (health checks, roaming retry, auto backup) keep running even
+   * without an external scheduler. Throttled via localStorage across tabs.
+   */
+  function tikrasSoftCron() {
+    var KEY = "tikras-soft-cron-at";
+    var INTERVAL = 5 * 60 * 1000;
+    var run = function () {
+      var last = parseInt(window.localStorage ? localStorage.getItem(KEY) || "0" : "0", 10);
+      var now = Date.now();
+      if (now - last < INTERVAL) {
+        return;
+      }
+      if (window.localStorage) {
+        localStorage.setItem(KEY, String(now));
+      }
+      var base = (document.body && document.body.getAttribute("data-base-url")) || "";
+      fetch(base + "cron.php?soft=1", { credentials: "same-origin" }).catch(function () {});
+    };
+    window.setTimeout(run, 4000);
+    window.setInterval(run, 60 * 1000);
+  }
+
   function tikrasBoot(root) {
     tikrasBindTableSearch(root || document);
     tikrasBindTicketPreview(root || document);
+  }
+
+  if (window.fetch) {
+    tikrasSoftCron();
   }
 
   if (document.readyState === "loading") {

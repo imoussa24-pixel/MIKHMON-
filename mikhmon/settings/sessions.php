@@ -63,23 +63,47 @@ if (!isset($_SESSION["mikhmon"])) {
 </script>
 
 <?php
+include_once(dirname(__DIR__) . '/lib/tikras_storage.php');
+include_once(dirname(__DIR__) . '/lib/tikras_automation.php');
+
+$routerStatuses = tikras_storage_all_router_statuses();
 $routerTotal = 0;
+$routerOnline = 0;
+$routerOffline = 0;
 $routerCards = '';
 foreach ($data as $value => $routerConfig) {
   if ($value == "" || $value == "mikhmon") {
     continue;
   }
   $routerTotal++;
+  $routerStatus = isset($routerStatuses[$value]) ? $routerStatuses[$value] : null;
+  if (is_array($routerStatus) && isset($routerStatus['last_state'])) {
+    if ($routerStatus['last_state'] == 'online') {
+      $routerOnline++;
+    } elseif ($routerStatus['last_state'] == 'offline') {
+      $routerOffline++;
+    }
+  }
   $routerCards .= tikras_ui_router_card(
     $value,
     tikras_cfg_value($data, $value, 4, '%', ''),
     tikras_cfg_value($data, $value, 5, '^', ''),
-    tikras_cfg_value($data, $value, 6, '&', '')
+    tikras_cfg_value($data, $value, 6, '&', ''),
+    $routerStatus
   );
 }
+$autoStatus = tikras_automation_status();
+$autoJobLabels = array(
+  'health_check' => 'Surveillance routeurs',
+  'sync_routers' => 'Sync base locale',
+  'roaming_retry' => 'Reprise roaming',
+  'auto_backup' => 'Sauvegarde auto',
+  'prune' => 'Nettoyage journaux',
+);
+$routerSubtitle = $routerTotal . ' routeur(s) · ' . $routerOnline . ' en ligne · ' . $routerOffline . ' hors ligne';
 ?>
 
-<?= tikras_ui_page_header('gear', $_admin_settings, $routerTotal . ' routeur(s) configuré(s)', tikras_ui_button('./admin.php?id=settings&router=new-' . rand(1111,9999), 'plus', $_add_router, 'primary') . tikras_ui_button('./admin.php?id=sessions', 'refresh', 'Actualiser', 'muted')); ?>
+<?= tikras_ui_page_header('gear', $_admin_settings, $routerSubtitle, tikras_ui_button('./admin.php?id=settings&router=new-' . rand(1111,9999), 'plus', $_add_router, 'primary') . tikras_ui_button('./admin.php?id=sessions', 'refresh', 'Actualiser', 'muted')); ?>
 
         <?php
         $connectFlash = tikras_session_get('connect_flash', '');
@@ -145,6 +169,30 @@ foreach ($data as $value => $routerConfig) {
       <div><b id="newVer" class="text-green"></b></div>
     </div>
   </section>
+
+  <section class="tikras-panel">
+    <div class="tikras-panel-header">
+      <h3><i class="fa fa-magic"></i> Automatisations</h3>
+      <span class="tikras-version-note"><?= $autoStatus['last_tick'] > 0 ? 'Dernier cycle : ' . tikras_h(date('d/m H:i', $autoStatus['last_tick'])) : 'Jamais exécuté'; ?></span>
+    </div>
+    <div class="tikras-panel-body">
+      <ul class="tikras-auto-list">
+        <?php foreach ($autoStatus['jobs'] as $jobKey => $job) {
+          $label = isset($autoJobLabels[$jobKey]) ? $autoJobLabels[$jobKey] : $jobKey;
+          $state = $job['interval'] < 1 ? '<span class="tikras-status tikras-status-unknown">Désactivé</span>'
+            : ($job['last_run'] > 0
+              ? '<span class="tikras-status tikras-status-online">' . tikras_h(date('d/m H:i', $job['last_run'])) . '</span>'
+              : '<span class="tikras-status tikras-status-unknown">En attente</span>');
+          $every = $job['interval'] >= 3600 ? round($job['interval'] / 3600) . ' h' : round($job['interval'] / 60) . ' min';
+          echo '<li><span class="tikras-auto-name">' . tikras_h($label) . '</span><span class="tikras-auto-interval">toutes les ' . tikras_h($every) . '</span>' . $state . '</li>';
+        } ?>
+      </ul>
+      <div class="tikras-form-actions">
+        <button class="tikras-btn tikras-btn-primary" type="button" id="runAutomations"><i class="fa fa-play"></i><span>Exécuter maintenant</span></button>
+      </div>
+      <div class="tikras-version-note" id="autoRunResult"></div>
+    </div>
+  </section>
 </div>
 <script>
   $("#adminRouterSearch").on("input", function(){
@@ -155,7 +203,20 @@ foreach ($data as $value => $routerConfig) {
     });
   });
 
-  var _0x7470=["\x68\x6F\x73\x74\x6E\x61\x6D\x65","\x6C\x6F\x63\x61\x74\x69\x6F\x6E","\x2E","\x73\x70\x6C\x69\x74","\x6D\x69\x6B\x68\x6D\x6F\x6E\x2E\x6F\x6E\x6C\x69\x6E\x65","\x78\x62\x61\x6E\x2E\x78\x79\x7A","\x6C\x6F\x67\x61\x6D\x2E\x69\x64","\x6D\x69\x6E\x69\x73\x2E\x69\x64","\x69\x6E\x64\x65\x78\x4F\x66","\x3C\x73\x70\x61\x6E\x20\x3E\x3C\x69\x20\x63\x6C\x61\x73\x73\x3D\x22\x74\x65\x78\x74\x2D\x77\x68\x69\x74\x65\x20\x66\x61\x20\x66\x61\x2D\x69\x6E\x66\x6F\x2D\x63\x69\x72\x63\x6C\x65\x22\x3E\x3C\x2F\x69\x3E\x20\x3C\x61\x20\x63\x6C\x61\x73\x73\x3D\x22\x74\x65\x78\x74\x2D\x62\x6C\x75\x65\x22\x20\x68\x72\x65\x66\x3D\x22\x2E\x2F\x61\x64\x6D\x69\x6E\x2E\x70\x68\x70\x3F\x69\x64\x3D\x61\x62\x6F\x75\x74\x22\x3E\x43\x68\x65\x63\x6B\x20\x55\x70\x64\x61\x74\x65\x3C\x2F\x61\x3E\x3C\x2F\x73\x70\x61\x6E\x3E","\x68\x74\x6D\x6C","\x23\x6E\x65\x77\x56\x65\x72","\x68\x74\x74\x70\x73\x3A\x2F\x2F\x72\x61\x77\x2E\x67\x69\x74\x68\x75\x62\x75\x73\x65\x72\x63\x6F\x6E\x74\x65\x6E\x74\x2E\x63\x6F\x6D\x2F\x6C\x61\x6B\x73\x61\x31\x39\x2F\x6D\x69\x6B\x68\x6D\x6F\x6E\x76\x33\x2F\x6D\x61\x73\x74\x65\x72\x2F\x76\x65\x72\x73\x6F\x6E\x2E\x74\x78\x74\x3F\x74\x3D","\x72\x61\x6E\x64\x6F\x6D","\x66\x6C\x6F\x6F\x72","\x76","\x76\x65\x72\x73\x69\x6F\x6E","","\x72\x65\x70\x6C\x61\x63\x65","\x69\x6E\x6E\x65\x72\x48\x54\x4D\x4C","\x6C\x6F\x61\x64\x56","\x67\x65\x74\x45\x6C\x65\x6D\x65\x6E\x74\x42\x79\x49\x64","\x20","\x75\x70\x64\x61\x74\x65\x64","\x2D","\x4E\x65\x77\x20\x56\x65\x72\x73\x69\x6F\x6E\x20","\x3C\x62\x72\x3E\x3C\x73\x70\x61\x6E\x20\x3E\x3C\x69\x20\x63\x6C\x61\x73\x73\x3D\x22\x74\x65\x78\x74\x2D\x77\x68\x69\x74\x65\x20\x66\x61\x20\x66\x61\x2D\x69\x6E\x66\x6F\x2D\x63\x69\x72\x63\x6C\x65\x22\x3E\x3C\x2F\x69\x3E\x20\x3C\x61\x20\x63\x6C\x61\x73\x73\x3D\x22\x74\x65\x78\x74\x2D\x62\x6C\x75\x65\x22\x20\x68\x72\x65\x66\x3D\x22\x2E\x2F\x61\x64\x6D\x69\x6E\x2E\x70\x68\x70\x3F\x69\x64\x3D\x61\x62\x6F\x75\x74\x22\x3E\x43\x68\x65\x63\x6B\x20\x55\x70\x64\x61\x74\x65\x3C\x2F\x61\x3E\x3C\x2F\x73\x70\x61\x6E\x3E","\x67\x65\x74\x4A\x53\x4F\x4E"];var hname=window[_0x7470[1]][_0x7470[0]];var dom=hname[_0x7470[3]](_0x7470[2])[1]+ _0x7470[2]+ hname[_0x7470[3]](_0x7470[2])[2];var domArray=[_0x7470[4],_0x7470[5],_0x7470[6],_0x7470[7]];var a=domArray[_0x7470[8]](hname);var b=domArray[_0x7470[8]](dom);if(dom== _0x7470[4]){$(_0x7470[11])[_0x7470[10]](_0x7470[9])}else {if(a> 0|| b> 0){}else {$[_0x7470[27]](_0x7470[12]+ (Math[_0x7470[14]]((Math[_0x7470[13]]()* 999999999)+ 1))* 128,function(_0xc1b4x6){getNewVer= (_0xc1b4x6[_0x7470[16]])[_0x7470[3]](_0x7470[15])[1];var _0xc1b4x7=parseInt(getNewVer[_0x7470[18]](_0x7470[2],_0x7470[17]));var _0xc1b4x8=document[_0x7470[21]](_0x7470[20])[_0x7470[19]];var _0xc1b4x9=(_0xc1b4x8[_0x7470[3]](_0x7470[22])[0])[_0x7470[3]](_0x7470[15])[1];var _0xc1b4xa=parseInt(_0xc1b4x9[_0x7470[18]](_0x7470[2],_0x7470[17]));var _0xc1b4xb=(_0xc1b4x7- _0xc1b4xa);getNewVer= (_0xc1b4x6[_0x7470[16]])[_0x7470[3]](_0x7470[15])[1];var _0xc1b4x7=parseInt(getNewVer[_0x7470[18]](_0x7470[2],_0x7470[17]));var _0xc1b4x8=document[_0x7470[21]](_0x7470[20])[_0x7470[19]];var _0xc1b4x9=(_0xc1b4x8[_0x7470[3]](_0x7470[22])[0])[_0x7470[3]](_0x7470[15])[1];var _0xc1b4xa=parseInt(_0xc1b4x9[_0x7470[18]](_0x7470[2],_0x7470[17]));var _0xc1b4xb=(_0xc1b4x7- _0xc1b4xa);getNewD= (_0xc1b4x6[_0x7470[23]])[_0x7470[3]](_0x7470[22])[0];newD= parseInt((getNewD)[_0x7470[3]](_0x7470[24])[2]+ (getNewD)[_0x7470[3]](_0x7470[24])[0]+ (getNewD)[_0x7470[3]](_0x7470[24])[1]);var _0xc1b4xc=parseInt((_0xc1b4x8[_0x7470[3]](_0x7470[22])[1])[_0x7470[3]](_0x7470[24])[2]+ (_0xc1b4x8[_0x7470[3]](_0x7470[22])[1])[_0x7470[3]](_0x7470[24])[0]+ (_0xc1b4x8[_0x7470[3]](_0x7470[22])[1][_0x7470[3]](_0x7470[24]))[1]);var _0xc1b4xd=(newD- _0xc1b4xc);if(_0xc1b4xb> 0|| _0xc1b4xd> 0){$(_0x7470[11])[_0x7470[10]](_0x7470[25]+ _0xc1b4x6[_0x7470[16]]+ _0x7470[22]+ _0xc1b4x6[_0x7470[23]]+ _0x7470[26])}})}}
+  document.getElementById("runAutomations").addEventListener("click", function(){
+    var btn = this;
+    var out = document.getElementById("autoRunResult");
+    btn.disabled = true;
+    out.textContent = "Exécution en cours...";
+    fetch("cron.php?soft=1&force=1", { credentials: "same-origin" })
+      .then(function(r){ return r.json(); })
+      .then(function(report){
+        var ran = report.ran ? Object.keys(report.ran).length : 0;
+        out.textContent = report.ok ? ("Terminé : " + ran + " tâche(s) exécutée(s).") : ("Erreur : " + (report.error || "inconnue"));
+        window.setTimeout(function(){ window.location.reload(); }, 1500);
+      })
+      .catch(function(){ out.textContent = "Erreur réseau."; btn.disabled = false; });
+  });
 </script>
 
 

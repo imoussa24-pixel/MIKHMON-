@@ -38,6 +38,7 @@ tikras_bootstrap_errors(false);
 		<link rel="stylesheet" href="css/mikhmon-custom.css">
 		<link rel="stylesheet" href="css/tikras-modern.css?v=<?= @filemtime(dirname(__DIR__) . '/css/tikras-modern.css'); ?>">
 		<link rel="stylesheet" href="css/tikras-oneui.css?v=<?= @filemtime(dirname(__DIR__) . '/css/tikras-oneui.css'); ?>">
+		<link rel="stylesheet" href="css/tikras-flux.css?v=<?= @filemtime(dirname(__DIR__) . '/css/tikras-flux.css'); ?>">
 		<!-- favicon -->
 		<link rel="icon" href="./img/favicon.png" />
 		<!-- jQuery -->

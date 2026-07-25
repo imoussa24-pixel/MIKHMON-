@@ -50,8 +50,25 @@ if (!function_exists('tikras_ui_button')) {
   }
 }
 
+if (!function_exists('tikras_ui_status_badge')) {
+  /* Badge etat routeur alimente par le health check automatique. */
+  function tikras_ui_status_badge($status)
+  {
+    if (!is_array($status) || !isset($status['last_state']) || $status['last_state'] == 'unknown') {
+      return '<span class="tikras-status tikras-status-unknown" title="Pas encore verifie">' . tikras_ui_icon('question-circle') . ' Inconnu</span>';
+    }
+    $latency = isset($status['last_latency_ms']) ? (int) $status['last_latency_ms'] : 0;
+    $seen = isset($status['updated_at']) ? (string) $status['updated_at'] : '';
+    if ($status['last_state'] == 'online') {
+      return '<span class="tikras-status tikras-status-online" title="Verifie: ' . tikras_h($seen) . '">' . tikras_ui_icon('check-circle') . ' En ligne · ' . $latency . ' ms</span>';
+    }
+    $error = isset($status['last_error']) ? (string) $status['last_error'] : '';
+    return '<span class="tikras-status tikras-status-offline" title="' . tikras_h($error . ' — ' . $seen) . '">' . tikras_ui_icon('times-circle') . ' Hors ligne</span>';
+  }
+}
+
 if (!function_exists('tikras_ui_router_card')) {
-  function tikras_ui_router_card($session, $hotspotName, $dnsName, $currency)
+  function tikras_ui_router_card($session, $hotspotName, $dnsName, $currency, $status = null)
   {
     $sessionUrl = rawurlencode($session);
     $safeSession = tikras_h($session);
@@ -65,7 +82,7 @@ if (!function_exists('tikras_ui_router_card')) {
     $html .= '<div class="tikras-router-main">';
     $html .= '<span class="tikras-router-icon">' . tikras_ui_icon('server') . '</span>';
     $html .= '<div class="tikras-router-copy">';
-    $html .= '<h3 title="' . $displayName . '">' . $displayName . '</h3>';
+    $html .= '<h3 title="' . $displayName . '">' . $displayName . ' ' . tikras_ui_status_badge($status) . '</h3>';
     $html .= '<p title="Session : ' . $safeSession . '"><span>Session</span> ' . $safeSession . '</p>';
     $html .= '<div class="tikras-router-meta">';
     if ($safeDns != '') {

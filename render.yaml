@@ -1,0 +1,40 @@
+# Deploiement TIKRAS IT / Mikhmon Pro Admin sur Render.
+# 1. Pousser ce depot sur GitHub/GitLab (depot PRIVE: config.php contient les routeurs).
+# 2. Render > New > Blueprint > choisir ce depot.
+# 3. Apres deploiement, recuperer TIKRAS_CRON_TOKEN dans l'onglet Environment
+#    et programmer un ping externe (cron-job.org / UptimeRobot) toutes les 5 min sur:
+#    https://VOTRE-APP.onrender.com/cron.php?token=LE_TOKEN
+services:
+  - type: web
+    name: tikras-mikhmon
+    runtime: docker
+    plan: starter
+    healthCheckPath: /admin.php?id=login
+    disk:
+      name: tikras-data
+      mountPath: /data
+      sizeGB: 1
+    envVars:
+      - key: TIKRAS_DATA_DIR
+        value: /data
+      - key: TIKRAS_CRON_TOKEN
+        generateValue: true
+      # Compte admin du panneau (config.php n'est pas versionne).
+      # A definir dans le tableau de bord Render avant le premier login.
+      - key: TIKRAS_ADMIN_USER
+        sync: false
+      - key: TIKRAS_ADMIN_PASS
+        sync: false
+      - key: TZ
+        value: Africa/Niamey
+      # Cadence des automatisations (secondes, 0 = desactive)
+      - key: TIKRAS_AUTO_HEALTH_INTERVAL
+        value: "300"
+      - key: TIKRAS_AUTO_ROAMING_INTERVAL
+        value: "600"
+      - key: TIKRAS_AUTO_BACKUP_INTERVAL
+        value: "86400"
+      - key: TIKRAS_AUTO_SYNC_INTERVAL
+        value: "3600"
+      - key: TIKRAS_AUTO_PRUNE_INTERVAL
+        value: "604800"

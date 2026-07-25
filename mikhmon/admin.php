@@ -85,13 +85,19 @@ if ($tikrasLoginRequest) {
     } else {
       $user = tikras_post('user');
       $pass = tikras_post('pass');
+      // Serveur en ligne: identifiants admin surchargés par l'environnement
+      // (TIKRAS_ADMIN_USER / TIKRAS_ADMIN_PASS) quand config.php est absent.
+      $envAdminUser = getenv('TIKRAS_ADMIN_USER');
+      $envAdminPass = getenv('TIKRAS_ADMIN_PASS');
+      $effectiveUser = ($envAdminUser !== false && $envAdminUser !== '') ? (string) $envAdminUser : (string) $useradm;
+      $effectivePass = ($envAdminPass !== false && $envAdminPass !== '') ? (string) $envAdminPass : (string) decrypt($passadm);
       // Constant-time credential check (avoids type juggling + timing leaks).
-      $userOk = hash_equals((string) $useradm, (string) $user);
-      $passOk = hash_equals((string) decrypt($passadm), (string) $pass);
+      $userOk = hash_equals($effectiveUser, (string) $user);
+      $passOk = ($effectivePass !== '') && hash_equals($effectivePass, (string) $pass);
       if ($userOk && $passOk) {
         tikras_login_throttle('success');
         tikras_session_regenerate();
-        $_SESSION["mikhmon"] = $useradm;
+        $_SESSION["mikhmon"] = $effectiveUser;
         tikras_redirect('./admin.php?id=sessions');
       } else {
         tikras_login_throttle('failure');

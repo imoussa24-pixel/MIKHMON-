@@ -442,6 +442,27 @@ if (!function_exists('tikras_storage_update_router_status')) {
   }
 }
 
+if (!function_exists('tikras_storage_all_router_statuses')) {
+  /* Map session -> derniere ligne router_status (health check automatique). */
+  function tikras_storage_all_router_statuses()
+  {
+    if (!tikras_storage_available()) {
+      return array();
+    }
+    try {
+      $pdo = tikras_storage_pdo();
+      $rows = $pdo->query('SELECT session, last_state, last_error, last_latency_ms, last_seen_at, updated_at FROM router_status')->fetchAll();
+      $map = array();
+      foreach ($rows as $row) {
+        $map[(string) $row['session']] = $row;
+      }
+      return $map;
+    } catch (Exception $e) {
+      return array();
+    }
+  }
+}
+
 if (!function_exists('tikras_storage_batch_status')) {
   function tikras_storage_batch_status($syncRows)
   {

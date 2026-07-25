@@ -9,6 +9,11 @@ include_once(dirname(__FILE__) . '/tikras_core.php');
 if (!function_exists('tikras_config_local_dir')) {
   function tikras_config_local_dir()
   {
+    // Serveur en ligne (Render/Docker/Linux): un seul dossier persistant.
+    $dataDir = getenv('TIKRAS_DATA_DIR');
+    if ($dataDir !== false && trim((string) $dataDir) != '') {
+      return rtrim((string) $dataDir, "\\/");
+    }
     $base = getenv('LOCALAPPDATA');
     if ($base === false || trim((string) $base) == '') {
       $base = sys_get_temp_dir();
