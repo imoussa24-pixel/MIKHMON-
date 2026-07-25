@@ -38,7 +38,7 @@ document.body.className = (document.body.className ? document.body.className + '
       <input class="form-control" type="text" name="user" id="_username" placeholder="Username" required="1" autofocus>
       <input class="form-control" type="password" name="pass" placeholder="Password" required="1">
       <input class="tikras-login-submit" type="submit" name="login" value="<?= tikras_h($_please_login); ?>">
-      <?= $error; ?>
+      <?= isset($error) ? $error : ''; ?>
     </form>
   </div>
 </div>

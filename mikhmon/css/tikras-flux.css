@@ -455,6 +455,15 @@ body[data-theme].login-screen {
     radial-gradient(820px 620px at 50% 115%, rgba(139, 92, 246, 0.26), transparent 60%) !important;
 }
 
+/* L'ecran de connexion occupe exactement la fenetre: sans cela, la marge
+   interieure du conteneur s'ajoute aux 100vh et fait apparaitre une barre
+   de defilement. */
+body.login-screen[data-theme] .wrapper {
+  min-height: 100vh;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
 body[data-theme] .tikras-login-shell {
   min-height: 100vh;
   display: flex;

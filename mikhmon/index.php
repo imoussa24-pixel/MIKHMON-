@@ -50,7 +50,7 @@ if (!isset($_SESSION["mikhmon"])) {
   $_SESSION["connect"] = "";
 
 // time zone
-  date_default_timezone_set($_SESSION['timezone']);
+  tikras_apply_session_timezone();
 
 // lang
   include('./include/lang.php');

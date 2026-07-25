@@ -1,4 +1,9 @@
-<?php date_default_timezone_set($_SESSION['timezone']); ?>
+<?php
+if (!function_exists('tikras_apply_session_timezone')) {
+  require_once(dirname(__DIR__) . '/lib/tikras_core.php');
+}
+tikras_apply_session_timezone();
+?>
 <script>
 function sendToQuickPrinterChrome(){
  

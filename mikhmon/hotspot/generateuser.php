@@ -31,7 +31,7 @@ if (!isset($_SESSION["mikhmon"])) {
 	header("Location:../admin.php?id=login");
 } else {
 // time zone
-date_default_timezone_set($_SESSION['timezone']);
+tikras_apply_session_timezone();
 	$ticketRoamingPage = isset($tikrasTicketRoamingPage) && $tikrasTicketRoamingPage;
 	$ticketGenerateRoute = $ticketRoamingPage ? "generate-roaming" : "generate";
 	$ticketGenerateTitle = $ticketRoamingPage ? "Générer des tickets roaming" : $_generate_user;

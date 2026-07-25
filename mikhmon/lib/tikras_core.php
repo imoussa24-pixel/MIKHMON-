@@ -78,6 +78,21 @@ if (!function_exists('tikras_start_session')) {
   }
 }
 
+if (!function_exists('tikras_apply_session_timezone')) {
+  /*
+   * Le fuseau du routeur n'est connu qu'apres le passage par le tableau de
+   * bord. Sans garde-fou, les pages ouvertes directement passaient une valeur
+   * vide a date_default_timezone_set() et journalisaient une erreur.
+   */
+  function tikras_apply_session_timezone()
+  {
+    $zone = isset($_SESSION['timezone']) ? trim((string) $_SESSION['timezone']) : '';
+    if ($zone === '' || @date_default_timezone_set($zone) === false) {
+      tikras_bootstrap_timezone();
+    }
+  }
+}
+
 if (!function_exists('tikras_session_regenerate')) {
   // Call right after a successful authentication to defeat session fixation.
   function tikras_session_regenerate()

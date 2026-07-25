@@ -22,7 +22,7 @@ tikras_bootstrap_errors(false);
 <!DOCTYPE html>
 <html>
 	<head>
-		<title>TIKRAS IT <?= $hotspotname; ?></title>
+		<title>TIKRAS IT <?= isset($hotspotname) ? tikras_h($hotspotname) : ''; ?></title>
 		<meta charset="utf-8">
 		<meta http-equiv="cache-control" content="private" />
 		<meta http-equiv="X-UA-Compatible" content="IE=edge">
