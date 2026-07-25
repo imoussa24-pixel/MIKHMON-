@@ -560,6 +560,21 @@ return $format;
 }
 
 
+/*
+ * Tirage aleatoire des codes de tickets. Ces codes ont une valeur marchande:
+ * rand() est previsible, on utilise donc random_int() quand il est disponible.
+ */
+function tikras_rand_index($max) {
+	if (function_exists('random_int')) {
+		try {
+			return random_int(0, $max);
+		} catch (Exception $e) {
+			return rand(0, $max);
+		}
+	}
+	return rand(0, $max);
+}
+
 function randN($length) {
 	$chars = "23456789";
 	$charArray = str_split($chars);
@@ -567,7 +582,7 @@ function randN($length) {
 	$result = "";
 	for($i=1;$i<=$length;$i++)
 	{
-		$randChar = rand(0,$charCount-1);
+		$randChar = tikras_rand_index($charCount-1);
 		$result .= $charArray[$randChar];
 	}
 	return $result;
@@ -580,7 +595,7 @@ function randUC($length) {
 	$result = "";
 	for($i=1;$i<=$length;$i++)
 	{
-		$randChar = rand(0,$charCount-1);
+		$randChar = tikras_rand_index($charCount-1);
 		$result .= $charArray[$randChar];
 	}
 	return $result;
@@ -592,7 +607,7 @@ function randLC($length) {
 	$result = "";
 	for($i=1;$i<=$length;$i++)
 	{
-		$randChar = rand(0,$charCount-1);
+		$randChar = tikras_rand_index($charCount-1);
 		$result .= $charArray[$randChar];
 	}
 	return $result;
@@ -605,7 +620,7 @@ function randULC($length) {
 	$result = "";
 	for($i=1;$i<=$length;$i++)
 	{
-		$randChar = rand(0,$charCount-1);
+		$randChar = tikras_rand_index($charCount-1);
 		$result .= $charArray[$randChar];
 	}
 	return $result;
@@ -618,7 +633,7 @@ function randNLC($length) {
 	$result = "";
 	for($i=1;$i<=$length;$i++)
 	{
-		$randChar = rand(0,$charCount-1);
+		$randChar = tikras_rand_index($charCount-1);
 		$result .= $charArray[$randChar];
 	}
 	return $result;
@@ -631,7 +646,7 @@ function randNUC($length) {
 	$result = "";
 	for($i=1;$i<=$length;$i++)
 	{
-		$randChar = rand(0,$charCount-1);
+		$randChar = tikras_rand_index($charCount-1);
 		$result .= $charArray[$randChar];
 	}
 	return $result;
@@ -644,7 +659,7 @@ function randNULC($length) {
 	$result = "";
 	for($i=1;$i<=$length;$i++)
 	{
-		$randChar = rand(0,$charCount-1);
+		$randChar = tikras_rand_index($charCount-1);
 		$result .= $charArray[$randChar];
 	}
 	return $result;

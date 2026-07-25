@@ -199,8 +199,19 @@ date_default_timezone_set($_SESSION['timezone']);
 			if ($count < 1) {
 				return $value;
 			}
+			// Les codes ont une valeur marchande: rand() est previsible, on tire
+			// donc au sort de maniere cryptographique quand c'est possible.
 			for ($i = 0; $i < $length; $i++) {
-				$value .= $chars[rand(0, $count - 1)];
+				if (function_exists('random_int')) {
+					try {
+						$index = random_int(0, $count - 1);
+					} catch (Exception $e) {
+						$index = rand(0, $count - 1);
+					}
+				} else {
+					$index = rand(0, $count - 1);
+				}
+				$value .= $chars[$index];
 			}
 			return $value;
 		}
@@ -740,7 +751,7 @@ date_default_timezone_set($_SESSION['timezone']);
 	</tr>
 	<tr>
     <td class="align-middle"><?= $_user_mode ?></td><td>
-			<select class="form-control " onchange="defUserl();" id="user" name="user" required="1">
+			<select class="form-control " onchange="tikrasUserModeChange();" id="user" name="user" required="1">
 				<option value="up" <?php if ($formUserMode == "up") { echo "selected"; } ?>><?= $_user_pass ?></option>
 				<option value="vc" <?php if ($formUserMode == "vc") { echo "selected"; } ?>><?= $_user_user ?></option>
 			</select>
@@ -761,17 +772,15 @@ date_default_timezone_set($_SESSION['timezone']);
   <tr>
     <td class="align-middle"><?= $_character ?></td><td>
       <select class="form-control " id="ticketChar" name="char" required="1">
-				<option id="lower" style="display:block;" value="lower" <?php if ($formChar == "lower") { echo "selected"; } ?>><?= $_random ?> abcd</option>
-				<option id="upper" style="display:block;" value="upper" <?php if ($formChar == "upper") { echo "selected"; } ?>><?= $_random ?> ABCD</option>
-				<option id="upplow" style="display:block;" value="upplow" <?php if ($formChar == "upplow") { echo "selected"; } ?>><?= $_random ?> aBcD</option>
-				<option id="lower1" style="display:none;" value="lower"><?= $_random ?> abcd2345</option>
-				<option id="upper1" style="display:none;" value="upper"><?= $_random ?> ABCD2345</option>
-				<option id="upplow1" style="display:none;" value="upplow"><?= $_random ?> aBcD2345</option>
-				<option id="mix" style="display:block;" value="mix" <?php if ($formChar == "mix") { echo "selected"; } ?>><?= $_random ?> 5ab2c34d</option>
-				<option id="mix1" style="display:block;" value="mix1" <?php if ($formChar == "mix1") { echo "selected"; } ?>><?= $_random ?> 5AB2C34D</option>
-				<option id="mix2" style="display:block;" value="mix2" <?php if ($formChar == "mix2") { echo "selected"; } ?>><?= $_random ?> 5aB2c34D</option>
-				<option id="num" style="display:none;" value="num" <?php if ($formChar == "num") { echo "selected"; } ?>><?= $_random ?> 1234</option>
+				<option value="lower" <?php if ($formChar == "lower") { echo "selected"; } ?>>Lettres minuscules — abcd</option>
+				<option value="upper" <?php if ($formChar == "upper") { echo "selected"; } ?>>Lettres majuscules — ABCD</option>
+				<option value="upplow" <?php if ($formChar == "upplow") { echo "selected"; } ?>>Lettres mélangées — aBcD</option>
+				<option value="mix" <?php if ($formChar == "mix") { echo "selected"; } ?>>Minuscules + chiffres — abcd2345</option>
+				<option value="mix1" <?php if ($formChar == "mix1") { echo "selected"; } ?>>Majuscules + chiffres — ABCD2345</option>
+				<option value="mix2" <?php if ($formChar == "mix2") { echo "selected"; } ?>>Mélangé + chiffres — aBcD2345</option>
+				<option value="num" <?php if ($formChar == "num") { echo "selected"; } ?>>Chiffres uniquement — 2345</option>
 			</select>
+			<small class="tikras-field-hint">Les caractères ambigus (0, 1, O, I, l, q) sont toujours exclus pour éviter les erreurs de saisie.</small>
     </td>
   </tr>
   <tr>
@@ -1272,6 +1281,34 @@ function copyTicketLink(){
   field.select();
   document.execCommand('copy');
 }
+/*
+ * Longueur conseillee selon le mode: un voucher (identifiant unique) doit etre
+ * plus long qu'un couple utilisateur/mot de passe. On change la valeur reelle
+ * du champ, pas seulement son libelle.
+ */
+function tikrasUserModeChange(){
+  var mode = document.getElementById('user');
+  var longueur = document.getElementById('userl');
+  if (!mode || !longueur || longueur.getAttribute('data-touche') === '1') {
+    return;
+  }
+  var souhaitee = mode.value === 'vc' ? '8' : '4';
+  for (var i = 0; i < longueur.options.length; i++) {
+    if (longueur.options[i].value === souhaitee) {
+      longueur.selectedIndex = i;
+      break;
+    }
+  }
+}
+(function(){
+  var longueur = document.getElementById('userl');
+  if (longueur) {
+    // Une fois la longueur choisie a la main, on ne la remplace plus.
+    longueur.addEventListener('change', function(){
+      this.setAttribute('data-touche', '1');
+    });
+  }
+})();
 updateShareTarget();
 updateRoamingRouters();
 updateRoamingEngine();

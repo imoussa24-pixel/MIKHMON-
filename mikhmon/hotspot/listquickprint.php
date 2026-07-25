@@ -203,7 +203,7 @@ if ($qpid != "") {
 	</tr>
 	<tr>
     <td class="align-middle"><?= $_user_mode ?></td><td>
-			<select class="form-control " onchange="defUserl();" id="user" name="user" required="1">
+			<select class="form-control " id="user" name="user" required="1">
 				<?php if($qpid != ""){echo '<option value="'.$usermode.'">'.$tusermode.'</option>';}?>
 				<option value="up"><?= $_user_pass ?></option>
 				<option value="vc"><?= $_user_user ?></option>
@@ -214,9 +214,8 @@ if ($qpid != "") {
     <td class="align-middle"><?= $_user_length ?></td><td>
       <select class="form-control " id="userl" name="userl" required="1">
 			<?php if($qpid != ""){echo '<option>'.$userlength.'</option>';}?>
-        <option>4</option>
 				<option>3</option>
-				<option>4</option>
+				<option selected>4</option>
 				<option>5</option>
 				<option>6</option>
 				<option>7</option>
@@ -231,16 +230,13 @@ if ($qpid != "") {
     <td class="align-middle"><?= $_character ?></td><td>
       <select class="form-control " name="char" required="1">
 			<?php if($qpid != ""){echo '<option value="'.$char.'">'.$_random.' '.$tchar.'</option>';}?>
-				<option id="lower" style="display:block;" value="lower"><?= $_random ?> abcd</option>
-				<option id="upper" style="display:block;" value="upper"><?= $_random ?> ABCD</option>
-				<option id="upplow" style="display:block;" value="upplow"><?= $_random ?> aBcD</option>
-				<option id="lower1" style="display:none;" value="lower"><?= $_random ?> abcd2345</option>
-				<option id="upper1" style="display:none;" value="upper"><?= $_random ?> ABCD2345</option>
-				<option id="upplow1" style="display:none;" value="upplow"><?= $_random ?> aBcD2345</option>
-				<option id="mix" style="display:block;" value="mix"><?= $_random ?> 5ab2c34d</option>
-				<option id="mix1" style="display:block;" value="mix1"><?= $_random ?> 5AB2C34D</option>
-				<option id="mix2" style="display:block;" value="mix2"><?= $_random ?> 5aB2c34D</option>
-				<option id="num" style="display:none;" value="num"><?= $_random ?> 1234</option>
+				<option value="lower">Lettres minuscules — abcd</option>
+				<option value="upper">Lettres majuscules — ABCD</option>
+				<option value="upplow">Lettres mélangées — aBcD</option>
+				<option value="mix">Minuscules + chiffres — abcd2345</option>
+				<option value="mix1">Majuscules + chiffres — ABCD2345</option>
+				<option value="mix2">Mélangé + chiffres — aBcD2345</option>
+				<option value="num">Chiffres uniquement — 2345</option>
 			</select>
     </td>
   </tr>

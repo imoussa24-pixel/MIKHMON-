@@ -395,6 +395,15 @@ body[data-theme] .tikras-status-unknown {
   border: 1px solid var(--one-line);
 }
 
+/* Indication sous un champ de formulaire */
+body[data-theme] .tikras-field-hint {
+  display: block;
+  margin-top: 6px;
+  font-size: 11.5px;
+  line-height: 1.45;
+  color: var(--one-muted);
+}
+
 /* Panneau automatisations */
 body[data-theme] .tikras-auto-list {
   list-style: none;

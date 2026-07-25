@@ -93,20 +93,12 @@ $getquickprint = $API->comm("/system/script/print", array("?name" => "$quickprin
 					$u[$i] = randNUC($userl);
 				} elseif ($char == "mix2") {
 					$u[$i] = randNULC($userl);
+				} elseif ($char == "num") {
+					$u[$i] = randN($userl);
+				} else {
+					$u[$i] = randNLC($userl);
 				}
-				if ($userl == 3) {
-					$p[$i] = randN(3);
-				} elseif ($userl == 4) {
-					$p[$i] = randN(4);
-				} elseif ($userl == 5) {
-					$p[$i] = randN(5);
-				} elseif ($userl == 6) {
-					$p[$i] = randN(6);
-				} elseif ($userl == 7) {
-					$p[$i] = randN(7);
-				} elseif ($userl == 8) {
-					$p[$i] = randN(8);
-				}
+				$p[$i] = randN(max(3, min(8, (int) $userl)));
 
 				$u[$i] = "$prefix$u[$i]";
 			}
@@ -133,6 +125,15 @@ $getquickprint = $API->comm("/system/script/print", array("?name" => "$quickprin
 					$u[$i] = randUC($shuf);
 				} elseif ($char == "upplow") {
 					$u[$i] = randULC($shuf);
+				} elseif ($char == "mix") {
+					$u[$i] = randNLC($shuf);
+				} elseif ($char == "mix1") {
+					$u[$i] = randNUC($shuf);
+				} elseif ($char == "mix2") {
+					$u[$i] = randNULC($shuf);
+				} else {
+					// Sans jeu reconnu, on garde un code lisible plutot qu'un code vide.
+					$u[$i] = randNLC($shuf);
 				}
 				if ($userl == 3) {
 					$p[$i] = randN(1);
