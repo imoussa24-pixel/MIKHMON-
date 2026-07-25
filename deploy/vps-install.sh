@@ -70,14 +70,42 @@ fi
 # Les automatisations tournent dans le conteneur (planificateur interne de
 # l'entrypoint). Rien a programmer sur l'hote.
 
+# Import automatique de la liste des routeurs si elle a ete deposee a cote
+# du projet ou dans /tmp (voir tools/export-config-local.php).
+echo "== Import des routeurs =="
+sleep 8
+IMPORTE=""
+for SOURCE in "./config.local.php" "/tmp/config.local.php" "/root/config.local.php"; do
+  if [ -f "$SOURCE" ]; then
+    docker cp "$SOURCE" tikras-app:/data/config.local.php
+    docker exec tikras-app chown www-data:www-data /data/config.local.php
+    docker exec tikras-app chmod 640 /data/config.local.php
+    IMPORTE="$SOURCE"
+    break
+  fi
+done
+
+if [ -n "$IMPORTE" ]; then
+  echo ">> Routeurs importes depuis $IMPORTE"
+  docker exec -u www-data tikras-app php /var/www/html/cron.php --force > /dev/null 2>&1 || true
+  rm -f "$IMPORTE"
+  echo ">> Fichier source supprime du serveur (il contenait des identifiants)."
+else
+  echo ">> Aucun config.local.php trouve."
+  echo "   Importez vos routeurs depuis le panneau (page Sauvegarde) ou copiez"
+  echo "   le fichier genere par tools/export-config-local.php puis relancez ce script."
+fi
+
+IP_PUBLIQUE=$(hostname -I | awk '{print $1}')
 echo ""
 echo "=================================================================="
 echo " TIKRAS IT est en ligne."
-echo " - Interface : http://$(hostname -I | awk '{print $1}')/  (ou votre domaine en HTTPS)"
+echo " - Interface : http://${IP_PUBLIQUE}/  (ou votre domaine en HTTPS)"
 echo " - Connexion : identifiants TIKRAS_ADMIN_USER / TIKRAS_ADMIN_PASS du .env"
-echo " - Importez vos routeurs : page Sauvegarde > restaurer le ZIP local,"
-echo "   ou copiez config.local.php (voir tools/export-config-local.php)."
 echo " - Automatisations : planificateur interne du conteneur (toutes les 5 min)."
 echo "   Journal : docker exec tikras-app cat /data/automations.log"
 echo " - Verifier ZeroTier : zerotier-cli listnetworks  (statut OK attendu)"
 echo "=================================================================="
+echo ""
+echo "Controle de sante:"
+bash "$PROJECT_DIR/deploy/verifier.sh" || true
