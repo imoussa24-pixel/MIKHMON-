@@ -19,6 +19,51 @@ include_once(dirname(__DIR__) . '/lib/tikras_core.php');
 tikras_start_session();
 tikras_bootstrap_errors(false);
 
+/*
+ * Marqueurs de surbrillance du menu et parametres de page.
+ * Chaque branche ci-dessous n'en renseigne qu'une poignee: sans valeur par
+ * defaut, toutes les autres etaient lues alors qu'elles n'existaient pas,
+ * ce qui remplissait le journal a chaque affichage de page.
+ */
+$tikrasMenuFlags = array(
+  'cmenu', 'hamenu', 'hmenu', 'ibmenu', 'lmenu', 'log', 'mppp', 'pppmenu',
+  'sabout', 'sactive', 'sadduser', 'sadduserprof', 'saudit', 'sbackup',
+  'schmenu', 'scookies', 'seditor', 'settmenu', 'sgenuser', 'shome', 'shosts',
+  'sipbind', 'slease', 'slog', 'snsettings', 'spactive', 'spprofile', 'squick',
+  'sradius', 'sroaminguser', 'srouterlog', 'ssch', 'sscriptgenerator',
+  'ssecrets', 'sselling', 'ssesslist', 'ssett', 'ssettings', 'sstorage',
+  'stickets', 'strafficmonitor', 'sulog', 'suplogo', 'suserprof',
+  'suserprofiles', 'susers', 'susersbp', 'susersl', 'sysmenu', 'teditor',
+  'umenu', 'uplogo', 'upmenu',
+);
+foreach ($tikrasMenuFlags as $tikrasMenuFlag) {
+  if (!isset($$tikrasMenuFlag)) {
+    $$tikrasMenuFlag = '';
+  }
+}
+
+$tikrasMenuInputs = array(
+  'id', 'hotspot', 'hotspotuser', 'ppp', 'sys', 'report', 'minterface',
+  'session', 'router', 'userbyname', 'userbyprofile', 'userprofile',
+  'userprofilebyname', 'secretbyname', 'resethotspotuser',
+  'removecookie', 'removehost', 'removehotspotuser', 'removehotspotusers',
+  'removehotspotuserbycomment', 'removeipbinding', 'removepactive',
+  'removepprofile', 'removesch', 'removesecr', 'removeuseractive',
+  'enablehotspotuser', 'enableipbinding', 'enablesch', 'enablesecr',
+  'disablehotspotuser', 'disableipbinding', 'disablesch', 'disablesecr',
+);
+foreach ($tikrasMenuInputs as $tikrasMenuInput) {
+  if (!isset($$tikrasMenuInput)) {
+    $$tikrasMenuInput = '';
+  }
+}
+
+$mpage = isset($mpage) ? $mpage : '';
+$idleto = isset($idleto) ? $idleto : '';
+$url = isset($url) ? $url : tikras_server('REQUEST_URI');
+$identity = isset($identity) ? $identity : '';
+$hotspotname = isset($hotspotname) ? $hotspotname : '';
+
 if (!isset($_SESSION["mikhmon"])) {
   header("Location:../admin.php?id=login");
 } else {
