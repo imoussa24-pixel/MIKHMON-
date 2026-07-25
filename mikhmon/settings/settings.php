@@ -205,16 +205,16 @@ if (!isset($_SESSION["mikhmon"])) {
         	     <div class="card-body">
 				<table class="table table-sm">
 					<tr>
-	  					<td class="align-middle">IP MikroTik </td><td><input class="form-control" type="text" size="15" name="ipmik" title="IP MikroTik / IP Cloud MikroTik" value="<?= $iphost; ?>" required="1"/></td>
+	  					<td class="align-middle">IP MikroTik </td><td><input class="form-control" type="text" size="15" name="ipmik" title="IP MikroTik / IP Cloud MikroTik" value="<?= tikras_h($iphost); ?>" required="1"/></td>
 					</tr>
 					<tr>
-						<td class="align-middle">Username  </td><td><input class="form-control" id="usermk" type="text" size="10" name="usermik" title="User MikroTik" value="<?= $userhost; ?>" required="1"/></td>
+						<td class="align-middle">Username  </td><td><input class="form-control" id="usermk" type="text" size="10" name="usermik" title="User MikroTik" value="<?= tikras_h($userhost); ?>" required="1"/></td>
 					</tr>
 					<tr>
 						<td class="align-middle">Password  </td><td>
 							<div class="input-group">
 								<div class="input-group-11 col-box-10">
-        						<input class="group-item group-item-l" id="passmk" type="password" name="passmik" title="Password MikroTik" value="<?= decrypt($passwdhost); ?>" required="1"/>
+        						<input class="group-item group-item-l" id="passmk" type="password" name="passmik" title="Password MikroTik" value="<?= tikras_h(decrypt($passwdhost)); ?>" required="1"/>
         						</div>
             					<div class="input-group-1 col-box-2">
             						<div class="group-item group-item-r pd-2p5 text-center align-middle">
@@ -257,19 +257,19 @@ if (!isset($_SESSION["mikhmon"])) {
     <div class="card-body">    
 	<table class="table table-sm">
 	<tr>
-	<td class="align-middle"><?= $_hotspot_name ?>  </td><td><input class="form-control" type="text" size="15" maxlength="50" name="hotspotname" title="Hotspot Name" value="<?= $hotspotname; ?>" required="1"/></td>
+	<td class="align-middle"><?= $_hotspot_name ?>  </td><td><input class="form-control" type="text" size="15" maxlength="50" name="hotspotname" title="Hotspot Name" value="<?= tikras_h($hotspotname); ?>" required="1"/></td>
 	</tr>
 	<tr>
-	<td class="align-middle"><?= $_dns_name ?>  </td><td><input class="form-control" type="text" size="15" maxlength="500" name="dnsname" title="DNS Name [IP->Hotspot->Server Profiles->DNS Name]" value="<?= $dnsname; ?>" required="1"/></td>
+	<td class="align-middle"><?= $_dns_name ?>  </td><td><input class="form-control" type="text" size="15" maxlength="500" name="dnsname" title="DNS Name [IP->Hotspot->Server Profiles->DNS Name]" value="<?= tikras_h($dnsname); ?>" required="1"/></td>
 	</tr>
 	<tr>
-	<td class="align-middle"><?= $_currency ?>  </td><td><input class="form-control" type="text" size="3" maxlength="4" name="currency" title="currency" value="<?= $currency; ?>" required="1"/></td>
+	<td class="align-middle"><?= $_currency ?>  </td><td><input class="form-control" type="text" size="3" maxlength="4" name="currency" title="currency" value="<?= tikras_h($currency); ?>" required="1"/></td>
 	</tr>
 	<tr> 
 	<td class="align-middle"><?= $_auto_reload ?></td><td>
 	<div class="input-group">
 		<div class="input-group-10">
-        	<input class="group-item group-item-l" type="number" min="10" max="3600" name="areload" title="Auto Reload in sec [min 10]" value="<?= $areload; ?>" required="1"/>
+        	<input class="group-item group-item-l" type="number" min="10" max="3600" name="areload" title="Auto Reload in sec [min 10]" value="<?= tikras_h($areload); ?>" required="1"/>
     	</div>
             <div class="input-group-2">
                 <span class="group-item group-item-r pd-2p5 text-center align-middle"><?= $_sec ?></span>
@@ -283,7 +283,7 @@ if (!isset($_SESSION["mikhmon"])) {
   <div class="input-group">
   <div class="input-group-9">
       <select class="group-item group-item-l" name="idleto" required="1">
-          <option value="<?= $idleto; ?>"><?= $idleto; ?></option>
+          <option value="<?= tikras_h($idleto); ?>"><?= tikras_h($idleto); ?></option>
 				  <option value="5">5</option>
           <option value="10">10</option>
           <option value="30">30</option>
@@ -298,7 +298,7 @@ if (!isset($_SESSION["mikhmon"])) {
     </td>
 	</tr>
 	<tr>
-	<td class="align-middle"><?= $_traffic_interface ?></td><td><input class="form-control" type="number" min="1" max="99" name="iface" title="Traffic Interface" value="<?= $iface; ?>" required="1"/></td>
+	<td class="align-middle"><?= $_traffic_interface ?></td><td><input class="form-control" type="number" min="1" max="99" name="iface" title="Traffic Interface" value="<?= tikras_h($iface); ?>" required="1"/></td>
 	</tr>
   <?php if (empty($livereport)) {
   } else { ?>
@@ -306,7 +306,7 @@ if (!isset($_SESSION["mikhmon"])) {
     <td><?= $_live_report ?></td>
     <td>
       <select class="form-control" name="livereport" >
-          <option value="<?= $livereport; ?>"><?= ucfirst($livereport); ?></option>
+          <option value="<?= tikras_h($livereport); ?>"><?= tikras_h(ucfirst($livereport)); ?></option>
 				  <option value="enable">Enable</option>
 				  <option value="disable">Disable</option>
 		  </select>

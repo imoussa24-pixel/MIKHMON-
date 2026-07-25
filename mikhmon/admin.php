@@ -85,12 +85,21 @@ if ($tikrasLoginRequest) {
     } else {
       $user = tikras_post('user');
       $pass = tikras_post('pass');
-      // Serveur en ligne: identifiants admin surchargés par l'environnement
-      // (TIKRAS_ADMIN_USER / TIKRAS_ADMIN_PASS) quand config.php est absent.
-      $envAdminUser = getenv('TIKRAS_ADMIN_USER');
-      $envAdminPass = getenv('TIKRAS_ADMIN_PASS');
-      $effectiveUser = ($envAdminUser !== false && $envAdminUser !== '') ? (string) $envAdminUser : (string) $useradm;
-      $effectivePass = ($envAdminPass !== false && $envAdminPass !== '') ? (string) $envAdminPass : (string) decrypt($passadm);
+      // Le compte enregistre dans la configuration fait foi. Les variables
+      // d'environnement ne servent qu'a ouvrir un serveur neuf, tant qu'aucun
+      // mot de passe n'a ete defini: sans cela, un changement fait depuis
+      // l'interface resterait sans effet.
+      $configUser = (string) $useradm;
+      $configPass = (string) decrypt($passadm);
+      if ($configPass !== '') {
+        $effectiveUser = $configUser;
+        $effectivePass = $configPass;
+      } else {
+        $envAdminUser = getenv('TIKRAS_ADMIN_USER');
+        $envAdminPass = getenv('TIKRAS_ADMIN_PASS');
+        $effectiveUser = ($envAdminUser !== false && $envAdminUser !== '') ? (string) $envAdminUser : $configUser;
+        $effectivePass = ($envAdminPass !== false && $envAdminPass !== '') ? (string) $envAdminPass : '';
+      }
       // Constant-time credential check (avoids type juggling + timing leaks).
       $userOk = hash_equals($effectiveUser, (string) $user);
       $passOk = ($effectivePass !== '') && hash_equals($effectivePass, (string) $pass);

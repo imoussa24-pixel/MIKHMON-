@@ -30,23 +30,43 @@ if (!isset($_SESSION["mikhmon"])) {
 
   if (tikras_has_post('save')) {
 
-    $suseradm = tikras_post('useradm');
-    $spassadm = encrypt(tikras_post('passadm'));
+    $suseradm = trim((string) tikras_post('useradm'));
+    $rawPassadm = (string) tikras_post('passadm');
     $logobt = tikras_post('logobt');
     $qrbt = tikras_post('qrbt', 'disable');
+    $adminSaveError = '';
 
-    $updatedConfig = is_array($data) ? $data : array();
-    $updatedConfig['mikhmon'] = array(
-      '1' => "mikhmon<|<$suseradm",
-      "mikhmon>|>$spassadm",
-    );
-    if (!tikras_config_write_all($updatedConfig)) {
-      tikras_log('admin config save failed', array('config' => tikras_config_local_path()));
+    // Un identifiant ou un mot de passe vide fermerait definitivement l'acces
+    // au panneau: on refuse l'enregistrement plutot que de bloquer le compte.
+    if ($suseradm === '' || $rawPassadm === '') {
+      $adminSaveError = "Nom d'utilisateur et mot de passe sont obligatoires : aucune modification enregistrée.";
+    } elseif (strlen($rawPassadm) < 6) {
+      $adminSaveError = "Le mot de passe doit contenir au moins 6 caractères : aucune modification enregistrée.";
+    }
+
+    if ($adminSaveError === '') {
+      $updatedConfig = is_array($data) ? $data : array();
+      $updatedConfig['mikhmon'] = array(
+        '1' => "mikhmon<|<$suseradm",
+        "mikhmon>|>" . encrypt($rawPassadm),
+      );
+      if (!tikras_config_write_all($updatedConfig)) {
+        tikras_log('admin config save failed', array('config' => tikras_config_local_path()));
+        $adminSaveError = "Enregistrement impossible : vérifiez les droits d'écriture du stockage.";
+      } else {
+        tikras_storage_audit('admin.credentials', 'admin', $suseradm, '', 'Compte administrateur mis a jour.');
+      }
     }
 
     if (!tikras_quickbt_write($qrbt)) {
       tikras_log('quick print config save failed', array('config' => tikras_quickbt_local_path()));
     }
+
+    if ($adminSaveError === '') {
+      $_SESSION['admin_flash'] = "Compte administrateur mis à jour. Utilisez le nouveau mot de passe à la prochaine connexion.";
+      tikras_redirect('./admin.php?id=sessions');
+    }
+    $_SESSION['admin_flash_error'] = $adminSaveError;
     tikras_redirect('./admin.php?id=sessions');
   }
 
@@ -110,6 +130,16 @@ $routerSubtitle = $routerTotal . ' routeur(s) · ' . $routerOnline . ' en ligne 
         if ($connectFlash != '') {
           unset($_SESSION['connect_flash']);
           echo tikras_ui_alert('danger', $connectFlash);
+        }
+        $adminFlash = tikras_session_get('admin_flash', '');
+        if ($adminFlash != '') {
+          unset($_SESSION['admin_flash']);
+          echo tikras_ui_alert('success', $adminFlash);
+        }
+        $adminFlashError = tikras_session_get('admin_flash_error', '');
+        if ($adminFlashError != '') {
+          unset($_SESSION['admin_flash_error']);
+          echo tikras_ui_alert('danger', $adminFlashError);
         }
         ?>
 
