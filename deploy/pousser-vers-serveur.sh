@@ -62,20 +62,28 @@ echo "   projet deploye dans $DISTANT"
 
 if [ "${SANS_CONFIG:-0}" != "1" ]; then
   echo "== [4/5] Envoi de la liste des routeurs"
-  CONFIG_TMP="$(mktemp -t tikras-cfg-XXXXXX).php"
+  # Windows peut interdire a PHP d'ecrire dans Documents (protection des
+  # dossiers): on passe par le dossier temporaire de l'utilisateur.
+  if [ -n "${TEMP:-}" ]; then
+    CONFIG_TMP="$(echo "$TEMP" | tr '\\' '/')/tikras-config-transfert.php"
+  else
+    CONFIG_TMP="/tmp/tikras-config-transfert.php"
+  fi
+  rm -f "$CONFIG_TMP"
   if [ -x "./php8/php.exe" ]; then
-    ./php8/php.exe tools/export-config-local.php "$CONFIG_TMP" > /dev/null
+    ./php8/php.exe tools/export-config-local.php "$CONFIG_TMP" > /dev/null || true
   elif command -v php > /dev/null 2>&1; then
-    php tools/export-config-local.php "$CONFIG_TMP" > /dev/null
+    php tools/export-config-local.php "$CONFIG_TMP" > /dev/null || true
   else
     echo "   PHP introuvable: liste des routeurs non exportee." ; CONFIG_TMP=""
   fi
   if [ -n "$CONFIG_TMP" ] && [ -s "$CONFIG_TMP" ]; then
     scp "${SSH_OPTS[@]}" -q "$CONFIG_TMP" "$CIBLE:/root/config.local.php"
     ssh "${SSH_OPTS[@]}" "$CIBLE" "chmod 600 /root/config.local.php"
-    NB=$(grep -c "^  '" "$CONFIG_TMP" 2>/dev/null || echo "?")
-    echo "   liste des routeurs envoyee"
+    echo "   liste des routeurs envoyee ($(du -h "$CONFIG_TMP" | cut -f1))"
     rm -f "$CONFIG_TMP"
+  else
+    echo "   ATTENTION: liste des routeurs non transferee."
   fi
 else
   echo "== [4/5] Liste des routeurs ignoree (SANS_CONFIG=1)"
