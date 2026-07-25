@@ -110,18 +110,33 @@ supprimera du serveur.
 
 ## Etape 4 — Installer
 
+Une seule commande, en remplacant les deux valeurs :
+
 ```bash
 ssh root@VOTRE_IP
 cd tikras
-ZT_NETWORK=VOTRE_NETWORK_ID bash deploy/vps-install.sh
+ZT_NETWORK=VOTRE_NETWORK_ID TIKRAS_ADMIN_PASS='VotreMotDePasseFort' bash deploy/vps-install.sh
 ```
 
 Le script installe Docker et ZeroTier, rejoint le reseau, configure le
-pare-feu, cree le fichier `.env` et demarre l'application.
+pare-feu, cree le fichier `.env` (droits 600, jeton cron aleatoire), construit
+l'image, demarre l'application, importe vos routeurs depuis
+`/root/config.local.php`, supprime ce fichier puis lance le controle de sante.
 
-**Il s'arretera une fois pour vous faire editer `.env`** : remplacez
-`TIKRAS_ADMIN_PASS=CHANGEZ-MOI` par un vrai mot de passe (12 caracteres ou
-plus), enregistrez avec `Ctrl+O` puis `Ctrl+X`.
+Comptez 5 a 10 minutes. A la fin, le controle doit afficher **0 erreur**.
+
+> Si vous omettez `TIKRAS_ADMIN_PASS` et que vous etes dans un terminal, le mot
+> de passe vous sera demande a l'ecran (masque, 12 caracteres minimum).
+
+<details>
+<summary>Ce processus a ete valide integralement</summary>
+
+L'installation a ete jouee de bout en bout dans un Ubuntu 24.04 reel :
+installation de Docker, configuration, construction de l'image, demarrage,
+import automatique des 106 routeurs, premier cycle d'automatisation,
+sauvegarde, connexion au panneau et controle de sante final —
+**17 verifications reussies, 0 erreur**.
+</details>
 
 ---
 

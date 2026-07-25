@@ -31,14 +31,16 @@ if ! command -v zerotier-cli > /dev/null 2>&1; then
 fi
 systemctl enable --now zerotier-one
 
+if [ -z "${ZT_NETWORK:-}" ] && [ -t 0 ]; then
+  read -r -p "ID du reseau ZeroTier a rejoindre (vide pour passer): " ZT_NETWORK || ZT_NETWORK=""
+fi
+
 if [ -n "${ZT_NETWORK:-}" ]; then
   zerotier-cli join "$ZT_NETWORK" || true
   echo ">> Reseau ZeroTier rejoint: $ZT_NETWORK"
 else
-  read -r -p "ID du reseau ZeroTier a rejoindre (vide pour passer): " ZT_NETWORK
-  if [ -n "$ZT_NETWORK" ]; then
-    zerotier-cli join "$ZT_NETWORK" || true
-  fi
+  echo ">> Aucun reseau ZeroTier indique. Les routeurs resteront injoignables"
+  echo "   tant que vous n'aurez pas lance: zerotier-cli join VOTRE_NETWORK_ID"
 fi
 echo ">> IMPORTANT: autorisez ce serveur dans my.zerotier.com (Members)."
 echo ">> Identite du serveur: $(zerotier-cli info || true)"
@@ -48,8 +50,54 @@ if [ ! -f .env ]; then
   cp deploy/.env.example .env
   TOKEN=$(head -c 24 /dev/urandom | od -An -tx1 | tr -d ' \n')
   sed -i "s/^TIKRAS_CRON_TOKEN=.*/TIKRAS_CRON_TOKEN=${TOKEN}/" .env
-  echo ">> Fichier .env cree. EDITEZ-LE (mot de passe admin!) : nano $PROJECT_DIR/.env"
-  read -r -p "Appuyez sur Entree une fois .env edite..." _
+
+  # Mot de passe admin: par variable d'environnement (installation automatique),
+  # sinon demande a l'ecran. Sans terminal ni variable, on s'arrete avec un
+  # message clair plutot que de demarrer un panneau inaccessible.
+  MDP="${TIKRAS_ADMIN_PASS:-}"
+  if [ -z "$MDP" ] && [ -t 0 ]; then
+    while [ -z "$MDP" ]; do
+      read -r -s -p "Mot de passe administrateur (12 caracteres minimum): " MDP
+      echo ""
+      if [ "${#MDP}" -lt 12 ]; then
+        echo "   Trop court, recommencez."
+        MDP=""
+      fi
+    done
+  fi
+
+  if [ -z "$MDP" ]; then
+    echo ""
+    echo "ERREUR: aucun mot de passe administrateur fourni."
+    echo "Relancez en le passant en variable d'environnement:"
+    echo "  ZT_NETWORK=${ZT_NETWORK:-VOTRE_RESEAU} TIKRAS_ADMIN_PASS='votre-mot-de-passe' bash deploy/vps-install.sh"
+    echo "ou editez $PROJECT_DIR/.env puis relancez ce script."
+    exit 1
+  fi
+
+  UTILISATEUR="${TIKRAS_ADMIN_USER:-admin}"
+  # Le mot de passe peut contenir des caracteres speciaux: on evite sed.
+  python3 - "$UTILISATEUR" "$MDP" <<'PY' 2>/dev/null || {
+import sys, io
+utilisateur, mdp = sys.argv[1], sys.argv[2]
+lignes = []
+with io.open('.env', encoding='utf-8') as f:
+    for ligne in f:
+        if ligne.startswith('TIKRAS_ADMIN_USER='):
+            ligne = 'TIKRAS_ADMIN_USER=%s\n' % utilisateur
+        elif ligne.startswith('TIKRAS_ADMIN_PASS='):
+            ligne = 'TIKRAS_ADMIN_PASS=%s\n' % mdp
+        lignes.append(ligne)
+with io.open('.env', 'w', encoding='utf-8') as f:
+    f.writelines(lignes)
+PY
+    # Repli sans python3
+    grep -v '^TIKRAS_ADMIN_USER=\|^TIKRAS_ADMIN_PASS=' .env > .env.tmp
+    printf 'TIKRAS_ADMIN_USER=%s\nTIKRAS_ADMIN_PASS=%s\n' "$UTILISATEUR" "$MDP" >> .env.tmp
+    mv .env.tmp .env
+  }
+  chmod 600 .env
+  echo ">> Fichier .env cree (identifiants enregistres, droits 600)."
 fi
 
 echo "== [5/6] Pare-feu =="
