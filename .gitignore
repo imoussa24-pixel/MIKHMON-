@@ -5,6 +5,10 @@
 mikhmon/include/config.php
 # Notification tokens (Telegram/WhatsApp) if configured at runtime
 # mikhmon/include/notify_config.php   # currently empty defaults — review before pushing
+# Server env: admin password + cron token
+.env
+# Router list exported for transfer to the server (same secrets as config.php)
+config.local.php
 
 # ==========================================================================
 #  Runtime-generated data (per-deployment, may contain customer data)

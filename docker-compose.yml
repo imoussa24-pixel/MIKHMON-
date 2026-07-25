@@ -1,0 +1,48 @@
+# TIKRAS IT / Mikhmon Pro Admin — production VPS (Option A: ZeroTier sur l'hote)
+#
+#   cp deploy/.env.example .env   # puis editer les valeurs
+#   docker compose up -d --build
+#
+# Sans domaine: l'app ecoute sur le port 80 du VPS.
+# Avec domaine + HTTPS automatique: docker compose --profile https up -d --build
+# (mettre TIKRAS_DOMAIN dans .env et pointer le DNS vers le VPS).
+services:
+  app:
+    build: .
+    container_name: tikras-app
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      TIKRAS_DATA_DIR: /data
+    volumes:
+      - tikras-data:/data
+    ports:
+      - "${TIKRAS_HTTP_PORT:-80}:80"
+    healthcheck:
+      test: ["CMD-SHELL", "php -r 'exit(@file_get_contents(\"http://localhost/admin.php?id=login\") ? 0 : 1);'"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: tikras-caddy
+    restart: unless-stopped
+    profiles: ["https"]
+    depends_on:
+      - app
+    environment:
+      TIKRAS_DOMAIN: ${TIKRAS_DOMAIN:-}
+    ports:
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+
+volumes:
+  tikras-data:
+  caddy-data:
+  caddy-config:

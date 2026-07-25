@@ -1,83 +1,129 @@
-# TIKRAS IT — Serveur en ligne + automatisations
+# TIKRAS IT — Serveur en ligne (VPS + ZeroTier)
 
-Cette version transforme le panneau en vrai serveur web avec automatisations
-integrees, deployable sur Render, Railway ou n'importe quel VPS Docker.
+Panneau Mikhmon transforme en vrai serveur web accessible partout, avec
+automatisations integrees et acces aux routeurs via ZeroTier.
 
-## Ce qui est inclus
+Tout ce qui suit a ete valide reellement en conteneur Docker :
+image sans secrets, import des 106 routeurs, automatisations, sauvegardes.
 
-- `Dockerfile` + `docker/` : image PHP 8.3 + Apache prete a l'emploi.
-- `render.yaml` : blueprint Render (service web + disque persistant `/data`).
-- `mikhmon/cron.php` : endpoint d'automatisation securise par token.
-- `mikhmon/lib/tikras_automation.php` : moteur des taches periodiques.
-- Nouveau design `tikras-flux` (clair/sombre) sur toute l'interface.
+## Pourquoi un VPS et pas Render
 
-## Automatisations actives
+Les routeurs sont joints par leurs IP privees ZeroTier. **Render ne peut pas
+rejoindre un reseau ZeroTier** (pas d'acces `/dev/net/tun` dans ses conteneurs).
+Sur un VPS, ZeroTier tourne sur l'hote et le conteneur emprunte
+automatiquement ses routes : aucune option Docker speciale n'est necessaire
+(le NAT sortant du reseau bridge suffit — verifie).
 
-| Tache | Cadence par defaut | Variable d'environnement |
+## Installation en une commande
+
+Sur un VPS Ubuntu/Debian neuf (Contabo, Hetzner, OVH... ~5 €/mois) :
+
+```bash
+git clone VOTRE_DEPOT_PRIVE tikras && cd tikras
+sudo bash deploy/vps-install.sh
+```
+
+Le script installe Docker et ZeroTier, rejoint le reseau, configure le
+pare-feu (UFW), cree le `.env` avec un jeton cron aleatoire et demarre l'app.
+
+**Apres l'installation**, autorisez le serveur dans <https://my.zerotier.com>
+(section Members), puis verifiez : `zerotier-cli listnetworks` doit afficher `OK`.
+
+## Importer vos 106 routeurs
+
+L'image Docker **ne contient aucun secret** : la liste des routeurs vit dans le
+volume persistant. Deux methodes au choix.
+
+### Methode 1 — fichier de configuration (rapide, recommandee)
+
+Sur le poste Windows :
+
+```powershell
+php8\php.exe tools\export-config-local.php
+```
+
+Puis transferez (le fichier contient les identifiants : **scp uniquement**) :
+
+```bash
+scp config.local.php root@VOTRE_VPS:/tmp/
+ssh root@VOTRE_VPS 'docker cp /tmp/config.local.php tikras-app:/data/config.local.php \
+  && docker exec tikras-app chown www-data:www-data /data/config.local.php \
+  && docker exec tikras-app chmod 640 /data/config.local.php \
+  && rm /tmp/config.local.php'
+```
+
+Rechargez le panneau : les 106 routeurs apparaissent.
+
+### Methode 2 — sauvegarde ZIP
+
+Page **Sauvegarde** en local → creer une sauvegarde → sur le serveur, page
+**Sauvegarde** → restaurer le ZIP. Importe aussi l'historique et les tickets.
+
+## HTTPS avec un nom de domaine
+
+1. Pointez un enregistrement DNS A vers l'IP du VPS.
+2. Dans `.env` : `TIKRAS_DOMAIN=panel.votredomaine.com` et `TIKRAS_HTTP_PORT=8080`.
+3. `docker compose --profile https up -d`
+
+Caddy obtient et renouvelle le certificat Let's Encrypt automatiquement.
+
+## Automatisations
+
+Un planificateur tourne **dans le conteneur** : rien a configurer, il demarre
+avec l'application et survit aux redemarrages.
+
+| Tache | Cadence | Variable |
 |---|---|---|
-| Surveillance routeurs (ping API + badges en ligne/hors ligne) | 5 min | `TIKRAS_AUTO_HEALTH_INTERVAL` |
-| Reprise file roaming (tickets en attente) | 10 min | `TIKRAS_AUTO_ROAMING_INTERVAL` |
-| Sauvegarde automatique (rotation, 10 conservees) | 24 h | `TIKRAS_AUTO_BACKUP_INTERVAL`, `TIKRAS_AUTO_BACKUP_KEEP` |
+| Surveillance routeurs (+ alertes Telegram) | 5 min | `TIKRAS_AUTO_HEALTH_INTERVAL` |
+| Reprise de la file roaming | 10 min | `TIKRAS_AUTO_ROAMING_INTERVAL` |
+| Sauvegarde automatique (10 conservees) | 24 h | `TIKRAS_AUTO_BACKUP_INTERVAL` |
 | Sync base locale SQLite | 1 h | `TIKRAS_AUTO_SYNC_INTERVAL` |
-| Nettoyage journaux (> 90 jours) | 7 j | `TIKRAS_AUTO_PRUNE_INTERVAL`, `TIKRAS_AUTO_AUDIT_KEEP_DAYS` |
+| Nettoyage journaux (> 90 j) | 7 j | `TIKRAS_AUTO_PRUNE_INTERVAL` |
 
-- La surveillance sonde 30 routeurs max par cycle (`TIKRAS_AUTO_HEALTH_BATCH`),
-  en commencant par les moins recemment verifies.
-- Une alerte Telegram est envoyee quand un routeur tombe ou revient
-  (si un bot est configure dans les notifications, `TIKRAS_AUTO_NOTIFY_DOWN=0` pour desactiver).
-- Etat visible dans `Parametres admin` (panneau **Automatisations**, bouton
-  **Executer maintenant**) et badges d'etat sur chaque routeur.
+- La surveillance sonde 30 routeurs par cycle (`TIKRAS_AUTO_HEALTH_BATCH`), les
+  moins recemment verifies d'abord : chaque cycle reste court meme a 106 routeurs.
+- Etat visible dans **Parametres admin** (panneau Automatisations, bouton
+  *Executer maintenant*) et badges *En ligne / Hors ligne* sur chaque routeur.
+- Journal : `docker exec tikras-app cat /data/automations.log`
 
-## Declencheurs
+Declencheurs complementaires : soft-cron du navigateur (panneau ouvert),
+appel externe `https://VOTRE_SERVEUR/cron.php?token=...`, ou CLI
+`docker exec -u www-data tikras-app php /var/www/html/cron.php --force`.
 
-1. **Soft cron** : tant qu'un admin garde le panneau ouvert, le navigateur
-   pingue `cron.php?soft=1` toutes les 5 minutes (aucune configuration).
-2. **Cron externe (recommande 24h/24)** : programmer un ping HTTP toutes les
-   5 minutes sur `https://VOTRE-APP/cron.php?token=TIKRAS_CRON_TOKEN`
-   avec cron-job.org, UptimeRobot ou un cron Render.
-3. **CLI** : `php mikhmon/cron.php` (ou `--force` pour tout executer).
+> Si vous programmez un cron sur l'hote, utilisez **toujours** `-u www-data` :
+> en root, les fichiers crees appartiendraient a root et l'application web ne
+> pourrait plus ecrire dans la base.
 
-## Deployer sur Render
+## Exploitation
 
-1. Depot **prive** GitHub/GitLab, pousser cette branche.
-   `mikhmon/include/config.php` (identifiants routeurs) n'est PAS versionne.
-2. Render > New > **Blueprint** > choisir le depot (`render.yaml` detecte).
-3. Dans l'onglet Environment du service, definir :
-   - `TIKRAS_ADMIN_USER` / `TIKRAS_ADMIN_PASS` : login du panneau.
-   - `TIKRAS_CRON_TOKEN` est genere automatiquement.
-4. Ouvrir l'app > se connecter > ajouter les routeurs (ou restaurer une
-   sauvegarde ZIP faite en local via la page **Sauvegarde**). Tout est stocke
-   sur le disque persistant `/data`.
-5. Programmer le ping cron externe (voir ci-dessus).
+```bash
+docker compose ps                      # etat
+docker compose logs -f app             # journaux
+docker compose pull && docker compose up -d --build   # mise a jour
+docker exec tikras-app ls -l /data/storage/backups/   # sauvegardes
+```
 
-### Importer vos routeurs existants
+Recuperer une sauvegarde sur son poste :
 
-Sur le poste local : `Sauvegarde` > creer une sauvegarde ZIP.
-Sur le serveur en ligne : `Sauvegarde` > restaurer ce ZIP.
-La liste des routeurs, la config admin et la base SQLite sont importees.
+```bash
+scp root@VOTRE_VPS:/var/lib/docker/volumes/tikras_tikras-data/_data/storage/backups/auto-backup-*.zip .
+```
 
-## IMPORTANT — acces aux routeurs (ZeroTier)
+## Securite
 
-Les routeurs sont joints via leurs IP privees ZeroTier/VPN. **Render ne peut
-pas rejoindre un reseau ZeroTier** (pas d'acces `/dev/net/tun` dans leurs
-conteneurs). Deux options :
+- `.env` et `config.local.php` sont exclus de git (contiennent des secrets).
+- L'image Docker ne contient aucun identifiant : elle peut etre reconstruite
+  ou partagee sans risque.
+- Le compte admin vient de `TIKRAS_ADMIN_USER` / `TIKRAS_ADMIN_PASS` ; un mot
+  de passe vide est refuse.
+- `cron.php` renvoie 403 sans le bon jeton.
+- Pare-feu : seuls SSH, 80, 443 et ZeroTier (9993/udp) sont ouverts.
+- Limitez l'exposition : idealement, n'ouvrez le panneau qu'aux membres de
+  votre reseau ZeroTier, ou ajoutez une authentification supplementaire.
 
-- **Option A (complete) : VPS Docker** (Contabo, Hetzner, OVH, ~5 $/mois).
-  ZeroTier s'installe sur le VPS, puis :
-  ```bash
-  docker build -t tikras-mikhmon .
-  docker run -d -p 80:80 -v tikras-data:/data \
-    -e TIKRAS_ADMIN_USER=... -e TIKRAS_ADMIN_PASS=... -e TIKRAS_CRON_TOKEN=... \
-    --network host tikras-mikhmon
-  ```
-  Le conteneur voit le reseau ZeroTier de l'hote (`--network host`) et tous
-  les routeurs restent joignables comme aujourd'hui.
-- **Option B (Render)** : l'interface fonctionne partout, mais seuls les
-  routeurs joignables publiquement (IP publique + port API, ou hub WireGuard
-  avec IP publique) seront accessibles pour la generation de tickets.
+## Verification locale (Windows)
 
-## Verification locale
-
-- Lint : `powershell -ExecutionPolicy Bypass -File tools/lint-php8.ps1`
-- Tick manuel : `php8\php.exe mikhmon\cron.php --force`
-- Serveur local : `powershell -ExecutionPolicy Bypass -File tools/start-php8-server.ps1`
+```powershell
+php8\php.exe mikhmon\cron.php --force            # tick manuel
+powershell -ExecutionPolicy Bypass -File tools/start-php8-server.ps1
+```

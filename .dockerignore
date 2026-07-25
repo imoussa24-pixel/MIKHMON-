@@ -2,6 +2,15 @@
 .claude
 php8/
 tools/
+deploy/
 lanceur.exe
 *.md
 LIRE_MOI_NOUVEAU.txt
+.env
+
+# Aucun secret dans l'image: la liste des routeurs vit dans le volume /data.
+mikhmon/include/config.php
+mikhmon/include/notify_config.php
+mikhmon/share/logs/
+mikhmon/voucher/roaming_queue.php
+config.local.php

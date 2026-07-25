@@ -1,0 +1,6 @@
+# HTTPS automatique (Let's Encrypt) pour TIKRAS IT.
+# Actif avec: docker compose --profile https up -d
+{$TIKRAS_DOMAIN} {
+	encode gzip
+	reverse_proxy app:80
+}

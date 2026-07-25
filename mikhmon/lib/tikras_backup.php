@@ -43,6 +43,30 @@ if (!function_exists('tikras_backup_sqlite_snapshot')) {
     }
 
     $snapshot = tikras_backup_dir() . DIRECTORY_SEPARATOR . 'sqlite-snapshot-' . str_replace('.', '-', uniqid('', true)) . '.sqlite';
+
+    // La base tourne en mode WAL: une simple copie du fichier principal laisse
+    // de cote tout ce qui est encore dans le journal. VACUUM INTO ecrit une
+    // copie complete et coherente, meme pendant des ecritures concurrentes.
+    if (tikras_storage_available()) {
+      try {
+        $pdo = tikras_storage_pdo();
+        $stmt = $pdo->prepare('VACUUM INTO ?');
+        $stmt->execute(array($snapshot));
+        if (is_file($snapshot) && filesize($snapshot) > 0) {
+          return $snapshot;
+        }
+      } catch (Exception $e) {
+        @unlink($snapshot);
+        tikras_log('backup vacuum into failed, fallback checkpoint', array('error' => $e->getMessage()));
+      }
+      // Repli (SQLite < 3.27): forcer le WAL dans le fichier avant de copier.
+      try {
+        tikras_storage_pdo()->exec('PRAGMA wal_checkpoint(TRUNCATE)');
+      } catch (Exception $e) {
+        tikras_log('backup wal checkpoint failed', array('error' => $e->getMessage()));
+      }
+    }
+
     if (@copy($source, $snapshot)) {
       return $snapshot;
     }
@@ -172,6 +196,10 @@ if (!function_exists('tikras_backup_restore')) {
       $result['restored'][] = 'quickbt';
     }
     if (tikras_backup_write_zip_entry($zip, 'storage/mikhmon-pro-admin.sqlite', tikras_storage_path())) {
+      // Les journaux WAL de l'ancienne base ne correspondent plus au fichier
+      // restaure: les laisser en place corromprait la base.
+      @unlink(tikras_storage_path() . '-wal');
+      @unlink(tikras_storage_path() . '-shm');
       $result['restored'][] = 'sqlite';
     }
 
