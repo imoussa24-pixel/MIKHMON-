@@ -37,6 +37,8 @@ if (tikras_has_post('enregistrer')) {
     'time_limit' => tikras_post('time_limit'),
     'data_limit' => tikras_post('data_limit', '0'),
     'comment' => tikras_post('comment'),
+    'with_qr' => tikras_post('with_qr', '0'),
+    'logo_file' => tikras_post('logo_file', ''),
     'channel' => tikras_post('channel', 'email'),
     'target' => tikras_post('target'),
     'frequency' => tikras_post('frequency', 'daily'),
@@ -257,6 +259,29 @@ if ($planFlash != '') {
         </div>
       </div>
 
+      <div class="tikras-plan-section"><i class="fa fa-print"></i> Apparence du ticket imprimé</div>
+      <div class="tikras-plan-grille">
+        <div class="tikras-field">
+          <label for="with_qr">Code QR</label>
+          <select class="form-control" id="with_qr" name="with_qr">
+            <option value="1"<?= $valeur('with_qr', '1') == '1' ? ' selected' : ''; ?>>Imprimer un QR sur chaque ticket</option>
+            <option value="0"<?= $valeur('with_qr', '1') == '0' ? ' selected' : ''; ?>>Sans QR</option>
+          </select>
+          <small class="tikras-field-hint">Le client scanne et se connecte sans recopier le code.</small>
+        </div>
+        <div class="tikras-field">
+          <label for="logo_file">Logo (facultatif)</label>
+          <select class="form-control" id="logo_file" name="logo_file">
+            <option value="">Aucun logo</option>
+            <?php foreach (tikras_sched_logos() as $fichier) {
+              echo '<option value="' . tikras_h($fichier) . '"' . ($valeur('logo_file') == $fichier ? ' selected' : '') . '>'
+                . tikras_h($fichier) . '</option>';
+            } ?>
+          </select>
+          <small class="tikras-field-hint">Déposez vos images via « Téléverser un logo » pour les retrouver ici.</small>
+        </div>
+      </div>
+
       <div class="tikras-plan-section"><i class="fa fa-clock-o"></i> Périodicité</div>
       <div class="tikras-plan-grille">
         <div class="tikras-field">
@@ -383,6 +408,10 @@ if ($planFlash != '') {
             <td>
               <?= (int) $plan['quantity']; ?> × <?= tikras_h($plan['profile']); ?>
               <div class="tikras-wg-session"><?= (int) $plan['code_length']; ?> car. · <?= tikras_h($plan['code_chars']); ?></div>
+              <div class="tikras-wg-session">
+                <?= (int) tikras_array_get($plan, 'with_qr', 1) === 1 ? 'avec QR' : 'sans QR'; ?>
+                <?= tikras_array_get($plan, 'logo_file', '') != '' ? ' · logo' : ''; ?>
+              </div>
             </td>
             <td><?= tikras_h($detail); ?></td>
             <td>

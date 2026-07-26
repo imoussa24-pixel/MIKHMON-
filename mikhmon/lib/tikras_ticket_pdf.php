@@ -41,6 +41,7 @@ if (!class_exists('TikrasTicketPdf')) {
     private $content = "";
     private $width = 595.28;
     private $height = 841.89;
+    private $logo = null;
 
     public function __construct()
     {
@@ -93,9 +94,77 @@ if (!class_exists('TikrasTicketPdf')) {
       $this->content .= sprintf('%.2F %.2F %.2F %.2F re S', $this->pt($x), $this->y($y + $h), $this->pt($w), $this->pt($h)) . "\n";
     }
 
+    /* Rectangle rempli, utilise pour les modules du QR. */
+    public function rectPlein($x, $y, $w, $h)
+    {
+      $this->content .= sprintf('%.3F %.3F %.3F %.3F re f', $this->pt($x), $this->y($y + $h), $this->pt($w), $this->pt($h)) . "\n";
+    }
+
     public function line($x1, $y1, $x2, $y2)
     {
       $this->content .= sprintf('%.2F %.2F m %.2F %.2F l S', $this->pt($x1), $this->y($y1), $this->pt($x2), $this->y($y2)) . "\n";
+    }
+
+    /*
+     * Enregistre le logo, converti en JPEG car ce format s'insere tel quel
+     * dans un PDF. Retourne false si l'image est illisible: le ticket est
+     * alors simplement imprime sans logo.
+     */
+    public function chargerLogo($chemin)
+    {
+      if ($this->logo !== null) {
+        return true;
+      }
+      if (!is_file($chemin) || !function_exists('imagecreatefromstring')) {
+        return false;
+      }
+      $source = @imagecreatefromstring((string) @file_get_contents($chemin));
+      if ($source === false) {
+        return false;
+      }
+      $largeur = imagesx($source);
+      $hauteur = imagesy($source);
+      if ($largeur < 1 || $hauteur < 1) {
+        imagedestroy($source);
+        return false;
+      }
+      // Reduction: inutile d'embarquer une grande image pour quelques mm.
+      $cible = 120;
+      $ratio = min(1, $cible / max($largeur, $hauteur));
+      $nl = max(1, (int) round($largeur * $ratio));
+      $nh = max(1, (int) round($hauteur * $ratio));
+      $vignette = imagecreatetruecolor($nl, $nh);
+      // Fond blanc: la transparence n'existe pas en JPEG.
+      $blanc = imagecolorallocate($vignette, 255, 255, 255);
+      imagefilledrectangle($vignette, 0, 0, $nl, $nh, $blanc);
+      imagecopyresampled($vignette, $source, 0, 0, 0, 0, $nl, $nh, $largeur, $hauteur);
+      imagedestroy($source);
+
+      ob_start();
+      imagejpeg($vignette, null, 85);
+      $donnees = ob_get_clean();
+      imagedestroy($vignette);
+      if ($donnees === false || $donnees === '') {
+        return false;
+      }
+      $this->logo = array('data' => $donnees, 'w' => $nl, 'h' => $nh);
+      return true;
+    }
+
+    public function aUnLogo()
+    {
+      return $this->logo !== null;
+    }
+
+    public function logo($x, $y, $w, $h)
+    {
+      if ($this->logo === null) {
+        return;
+      }
+      $this->content .= sprintf(
+        "q %.2F 0 0 %.2F %.2F %.2F cm /L1 Do Q",
+        $this->pt($w), $this->pt($h), $this->pt($x), $this->y($y + $h)
+      ) . "\n";
     }
 
     public function save($file)
@@ -108,7 +177,8 @@ if (!class_exists('TikrasTicketPdf')) {
       $objects = array();
       $objects[] = "<< /Type /Catalog /Pages 2 0 R >>";
       $kids = array();
-      $pageObjectId = 5;
+      // Le logo occupe un objet supplementaire quand il est present.
+      $pageObjectId = $this->logo === null ? 5 : 6;
       for ($i = 0; $i < count($this->pages); $i++) {
         $kids[] = ($pageObjectId + ($i * 2)) . " 0 R";
       }
@@ -116,9 +186,18 @@ if (!class_exists('TikrasTicketPdf')) {
       $objects[] = "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>";
       $objects[] = "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>";
 
+      $ressourceLogo = "";
+      if ($this->logo !== null) {
+        $objects[] = "<< /Type /XObject /Subtype /Image /Width " . $this->logo['w']
+          . " /Height " . $this->logo['h'] . " /ColorSpace /DeviceRGB /BitsPerComponent 8"
+          . " /Filter /DCTDecode /Length " . strlen($this->logo['data']) . " >>\nstream\n"
+          . $this->logo['data'] . "\nendstream";
+        $ressourceLogo = " /XObject << /L1 5 0 R >>";
+      }
+
       for ($i = 0; $i < count($this->pages); $i++) {
         $contentId = $pageObjectId + ($i * 2) + 1;
-        $objects[] = "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 " . sprintf('%.2F %.2F', $this->width, $this->height) . "] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents " . $contentId . " 0 R >>";
+        $objects[] = "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 " . sprintf('%.2F %.2F', $this->width, $this->height) . "] /Resources << /Font << /F1 3 0 R /F2 4 0 R >>" . $ressourceLogo . " >> /Contents " . $contentId . " 0 R >>";
         $stream = $this->pages[$i];
         $objects[] = "<< /Length " . strlen($stream) . " >>\nstream\n" . $stream . "endstream";
       }
@@ -138,6 +217,33 @@ if (!class_exists('TikrasTicketPdf')) {
 
       return file_put_contents($file, $pdf) !== false;
     }
+  }
+}
+
+if (!function_exists('tikras_ticket_pdf_qr')) {
+  /*
+   * Dessine le QR en petits rectangles vectoriels: aucune image a produire,
+   * et le rendu reste net a l'impression quelle que soit la resolution.
+   */
+  function tikras_ticket_pdf_qr($pdf, $texte, $x, $y, $cote)
+  {
+    if (!function_exists('tikras_qr_matrice')) {
+      include_once(dirname(__FILE__) . '/tikras_qr.php');
+    }
+    $matrice = tikras_qr_matrice($texte);
+    if (!is_array($matrice) || count($matrice) < 1) {
+      return false;
+    }
+    $modules = count($matrice);
+    $pas = $cote / $modules;
+    for ($i = 0; $i < $modules; $i++) {
+      for ($j = 0; $j < $modules; $j++) {
+        if ($matrice[$i][$j] === 1) {
+          $pdf->rectPlein($x + ($j * $pas), $y + ($i * $pas), $pas, $pas);
+        }
+      }
+    }
+    return true;
   }
 }
 
@@ -180,30 +286,73 @@ if (!function_exists('tikras_ticket_pdf_draw_ticket')) {
     }
     $details = tikras_pdf_fit(implode("  -  ", $conditions), 42);
 
+    /*
+     * Le QR est optionnel: il occupe la droite du ticket et decale le reste.
+     * Il porte l'adresse du portail et le code, afin qu'un client puisse se
+     * connecter sans rien recopier.
+     */
+    $avecQr = !empty($meta['qrcode']);
+    $qrCote = 15.5;
+    $largeurTexte = $avecQr ? ($w - $qrCote - 6) : ($w - 8);
+    $gaucheTexte = $x + 4;
+
     $pdf->rect($x, $y, $w, $h);
-    $pdf->text($x + 2, $y + 4.2, $hotspot, 8, true, "left", 30);
+
+    /*
+     * Logo optionnel: place en tete, il decale le nom du hotspot. Absent, la
+     * mise en page reste exactement celle d'origine.
+     */
+    $avecLogo = !empty($meta['logo']) && $pdf->aUnLogo();
+    if ($avecLogo) {
+      $pdf->logo($x + 1.6, $y + 1, 4.6, 4.6);
+      $pdf->text($x + 7, $y + 4.2, tikras_pdf_fit($hotspot, 20), 7.5, true, "left", 26);
+    } else {
+      $pdf->text($x + 2, $y + 4.2, $hotspot, 8, true, "left", 30);
+    }
     $pdf->text($x + 35, $y + 4.2, "[" . $num . "]", 7, true, "right", 8);
     $pdf->line($x, $y + 5.8, $x + $w, $y + 5.8);
 
+    if ($avecQr) {
+      /*
+       * Le QR est propre a chaque ticket: l'eventuel prefixe commun (adresse
+       * du portail) est suivi du code du ticket, sans quoi tous les QR d'une
+       * page renverraient la meme information.
+       */
+      $prefixeQr = trim((string) (isset($meta['qrtexte']) ? $meta['qrtexte'] : ""));
+      if ($prefixeQr == "" && $adresse != "") {
+        $prefixeQr = "http://" . $adresse;
+      }
+      $contenuQr = trim($prefixeQr . " " . $username);
+      if ($mode != "vc" && $password != "") {
+        $contenuQr .= " / " . $password;
+      }
+      if (!tikras_ticket_pdf_qr($pdf, $contenuQr, $x + $w - $qrCote - 2.5, $y + 8.5, $qrCote)) {
+        // Contenu trop long pour un QR: on rend la largeur au texte.
+        $avecQr = false;
+        $largeurTexte = $w - 8;
+      }
+    }
+
     if ($mode == "vc") {
-      $pdf->text($x + 2, $y + 9.6, "Code d'acces", 6.5, false, "center", $w - 4);
-      $pdf->rect($x + 4, $y + 10.6, $w - 8, 6);
-      $pdf->text($x + 4, $y + 14.8, tikras_pdf_fit($username, 22), 9, true, "center", $w - 8);
+      $pdf->text($gaucheTexte, $y + 9.6, "Code d'acces", 6.5, false, "center", $largeurTexte);
+      $pdf->rect($gaucheTexte, $y + 10.6, $largeurTexte, 6);
+      $pdf->text($gaucheTexte, $y + 14.8, tikras_pdf_fit($username, $avecQr ? 14 : 22), $avecQr ? 8 : 9, true, "center", $largeurTexte);
     } else {
-      $pdf->text($x + 3, $y + 9.6, "Utilisateur", 6, false, "center", ($w - 8) / 2);
-      $pdf->text($x + 4 + (($w - 8) / 2), $y + 9.6, "Mot de passe", 6, false, "center", ($w - 8) / 2);
-      $pdf->rect($x + 4, $y + 10.6, ($w - 8) / 2, 6);
-      $pdf->rect($x + 4 + (($w - 8) / 2), $y + 10.6, ($w - 8) / 2, 6);
-      $pdf->text($x + 4, $y + 14.8, tikras_pdf_fit($username, 14), 7.2, true, "center", ($w - 8) / 2);
-      $pdf->text($x + 4 + (($w - 8) / 2), $y + 14.8, tikras_pdf_fit($password, 14), 7.2, true, "center", ($w - 8) / 2);
+      $demi = $largeurTexte / 2;
+      $pdf->text($gaucheTexte, $y + 9.6, "Utilisateur", 5.5, false, "center", $demi);
+      $pdf->text($gaucheTexte + $demi, $y + 9.6, "Mot de passe", 5.5, false, "center", $demi);
+      $pdf->rect($gaucheTexte, $y + 10.6, $demi, 6);
+      $pdf->rect($gaucheTexte + $demi, $y + 10.6, $demi, 6);
+      $pdf->text($gaucheTexte, $y + 14.8, tikras_pdf_fit($username, 12), 6.8, true, "center", $demi);
+      $pdf->text($gaucheTexte + $demi, $y + 14.8, tikras_pdf_fit($password, 12), 6.8, true, "center", $demi);
     }
 
     if ($adresse != "") {
-      $pdf->text($x + 2, $y + 20.2, "Connexion : " . $adresse, 6, false, "center", $w - 4);
+      $pdf->text($gaucheTexte, $y + 20.2, "Connexion : " . tikras_pdf_fit($adresse, $avecQr ? 22 : 34), 5.8, false, "center", $largeurTexte);
     }
     if ($details != "") {
-      $pdf->rect($x + 4, $y + 21.6, $w - 8, 5);
-      $pdf->text($x + 4, $y + 25, $details, 6, true, "center", $w - 8);
+      $pdf->rect($gaucheTexte, $y + 21.6, $largeurTexte, 5);
+      $pdf->text($gaucheTexte, $y + 25, tikras_pdf_fit($details, $avecQr ? 28 : 42), 5.8, true, "center", $largeurTexte);
     }
   }
 }
@@ -220,6 +369,10 @@ if (!function_exists('tikras_ticket_pdf_generate')) {
     }
 
     $pdf = new TikrasTicketPdf();
+    // Le logo n'est charge qu'une fois, et seulement s'il a ete demande.
+    if (!empty($meta['logo']) && is_string($meta['logo'])) {
+      $pdf->chargerLogo($meta['logo']);
+    }
     $marginX = 7;
     $marginY = 9;
     $ticketW = 45;

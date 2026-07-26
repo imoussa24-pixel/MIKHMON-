@@ -2,10 +2,12 @@
 # Image PHP 8.3 + Apache prete pour Render, Railway, VPS Docker...
 FROM php:8.3-apache
 
-# Extensions requises: zip (sauvegardes), pdo_sqlite (base locale).
+# Extensions requises: zip (sauvegardes), pdo_sqlite (base locale),
+# gd (lecture du logo depose par l'utilisateur pour l'imprimer sur les tickets).
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends libzip-dev unzip \
-    && docker-php-ext-install zip \
+    && apt-get install -y --no-install-recommends libzip-dev unzip libpng-dev libjpeg62-turbo-dev \
+    && docker-php-ext-configure gd --with-jpeg \
+    && docker-php-ext-install zip gd \
     && a2enmod rewrite headers expires \
     && rm -rf /var/lib/apt/lists/*
 

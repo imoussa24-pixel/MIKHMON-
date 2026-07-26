@@ -37,6 +37,8 @@ if (!function_exists('tikras_sched_table')) {
         time_limit TEXT NOT NULL DEFAULT '',
         data_limit TEXT NOT NULL DEFAULT '0',
         comment TEXT NOT NULL DEFAULT '',
+        with_qr INTEGER NOT NULL DEFAULT 1,
+        logo_file TEXT NOT NULL DEFAULT '',
         channel TEXT NOT NULL DEFAULT 'email',
         target TEXT NOT NULL DEFAULT '',
         frequency TEXT NOT NULL DEFAULT 'daily',
@@ -53,7 +55,51 @@ if (!function_exists('tikras_sched_table')) {
         updated_at TEXT NOT NULL
       )
     ");
+    /*
+     * Colonnes ajoutees apres coup: on les cree si la table existe deja,
+     * afin de ne pas perdre les planifications enregistrees.
+     */
+    $colonnes = array();
+    foreach ($pdo->query('PRAGMA table_info(ticket_schedules)')->fetchAll() as $colonne) {
+      $colonnes[] = isset($colonne['name']) ? $colonne['name'] : '';
+    }
+    if (!in_array('with_qr', $colonnes)) {
+      $pdo->exec("ALTER TABLE ticket_schedules ADD COLUMN with_qr INTEGER NOT NULL DEFAULT 1");
+    }
+    if (!in_array('logo_file', $colonnes)) {
+      $pdo->exec("ALTER TABLE ticket_schedules ADD COLUMN logo_file TEXT NOT NULL DEFAULT ''");
+    }
     return true;
+  }
+}
+
+if (!function_exists('tikras_sched_logos')) {
+  /* Images deposees par l'utilisateur, proposees comme logo du ticket. */
+  function tikras_sched_logos()
+  {
+    $dossier = dirname(__DIR__) . DIRECTORY_SEPARATOR . 'img';
+    $fichiers = array();
+    if (is_dir($dossier)) {
+      foreach (scandir($dossier) as $fichier) {
+        if (preg_match('/\.(png|jpe?g|gif)$/i', $fichier)) {
+          $fichiers[] = $fichier;
+        }
+      }
+    }
+    sort($fichiers);
+    return $fichiers;
+  }
+}
+
+if (!function_exists('tikras_sched_chemin_logo')) {
+  function tikras_sched_chemin_logo($fichier)
+  {
+    $fichier = basename((string) $fichier);
+    if ($fichier == '' || !preg_match('/\.(png|jpe?g|gif)$/i', $fichier)) {
+      return '';
+    }
+    $chemin = dirname(__DIR__) . DIRECTORY_SEPARATOR . 'img' . DIRECTORY_SEPARATOR . $fichier;
+    return is_file($chemin) ? $chemin : '';
   }
 }
 
@@ -156,6 +202,8 @@ if (!function_exists('tikras_sched_enregistrer')) {
       'time_limit' => (string) tikras_array_get($champs, 'time_limit', ''),
       'data_limit' => (string) tikras_array_get($champs, 'data_limit', '0'),
       'comment' => (string) tikras_array_get($champs, 'comment', ''),
+      'with_qr' => tikras_array_get($champs, 'with_qr', '1') == '1' ? 1 : 0,
+      'logo_file' => basename((string) tikras_array_get($champs, 'logo_file', '')),
       'channel' => $canal,
       'target' => $cible,
       'frequency' => (string) tikras_array_get($champs, 'frequency', 'daily'),
@@ -172,17 +220,17 @@ if (!function_exists('tikras_sched_enregistrer')) {
       if ($id > 0) {
         $sql = 'UPDATE ticket_schedules SET label=?, session=?, profile=?, server=?, quantity=?,
           user_mode=?, code_length=?, code_chars=?, prefix=?, time_limit=?, data_limit=?, comment=?,
-          channel=?, target=?, frequency=?, hour=?, weekday=?, monthday=?, enabled=?, updated_at=?
-          WHERE id=?';
+          with_qr=?, logo_file=?, channel=?, target=?, frequency=?, hour=?, weekday=?, monthday=?,
+          enabled=?, updated_at=? WHERE id=?';
         $valeurs = array_values($donnees);
         $valeurs[] = $now;
         $valeurs[] = $id;
         $pdo->prepare($sql)->execute($valeurs);
       } else {
         $sql = 'INSERT INTO ticket_schedules (label, session, profile, server, quantity, user_mode,
-          code_length, code_chars, prefix, time_limit, data_limit, comment, channel, target,
-          frequency, hour, weekday, monthday, enabled, created_at, updated_at)
-          VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)';
+          code_length, code_chars, prefix, time_limit, data_limit, comment, with_qr, logo_file,
+          channel, target, frequency, hour, weekday, monthday, enabled, created_at, updated_at)
+          VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)';
         $valeurs = array_values($donnees);
         $valeurs[] = $now;
         $valeurs[] = $now;
@@ -458,6 +506,10 @@ if (!function_exists('tikras_sched_executer')) {
       'datalimit' => (string) $plan['data_limit'],
       'price' => $prixProfil,
       'currency' => $devise,
+      // Options d'impression retenues pour cette planification.
+      'qrcode' => (int) tikras_array_get($plan, 'with_qr', 1) === 1,
+      'qrtexte' => ($dns != '' ? 'http://' . $dns . ' ' : ''),
+      'logo' => tikras_sched_chemin_logo(tikras_array_get($plan, 'logo_file', '')),
     );
     if (!tikras_ticket_pdf_generate($chemin, $ticketsCrees, $meta)) {
       $rapport['erreur'] = 'Tickets crees mais PDF non genere.';
