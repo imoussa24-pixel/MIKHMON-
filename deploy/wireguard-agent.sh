@@ -36,6 +36,26 @@ EOF
   chmod 644 "${ETAT}/hub.json"
 }
 
+publier_adresses() {
+  mkdir -p "$ETAT"
+  # Le serveur porte une adresse differente sur chaque reseau (ZeroTier,
+  # WireGuard). L'application a besoin de la liste pour indiquer a chaque
+  # routeur celle qu'il peut effectivement joindre.
+  {
+    echo "["
+    local premier=1
+    while read -r cidr iface; do
+      [ -z "$cidr" ] && continue
+      [ "$premier" = "0" ] && echo ","
+      premier=0
+      printf '{"cidr":"%s","interface":"%s"}' "$cidr" "$iface"
+    done < <(ip -4 -o addr show scope global 2>/dev/null | awk '{print $4, $2}')
+    echo ""
+    echo "]"
+  } > "${ETAT}/adresses.json"
+  chmod 644 "${ETAT}/adresses.json"
+}
+
 publier_pairs() {
   mkdir -p "$ETAT"
   # Etat de chaque pair: dernier handshake et volumes echanges.
@@ -163,12 +183,14 @@ if [ "${1:-}" = "--boucle" ]; then
   echo "Agent WireGuard demarre (surveillance toutes les 10 s)"
   while true; do
     publier_hub
+    publier_adresses
     traiter_demandes
     publier_pairs
     sleep 10
   done
 else
   publier_hub
+  publier_adresses
   traiter_demandes
   publier_pairs
   echo "Traitement termine."

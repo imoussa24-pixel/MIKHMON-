@@ -38,12 +38,49 @@ if (tikras_has_post('autoriser')) {
     $radFlashType = $resultat['ok'] ? 'success' : 'danger';
     if ($resultat['ok']) {
       $radScriptSession = $cible;
+
+      /*
+       * Adresse du serveur et profils vises sont deduits du routeur lui-meme:
+       * une adresse prise sur un autre reseau, ou un profil qu'aucun serveur
+       * Hotspot n'utilise, donnent une configuration sans effet et sans
+       * message d'erreur.
+       */
+      $adresseServeur = trim((string) tikras_post('serveur_adresse', ''));
+      if ($adresseServeur == '') {
+        $adresseServeur = tikras_rad_adresse_pour_routeur($adresse);
+      }
+      if ($adresseServeur == '') {
+        $adresseServeur = '10.200.0.1';
+        $radFlash .= " Adresse du serveur non deduite : verifiez-la avant de coller le script.";
+        $radFlashType = 'warning';
+      }
+
+      $profilsVises = array();
+      $profilSaisi = trim((string) tikras_post('profil_hotspot', ''));
+      if ($profilSaisi != '') {
+        $profilsVises = array($profilSaisi);
+      } else {
+        include_once(dirname(__DIR__) . '/lib/tikras_routeros.php');
+        $apiRouteur = tikras_routeros_create();
+        $apiRouteur->attempts = 1;
+        $apiRouteur->timeout = 8;
+        $utilisateurRouteur = tikras_cfg_value($data, $cible, 2, '@|@', '');
+        $passRouteur = decrypt(tikras_cfg_value($data, $cible, 3, '#|#', ''));
+        if (tikras_routeros_connect($apiRouteur, $adresse, $utilisateurRouteur, $passRouteur, $cible, array('timeout' => 8, 'force' => true))) {
+          $profilsVises = tikras_rad_profils_actifs($apiRouteur);
+          tikras_routeros_disconnect($apiRouteur);
+        }
+      }
+
       $radScript = tikras_rad_script_routeur(
-        (string) tikras_post('serveur_adresse', '10.200.0.1'),
+        $adresseServeur,
         $resultat['secret'],
-        (string) tikras_post('profil_hotspot', ''),
+        $profilsVises,
         tikras_post('avec_ppp') != ''
       );
+      if (count($profilsVises) > 0) {
+        $radFlash .= ' Profil(s) visé(s) : ' . implode(', ', $profilsVises) . '.';
+      }
     }
   }
 }

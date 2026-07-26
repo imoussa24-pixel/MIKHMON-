@@ -329,6 +329,92 @@ if (!function_exists('tikras_rad_supprimer_ticket')) {
   }
 }
 
+if (!function_exists('tikras_rad_adresse_pour_routeur')) {
+  /*
+   * Adresse du serveur telle que ce routeur peut la joindre.
+   *
+   * Le serveur porte une adresse par reseau (une par reseau ZeroTier, plus le
+   * tunnel WireGuard). Indiquer la mauvaise revient a configurer un serveur
+   * injoignable, sans message d'erreur cote routeur: on retient donc celle
+   * dont le sous-reseau contient l'adresse du routeur.
+   */
+  function tikras_rad_adresse_pour_routeur($ipRouteur)
+  {
+    $ipRouteur = trim((string) $ipRouteur);
+    if (strpos($ipRouteur, ':') !== false) {
+      $ipRouteur = substr($ipRouteur, 0, strpos($ipRouteur, ':'));
+    }
+    $numRouteur = ip2long($ipRouteur);
+    if ($numRouteur === false) {
+      return '';
+    }
+
+    $base = getenv('TIKRAS_DATA_DIR');
+    if ($base === false || trim((string) $base) == '') {
+      $base = tikras_config_local_dir();
+    }
+    $fichier = rtrim((string) $base, "\\/") . DIRECTORY_SEPARATOR . 'wireguard'
+      . DIRECTORY_SEPARATOR . 'etat' . DIRECTORY_SEPARATOR . 'adresses.json';
+    if (!is_file($fichier)) {
+      return '';
+    }
+    $liste = json_decode((string) @file_get_contents($fichier), true);
+    if (!is_array($liste)) {
+      return '';
+    }
+
+    $meilleure = '';
+    $meilleurPrefixe = -1;
+    foreach ($liste as $entree) {
+      $cidr = isset($entree['cidr']) ? (string) $entree['cidr'] : '';
+      if (strpos($cidr, '/') === false) {
+        continue;
+      }
+      list($adresse, $prefixe) = explode('/', $cidr, 2);
+      $prefixe = (int) $prefixe;
+      $numServeur = ip2long($adresse);
+      if ($numServeur === false || $prefixe < 1 || $prefixe > 32) {
+        continue;
+      }
+      $masque = -1 << (32 - $prefixe);
+      if (($numRouteur & $masque) === ($numServeur & $masque)) {
+        // Le sous-reseau le plus precis l'emporte.
+        if ($prefixe > $meilleurPrefixe) {
+          $meilleurPrefixe = $prefixe;
+          $meilleure = $adresse;
+        }
+      }
+    }
+    return $meilleure;
+  }
+}
+
+if (!function_exists('tikras_rad_profils_actifs')) {
+  /*
+   * Profils Hotspot reellement utilises par un serveur du routeur.
+   *
+   * Basculer un profil inutilise laisse le portail authentifier localement,
+   * sans que rien ne signale l'erreur: on cible donc les profils rattaches a
+   * un serveur Hotspot existant.
+   */
+  function tikras_rad_profils_actifs($api)
+  {
+    $profils = array();
+    if (!is_object($api)) {
+      return $profils;
+    }
+    $serveurs = $api->comm('/ip/hotspot/print', array('.proplist' => 'name,profile'));
+    if (is_array($serveurs)) {
+      foreach ($serveurs as $serveur) {
+        if (isset($serveur['profile']) && $serveur['profile'] != '') {
+          $profils[(string) $serveur['profile']] = true;
+        }
+      }
+    }
+    return array_keys($profils);
+  }
+}
+
 if (!function_exists('tikras_rad_script_routeur')) {
   /*
    * Commandes RouterOS pour raccorder un routeur au serveur.
@@ -337,15 +423,24 @@ if (!function_exists('tikras_rad_script_routeur')) {
    */
   function tikras_rad_script_routeur($adresseServeur, $secret, $profilHotspot, $avecPpp = false)
   {
+    // Une declaration precedente est retiree pour eviter les doublons lors
+    // d'un nouveau raccordement.
     $lignes = array(
+      '/radius/remove [find comment="TIKRAS RADIUS"]',
       '/radius/add service=hotspot' . ($avecPpp ? ',ppp' : '')
         . ' address=' . $adresseServeur
         . ' secret="' . $secret . '"'
         . ' authentication-port=1812 accounting-port=1813 timeout=3s comment="TIKRAS RADIUS"',
       '/radius/incoming/set accept=yes',
     );
-    if ($profilHotspot != '') {
-      $lignes[] = '/ip/hotspot/profile/set [find name="' . $profilHotspot . '"] use-radius=yes radius-accounting=yes';
+
+    // Plusieurs profils peuvent etre en service sur un meme routeur.
+    $profils = is_array($profilHotspot) ? $profilHotspot : ($profilHotspot != '' ? array($profilHotspot) : array());
+    foreach ($profils as $profil) {
+      $profil = trim((string) $profil);
+      if ($profil != '') {
+        $lignes[] = '/ip/hotspot/profile/set [find name="' . $profil . '"] use-radius=yes radius-accounting=yes';
+      }
     }
     if ($avecPpp) {
       $lignes[] = '/ppp/aaa/set use-radius=yes accounting=yes';

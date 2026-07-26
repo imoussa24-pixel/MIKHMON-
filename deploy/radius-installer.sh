@@ -31,11 +31,22 @@ fi
 
 echo "== [3/4] Pare-feu =="
 if command -v ufw > /dev/null 2>&1; then
-  # Les routeurs interrogent le serveur par le tunnel, pas depuis Internet.
-  ufw allow from 10.200.0.0/16 to any port 1812 proto udp > /dev/null 2>&1 || true
-  ufw allow from 10.200.0.0/16 to any port 1813 proto udp > /dev/null 2>&1 || true
-  echo "   ports 1812 et 1813 ouverts pour le tunnel WireGuard"
-  echo "   (pour un routeur joint par ZeroTier, ouvrez aussi sa plage)"
+  # Les routeurs joignent le serveur par le reseau prive qui les relie, pas
+  # depuis Internet: on ouvre donc chaque reseau auquel le serveur appartient
+  # (tunnel WireGuard et reseaux ZeroTier). N'ouvrir que le tunnel laisserait
+  # les routeurs joints par ZeroTier sans reponse, sans message d'erreur.
+  OUVERTS=0
+  for IFACE in $(ip -o link show | awk -F': ' '{print $2}' | grep -E '^(zt|wg)'); do
+    CIDR=$(ip -4 -o addr show dev "$IFACE" 2>/dev/null | awk '{print $4}' | head -1)
+    [ -z "$CIDR" ] && continue
+    RESEAU=$(python3 -c "import ipaddress,sys; print(ipaddress.ip_network(sys.argv[1], strict=False))" "$CIDR" 2>/dev/null)
+    [ -z "$RESEAU" ] && continue
+    ufw allow from "$RESEAU" to any port 1812 proto udp > /dev/null 2>&1 || true
+    ufw allow from "$RESEAU" to any port 1813 proto udp > /dev/null 2>&1 || true
+    OUVERTS=$((OUVERTS + 1))
+  done
+  echo "   ports 1812 et 1813 ouverts sur ${OUVERTS} reseau(x) prive(s)"
+  echo "   (relancez ce script apres avoir rejoint un nouveau reseau)"
 fi
 
 echo "== [4/4] Verification =="
