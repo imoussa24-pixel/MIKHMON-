@@ -22,6 +22,66 @@ $wgConfig = tikras_wg_config();
 $wgPeers = tikras_wg_liste();
 $wgFlash = '';
 $wgFlashType = 'success';
+$wgScript = '';
+$wgScriptSession = '';
+$wgScriptIp = '';
+
+/*
+ * Un routeur neuf est d'abord configure sur le reseau local: le serveur ne
+ * peut donc pas le joindre. On reserve son adresse et on fournit le script a
+ * coller sur place; il rejoint ensuite le tunnel et devient administrable.
+ */
+if (tikras_has_post('preparer')) {
+  $nouveau = trim((string) tikras_post('nouveau_nom'));
+  $rapport = tikras_wg_preparer($nouveau);
+  $wgFlash = $rapport['message'];
+  $wgFlashType = $rapport['ok'] ? 'success' : 'danger';
+  if ($rapport['ok']) {
+    $wgScript = $rapport['script'];
+    $wgScriptSession = $nouveau;
+    $wgScriptIp = $rapport['ip'];
+  }
+  $wgPeers = tikras_wg_liste();
+}
+
+if (tikras_has_post('revoir_script')) {
+  $cible = (string) tikras_post('session');
+  $connus = tikras_wg_liste();
+  if (isset($connus[$cible]) && $connus[$cible]['private_key'] != '') {
+    $wgScript = tikras_wg_script_routeur($connus[$cible]['private_key'], $connus[$cible]['tunnel_ip'], $wgConfig);
+    $wgScriptSession = $cible;
+    $wgScriptIp = (string) $connus[$cible]['tunnel_ip'];
+  }
+}
+
+if (tikras_has_post('ajouter_mikhmon')) {
+  $cible = (string) tikras_post('session');
+  $connus = tikras_wg_liste();
+  if (!isset($connus[$cible])) {
+    $wgFlash = 'Routeur inconnu.';
+    $wgFlashType = 'danger';
+  } else {
+    $resultat = tikras_wg_ajouter_routeur_mikhmon(
+      $data,
+      $cible,
+      (string) $connus[$cible]['tunnel_ip'],
+      (string) tikras_post('routeur_user', 'admin'),
+      (string) tikras_post('routeur_pass'),
+      (string) tikras_post('routeur_hotspot'),
+      (string) tikras_post('routeur_dns'),
+      (string) tikras_post('routeur_devise')
+    );
+    $wgFlash = $resultat['message'];
+    $wgFlashType = $resultat['ok'] ? 'success' : 'danger';
+    if ($resultat['ok']) {
+      tikras_wg_enregistrer($cible, (string) $connus[$cible]['tunnel_ip'], array(
+        'privee' => (string) $connus[$cible]['private_key'],
+        'publique' => (string) $connus[$cible]['public_key'],
+      ), 'actif', '', true);
+      $wgPeers = tikras_wg_liste();
+    }
+  }
+}
 
 if (tikras_has_post('raccorder')) {
   $cible = (string) tikras_post('session');
@@ -103,6 +163,113 @@ if (!$wgConfig['disponible']) {
   </div>
 </div>
 
+<?php
+// Routeurs prepares mais pas encore enregistres dans TIKRAS IT.
+$wgEnAttente = array();
+foreach ($wgPeers as $nom => $pair) {
+  if (!isset($data[$nom])) {
+    $etat = tikras_wg_etat_pair($nom);
+    $handshake = isset($etat['handshake']) ? (int) $etat['handshake'] : 0;
+    $wgEnAttente[$nom] = array(
+      'pair' => $pair,
+      'vivant' => $handshake > 0 && (time() - $handshake) < 300,
+    );
+  }
+}
+?>
+
+<div class="tikras-panel">
+  <div class="tikras-panel-header">
+    <h3><i class="fa fa-plus-circle"></i> Nouveau routeur configuré en local</h3>
+  </div>
+  <div class="tikras-panel-body">
+    <p class="tikras-wg-intro">
+      Vous venez de configurer un routeur sur votre réseau local ? Il n'est pas
+      encore joignable depuis ce serveur. Réservez son adresse ici, collez le
+      script obtenu dans son terminal, et il rejoindra le tunnel tout seul.
+      Vous pourrez ensuite l'ajouter à TIKRAS IT en un clic.
+    </p>
+    <form method="post" action="" class="tikras-wg-nouveau">
+      <div class="tikras-field">
+        <label for="nouveau_nom">Nom du routeur</label>
+        <input class="form-control" id="nouveau_nom" type="text" name="nouveau_nom"
+               placeholder="ex : BOUTIQUE-CENTRE" pattern="[A-Za-z0-9_.-]+" required>
+      </div>
+      <button class="tikras-btn tikras-btn-primary" type="submit" name="preparer" value="1">
+        <i class="fa fa-magic"></i><span>Réserver une adresse</span>
+      </button>
+    </form>
+
+    <?php if ($wgScript != '') { ?>
+    <div class="tikras-wg-script">
+      <h4><i class="fa fa-terminal"></i> À coller dans le terminal de <?= tikras_h($wgScriptSession); ?></h4>
+      <p class="tikras-wg-intro">
+        Ouvrez le routeur avec Winbox ou WebFig (sur votre réseau local), allez dans
+        <strong>New Terminal</strong>, puis collez ces quatre lignes. Adresse attribuée :
+        <strong><?= tikras_h($wgScriptIp); ?></strong>
+      </p>
+      <textarea id="wgScriptTexte" class="form-control" rows="7" readonly><?= tikras_h($wgScript); ?></textarea>
+      <div class="tikras-form-actions">
+        <button class="tikras-btn tikras-btn-primary" type="button" onclick="copierScriptWg()">
+          <i class="fa fa-copy"></i><span>Copier le script</span>
+        </button>
+        <span class="tikras-version-note" id="wgCopieEtat"></span>
+      </div>
+    </div>
+    <?php } ?>
+  </div>
+</div>
+
+<?php if (count($wgEnAttente) > 0) { ?>
+<div class="tikras-panel">
+  <div class="tikras-panel-header">
+    <h3><i class="fa fa-hourglass-half"></i> Routeurs préparés, pas encore dans TIKRAS IT</h3>
+    <span class="tikras-version-note"><?= count($wgEnAttente); ?> en attente</span>
+  </div>
+  <div class="tikras-panel-body">
+    <?php foreach ($wgEnAttente as $nom => $info) { ?>
+    <div class="tikras-wg-attente">
+      <div class="tikras-wg-attente-tete">
+        <strong><?= tikras_h($nom); ?></strong>
+        <span class="tikras-wg-session"><?= tikras_h($info['pair']['tunnel_ip']); ?></span>
+        <?php if ($info['vivant']) {
+          echo '<span class="tikras-status tikras-status-online"><i class="fa fa-check-circle"></i> Tunnel actif</span>';
+        } else {
+          echo '<span class="tikras-status tikras-status-offline"><i class="fa fa-clock-o"></i> En attente du routeur</span>';
+        } ?>
+      </div>
+      <?php if ($info['vivant']) { ?>
+      <form method="post" action="" class="tikras-wg-ajout">
+        <input type="hidden" name="session" value="<?= tikras_h($nom); ?>">
+        <div class="tikras-wg-ajout-champs">
+          <input class="form-control" type="text" name="routeur_user" value="admin" placeholder="Identifiant" required>
+          <input class="form-control" type="password" name="routeur_pass" placeholder="Mot de passe du routeur">
+          <input class="form-control" type="text" name="routeur_hotspot" placeholder="Nom du hotspot">
+          <input class="form-control" type="text" name="routeur_dns" placeholder="DNS (ex : wifi.zone)">
+          <input class="form-control" type="text" name="routeur_devise" value="CFA" placeholder="Devise">
+        </div>
+        <button class="tikras-btn tikras-btn-primary" type="submit" name="ajouter_mikhmon" value="1">
+          <i class="fa fa-plus"></i><span>Ajouter à TIKRAS IT</span>
+        </button>
+      </form>
+      <?php } else { ?>
+      <form method="post" action="" class="tikras-wg-ajout">
+        <input type="hidden" name="session" value="<?= tikras_h($nom); ?>">
+        <p class="tikras-wg-intro">
+          Le routeur n'a pas encore contacté le serveur. Vérifiez que le script a bien
+          été collé, puis actualisez cette page.
+        </p>
+        <button class="tikras-btn tikras-btn-muted" type="submit" name="revoir_script" value="1">
+          <i class="fa fa-terminal"></i><span>Revoir le script</span>
+        </button>
+      </form>
+      <?php } ?>
+    </div>
+    <?php } ?>
+  </div>
+</div>
+<?php } ?>
+
 <div class="tikras-panel">
   <div class="tikras-panel-header">
     <h3><i class="fa fa-shield"></i> Routeurs</h3>
@@ -183,6 +350,19 @@ if (!$wgConfig['disponible']) {
 </div>
 
 <script>
+function copierScriptWg() {
+  var champ = document.getElementById('wgScriptTexte');
+  var etat = document.getElementById('wgCopieEtat');
+  if (!champ) { return; }
+  champ.select();
+  champ.setSelectionRange(0, 99999);
+  try {
+    document.execCommand('copy');
+    if (etat) { etat.textContent = 'Script copié.'; }
+  } catch (e) {
+    if (etat) { etat.textContent = 'Sélectionnez le texte puis copiez-le.'; }
+  }
+}
 document.getElementById('wgSearch').addEventListener('input', function () {
   var terme = this.value.toLowerCase();
   var lignes = document.querySelectorAll('.tikras-wg-row');

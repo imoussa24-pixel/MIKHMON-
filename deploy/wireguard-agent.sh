@@ -59,13 +59,33 @@ traiter_demandes() {
   local fichier
   for fichier in "$DEMANDES"/*.json; do
     [ -e "$fichier" ] || continue
-    local cle ip session
-    cle=$(grep -oE '"public_key" *: *"[^"]*"' "$fichier" | cut -d'"' -f4)
-    ip=$(grep -oE '"tunnel_ip" *: *"[^"]*"' "$fichier" | cut -d'"' -f4)
-    session=$(grep -oE '"session" *: *"[^"]*"' "$fichier" | cut -d'"' -f4)
+    local champs cle ip session
+    # Lecture par un vrai analyseur JSON: les cles WireGuard contiennent des
+    # "/" que l'encodage echappe en "\/", et une cle mal decodee rend le
+    # fichier de configuration invalide, ce qui ferait tomber tout le tunnel.
+    champs=$(python3 - "$fichier" <<'PYEOF' 2>/dev/null
+import json, sys
+try:
+    d = json.load(open(sys.argv[1]))
+    print(d.get("public_key", ""))
+    print(d.get("tunnel_ip", ""))
+    print(d.get("session", ""))
+except Exception:
+    pass
+PYEOF
+)
+    cle=$(echo "$champs" | sed -n 1p)
+    ip=$(echo "$champs" | sed -n 2p)
+    session=$(echo "$champs" | sed -n 3p)
 
-    if [ -z "$cle" ] || [ -z "$ip" ]; then
-      echo "$(date '+%F %T') demande invalide: $(basename "$fichier")"
+    # Une cle WireGuard valide fait 44 caracteres base64 terminés par "=".
+    if ! echo "$cle" | grep -qE '^[A-Za-z0-9+/]{43}=$'; then
+      echo "$(date '+%F %T') cle invalide, demande ignoree: $(basename "$fichier")"
+      rm -f "$fichier"
+      continue
+    fi
+    if ! echo "$ip" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$'; then
+      echo "$(date '+%F %T') adresse invalide, demande ignoree: $(basename "$fichier")"
       rm -f "$fichier"
       continue
     fi
@@ -108,9 +128,21 @@ PYEOF
         echo "AllowedIPs = ${ip}/32"
       } >> "$CONF"
       # Application a chaud: pas de coupure des tunnels deja etablis.
-      wg set wg0 peer "$cle" allowed-ips "${ip}/32" 2>/dev/null \
-        && echo "$(date '+%F %T') pair ajoute: ${session} -> ${ip}" \
-        || { systemctl restart wg-quick@wg0; echo "$(date '+%F %T') pair ajoute (rechargement): ${session}"; }
+      if wg set wg0 peer "$cle" allowed-ips "${ip}/32" 2>/dev/null; then
+        echo "$(date '+%F %T') pair ajoute: ${session} -> ${ip}"
+      else
+        # Un fichier invalide empecherait l'interface de redemarrer: on verifie
+        # avant de toucher au service, et on restaure le cas echeant.
+        cp "$CONF" "${CONF}.avant-ajout"
+        if wg-quick strip wg0 > /dev/null 2>&1; then
+          systemctl restart wg-quick@wg0
+          echo "$(date '+%F %T') pair ajoute (rechargement): ${session}"
+        else
+          mv "${CONF}.avant-ajout" "$CONF"
+          echo "$(date '+%F %T') configuration invalide, ajout annule: ${session}"
+        fi
+        rm -f "${CONF}.avant-ajout"
+      fi
     fi
     rm -f "$fichier"
   done

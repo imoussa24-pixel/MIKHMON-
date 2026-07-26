@@ -13,6 +13,8 @@
  */
 include_once(dirname(__FILE__) . '/tikras_core.php');
 include_once(dirname(__FILE__) . '/tikras_storage.php');
+include_once(dirname(__FILE__) . '/tikras_config_store.php');
+include_once(dirname(__FILE__) . '/routeros_api.class.php');
 
 if (!function_exists('tikras_wg_dir')) {
   function tikras_wg_dir()
@@ -143,12 +145,14 @@ if (!function_exists('tikras_wg_deposer_demande')) {
   {
     $fichier = tikras_wg_dir() . DIRECTORY_SEPARATOR . 'demandes' . DIRECTORY_SEPARATOR
       . preg_replace('/[^A-Za-z0-9_.-]/', '_', (string) $session) . '.json';
+    // Les cles WireGuard contiennent des "/": on evite leur echappement pour
+    // qu'une lecture simple du fichier ne produise pas une cle invalide.
     $contenu = json_encode(array(
       'session' => (string) $session,
       'public_key' => (string) $publique,
       'tunnel_ip' => (string) $ip,
       'demande_at' => date('c'),
-    ));
+    ), JSON_UNESCAPED_SLASHES);
     return @file_put_contents($fichier, $contenu) !== false;
   }
 }
@@ -323,6 +327,122 @@ if (!function_exists('tikras_wg_enregistrer')) {
     } catch (Exception $e) {
       return false;
     }
+  }
+}
+
+if (!function_exists('tikras_wg_preparer')) {
+  /*
+   * Prepare un routeur qui n'est pas encore joignable depuis le serveur:
+   * typiquement un routeur neuf, configure sur le reseau local.
+   * On reserve son adresse et on produit le script a coller sur place; des
+   * que le tunnel monte, le routeur devient joignable et peut etre ajoute.
+   */
+  function tikras_wg_preparer($session)
+  {
+    $rapport = array('ok' => false, 'message' => '', 'ip' => '', 'script' => '');
+    $session = trim((string) $session);
+    $config = tikras_wg_config();
+
+    if ($session == '' || !preg_match('/^[A-Za-z0-9_.-]+$/', $session)) {
+      $rapport['message'] = 'Nom invalide : lettres, chiffres, point, tiret et souligne uniquement.';
+      return $rapport;
+    }
+    if (!$config['disponible'] || $config['endpoint'] == '') {
+      $rapport['message'] = "Le concentrateur n'est pas encore pret sur le serveur.";
+      return $rapport;
+    }
+
+    $connus = tikras_wg_liste();
+    if (isset($connus[$session]) && $connus[$session]['private_key'] != '') {
+      $ip = (string) $connus[$session]['tunnel_ip'];
+      $cles = array(
+        'privee' => (string) $connus[$session]['private_key'],
+        'publique' => (string) $connus[$session]['public_key'],
+      );
+    } else {
+      $cles = tikras_wg_generer_cles();
+      if ($cles === null) {
+        $rapport['message'] = 'Generation de cles indisponible sur ce serveur.';
+        return $rapport;
+      }
+      $ip = tikras_wg_prochaine_ip();
+      if ($ip == '') {
+        $rapport['message'] = 'Plus aucune adresse libre dans la plage du tunnel.';
+        return $rapport;
+      }
+    }
+
+    if (!tikras_wg_deposer_demande($session, $cles['publique'], $ip)) {
+      $rapport['message'] = "Impossible d'ecrire la demande pour le serveur.";
+      return $rapport;
+    }
+    tikras_wg_enregistrer($session, $ip, $cles, 'prepare', '', false);
+    tikras_storage_audit('wireguard.preparation', 'router', $session, $session,
+      'Adresse de tunnel reservee pour un nouveau routeur.', array('tunnel_ip' => $ip));
+
+    $rapport['ok'] = true;
+    $rapport['ip'] = $ip;
+    $rapport['script'] = tikras_wg_script_routeur($cles['privee'], $ip, $config);
+    $rapport['message'] = 'Adresse ' . $ip . ' reservee. Collez le script ci-dessous dans le routeur.';
+    return $rapport;
+  }
+}
+
+if (!function_exists('tikras_wg_script_routeur')) {
+  /* Commandes RouterOS 7 a coller sur un routeur non encore joignable. */
+  function tikras_wg_script_routeur($clePrivee, $ipTunnel, $config)
+  {
+    $lignes = array(
+      '/interface/wireguard/add name=wg-tikras listen-port=13231 private-key="' . $clePrivee . '" comment="TIKRAS IT"',
+      '/ip/address/add address=' . $ipTunnel . '/16 interface=wg-tikras comment="TIKRAS IT"',
+      '/interface/wireguard/peers/add interface=wg-tikras public-key="' . $config['cle_publique'] . '"'
+        . ' endpoint-address=' . $config['endpoint'] . ' endpoint-port=' . $config['port']
+        . ' allowed-address=' . $config['reseau'] . ' persistent-keepalive=25s comment="Serveur TIKRAS"',
+      '/ip/firewall/filter/add chain=input in-interface=wg-tikras action=accept comment="TIKRAS IT: acces par le tunnel" place-before=0',
+    );
+    return implode("\n", $lignes);
+  }
+}
+
+if (!function_exists('tikras_wg_ajouter_routeur_mikhmon')) {
+  /*
+   * Enregistre le routeur dans TIKRAS IT en utilisant son adresse de tunnel.
+   * Utilise apres qu'un routeur prepare a joint le concentrateur.
+   */
+  function tikras_wg_ajouter_routeur_mikhmon(&$data, $session, $ip, $utilisateur, $motDePasse, $hotspot, $dns, $devise)
+  {
+    if (!is_array($data)) {
+      $data = array();
+    }
+    $session = trim((string) $session);
+    if ($session == '' || !preg_match('/^[A-Za-z0-9_.-]+$/', $session)) {
+      return array('ok' => false, 'message' => 'Nom de routeur invalide.');
+    }
+    if ($utilisateur == '') {
+      return array('ok' => false, 'message' => "L'identifiant du routeur est obligatoire.");
+    }
+
+    $hotspot = $hotspot != '' ? $hotspot : $session;
+    $data[$session] = array(
+      '1' => $session . '!' . $ip,
+      $session . '@|@' . $utilisateur,
+      $session . '#|#' . encrypt($motDePasse),
+      $session . '%' . $hotspot,
+      $session . '^' . $dns,
+      $session . '&' . ($devise != '' ? $devise : 'CFA'),
+      $session . '*10',
+      $session . '(1',
+      $session . ')',
+      $session . '=10',
+      $session . '@!@disable',
+    );
+
+    if (!tikras_config_write_all($data)) {
+      return array('ok' => false, 'message' => "Enregistrement impossible : verifiez les droits d'ecriture.");
+    }
+    tikras_storage_audit('wireguard.ajout_routeur', 'router', $session, $session,
+      'Routeur ajoute a TIKRAS IT via son adresse de tunnel.', array('tunnel_ip' => $ip));
+    return array('ok' => true, 'message' => 'Routeur ' . $session . ' ajoute avec l\'adresse ' . $ip . '.');
   }
 }
 
