@@ -117,6 +117,7 @@ $autoJobLabels = array(
   'health_check' => 'Surveillance routeurs',
   'sync_routers' => 'Sync base locale',
   'roaming_retry' => 'Reprise roaming',
+  'tickets' => 'Tickets planifiés',
   'auto_backup' => 'Sauvegarde auto',
   'prune' => 'Nettoyage journaux',
 );
