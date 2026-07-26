@@ -21,6 +21,7 @@ $radFlash = '';
 $radFlashType = 'success';
 $radScript = '';
 $radScriptSession = '';
+$radActions = array();
 
 if (tikras_has_post('autoriser')) {
   $cible = (string) tikras_post('session');
@@ -57,26 +58,47 @@ if (tikras_has_post('autoriser')) {
 
       $profilsVises = array();
       $profilSaisi = trim((string) tikras_post('profil_hotspot', ''));
-      if ($profilSaisi != '') {
-        $profilsVises = array($profilSaisi);
-      } else {
-        include_once(dirname(__DIR__) . '/lib/tikras_routeros.php');
-        $apiRouteur = tikras_routeros_create();
-        $apiRouteur->attempts = 1;
-        $apiRouteur->timeout = 8;
-        $utilisateurRouteur = tikras_cfg_value($data, $cible, 2, '@|@', '');
-        $passRouteur = decrypt(tikras_cfg_value($data, $cible, 3, '#|#', ''));
-        if (tikras_routeros_connect($apiRouteur, $adresse, $utilisateurRouteur, $passRouteur, $cible, array('timeout' => 8, 'force' => true))) {
-          $profilsVises = tikras_rad_profils_actifs($apiRouteur);
-          tikras_routeros_disconnect($apiRouteur);
+      $avecPpp = tikras_post('avec_ppp') != '';
+
+      /*
+       * Le raccordement est applique directement sur le routeur. Le script a
+       * coller reste affiche en repli, pour un routeur momentanement
+       * injoignable ou pour verification.
+       */
+      include_once(dirname(__DIR__) . '/lib/tikras_routeros.php');
+      $apiRouteur = tikras_routeros_create();
+      $apiRouteur->attempts = 1;
+      $apiRouteur->timeout = 8;
+      $utilisateurRouteur = tikras_cfg_value($data, $cible, 2, '@|@', '');
+      $passRouteur = decrypt(tikras_cfg_value($data, $cible, 3, '#|#', ''));
+      if (tikras_routeros_connect($apiRouteur, $adresse, $utilisateurRouteur, $passRouteur, $cible, array('timeout' => 8, 'force' => true))) {
+        if ($profilSaisi == '') {
+          $applique = tikras_rad_appliquer_routeur($apiRouteur, $adresseServeur, $resultat['secret'], $avecPpp);
+          $radActions = $applique['actions'];
+          if ($applique['ok']) {
+            $profilsVises = $applique['profils'];
+            $radFlash .= ' ' . $applique['message'];
+          } else {
+            $radFlash .= ' Configuration automatique impossible : ' . $applique['message']
+              . ' Collez le script ci-dessous sur le routeur.';
+            $radFlashType = 'warning';
+            $profilsVises = tikras_rad_profils_actifs($apiRouteur);
+          }
+        } else {
+          $profilsVises = array($profilSaisi);
         }
+        tikras_routeros_disconnect($apiRouteur);
+      } else {
+        $profilsVises = $profilSaisi != '' ? array($profilSaisi) : array();
+        $radFlash .= " Routeur injoignable : collez le script ci-dessous quand il sera accessible.";
+        $radFlashType = 'warning';
       }
 
       $radScript = tikras_rad_script_routeur(
         $adresseServeur,
         $resultat['secret'],
         $profilsVises,
-        tikras_post('avec_ppp') != ''
+        $avecPpp
       );
       if (count($profilsVises) > 0) {
         $radFlash .= ' Profil(s) visé(s) : ' . implode(', ', $profilsVises) . '.';
@@ -158,16 +180,41 @@ if (!$radEtat['disponible']) {
   </div>
 </div>
 
-<?php if ($radScript != '') { ?>
+<?php if (count($radActions) > 0) { ?>
 <div class="tikras-panel">
   <div class="tikras-panel-header">
-    <h3><i class="fa fa-terminal"></i> À coller dans <?= tikras_h($radScriptSession); ?></h3>
+    <h3><i class="fa fa-check-circle"></i> Appliqué sur <?= tikras_h($radScriptSession); ?></h3>
   </div>
   <div class="tikras-panel-body">
     <p class="tikras-wg-intro">
+      Le routeur a été configuré directement : vous n'avez rien à recopier.
+    </p>
+    <ul class="tikras-wg-intro">
+      <?php foreach ($radActions as $action) { ?>
+      <li><?= tikras_h($action); ?></li>
+      <?php } ?>
+    </ul>
+  </div>
+</div>
+<?php } ?>
+
+<?php if ($radScript != '') { ?>
+<div class="tikras-panel">
+  <div class="tikras-panel-header">
+    <h3><i class="fa fa-terminal"></i>
+      <?= count($radActions) > 0 ? 'Équivalent en commandes' : 'À coller dans'; ?>
+      <?= tikras_h($radScriptSession); ?></h3>
+  </div>
+  <div class="tikras-panel-body">
+    <p class="tikras-wg-intro">
+      <?php if (count($radActions) > 0) { ?>
+      Pour référence, ou pour rejouer le raccordement à la main. Rien à faire
+      si le compte-rendu ci-dessus est complet.
+      <?php } else { ?>
       Ces commandes ajoutent le serveur RADIUS au routeur et activent
       l'authentification à distance sur le profil indiqué. Elles ne suppriment
       ni les tickets déjà présents sur le routeur, ni ses autres réglages.
+      <?php } ?>
     </p>
     <div class="tikras-wg-script">
       <textarea id="radScriptTexte" class="form-control" rows="6" readonly><?= tikras_h($radScript); ?></textarea>

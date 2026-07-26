@@ -131,29 +131,84 @@ if (!function_exists('tikras_rad_autoriser_routeur')) {
       return array('ok' => false, 'message' => "Serveur RADIUS indisponible.");
     }
     $session = trim((string) $session);
-    $adresse = trim((string) $adresse);
-    if ($session == '' || $adresse == '') {
-      return array('ok' => false, 'message' => 'Routeur ou adresse manquante.');
+    if ($session == '') {
+      return array('ok' => false, 'message' => 'Routeur manquant.');
     }
+
+    /*
+     * Un routeur peut atteindre le serveur par plusieurs chemins (ZeroTier,
+     * tunnel WireGuard), et l'adresse source vue par le serveur change avec
+     * le chemin emprunte. Le serveur rejette toute adresse qu'il ne connait
+     * pas, en la signalant seulement dans son journal: on enregistre donc
+     * chacune des adresses possibles du routeur, sous un secret commun.
+     */
+    $adresses = is_array($adresse) ? $adresse : array($adresse);
+    $adresses[] = tikras_rad_adresse_tunnel($session);
+    $propres = array();
+    foreach ($adresses as $candidate) {
+      $candidate = trim((string) $candidate);
+      if (strpos($candidate, ':') !== false) {
+        $candidate = substr($candidate, 0, strpos($candidate, ':'));
+      }
+      if ($candidate != '' && filter_var($candidate, FILTER_VALIDATE_IP)) {
+        $propres[$candidate] = true;
+      }
+    }
+    if (count($propres) < 1) {
+      return array('ok' => false, 'message' => 'Aucune adresse valide pour ce routeur.');
+    }
+
     try {
       $pdo = tikras_rad_pdo();
-      $stmt = $pdo->prepare('SELECT id, secret FROM nas WHERE shortname = ?');
+      $stmt = $pdo->prepare('SELECT secret FROM nas WHERE shortname = ? LIMIT 1');
       $stmt->execute(array($session));
-      $existant = $stmt->fetch();
-      $secret = ($existant !== false && $existant['secret'] != '') ? $existant['secret'] : tikras_rad_secret();
+      $ancien = $stmt->fetchColumn();
+      $secret = ($ancien !== false && $ancien != '') ? $ancien : tikras_rad_secret();
 
-      if ($existant !== false) {
-        $stmt = $pdo->prepare('UPDATE nas SET nasname = ?, secret = ?, description = ? WHERE id = ?');
-        $stmt->execute(array($adresse, $secret, $description, $existant['id']));
-      } else {
-        $stmt = $pdo->prepare('INSERT INTO nas (nasname, shortname, type, secret, description) VALUES (?, ?, ?, ?, ?)');
-        $stmt->execute(array($adresse, $session, 'mikrotik', $secret, $description));
+      // On repart des adresses actuelles: une adresse retiree ne doit plus
+      // etre acceptee.
+      $stmt = $pdo->prepare('DELETE FROM nas WHERE shortname = ?');
+      $stmt->execute(array($session));
+
+      $ajout = $pdo->prepare('INSERT OR REPLACE INTO nas (nasname, shortname, type, secret, description) VALUES (?, ?, ?, ?, ?)');
+      foreach (array_keys($propres) as $uneAdresse) {
+        $ajout->execute(array($uneAdresse, $session, 'mikrotik', $secret, $description));
       }
+
       tikras_storage_audit('radius.nas_ajout', 'router', $session, $session,
-        'Routeur autorise sur le serveur RADIUS.', array('adresse' => $adresse));
-      return array('ok' => true, 'message' => 'Routeur autorisé.', 'secret' => $secret, 'adresse' => $adresse);
+        'Routeur autorise sur le serveur RADIUS.', array('adresses' => array_keys($propres)));
+      return array(
+        'ok' => true,
+        'message' => 'Routeur autorisé (' . count($propres) . ' adresse(s) reconnue(s)).',
+        'secret' => $secret,
+        'adresse' => reset($adresses),
+        'adresses' => array_keys($propres),
+      );
     } catch (Exception $e) {
       return array('ok' => false, 'message' => $e->getMessage());
+    }
+  }
+}
+
+if (!function_exists('tikras_rad_adresse_tunnel')) {
+  /* Adresse du routeur dans le tunnel WireGuard, s'il y est raccorde. */
+  function tikras_rad_adresse_tunnel($session)
+  {
+    if (!tikras_storage_available()) {
+      return '';
+    }
+    try {
+      $pdo = tikras_storage_pdo();
+      $tables = $pdo->query("SELECT name FROM sqlite_master WHERE type='table' AND name='wireguard_peers'")->fetchAll();
+      if (count($tables) < 1) {
+        return '';
+      }
+      $stmt = $pdo->prepare('SELECT tunnel_ip FROM wireguard_peers WHERE session = ? LIMIT 1');
+      $stmt->execute(array((string) $session));
+      $valeur = $stmt->fetchColumn();
+      return $valeur === false ? '' : (string) $valeur;
+    } catch (Exception $e) {
+      return '';
     }
   }
 }
@@ -446,6 +501,131 @@ if (!function_exists('tikras_rad_script_routeur')) {
       $lignes[] = '/ppp/aaa/set use-radius=yes accounting=yes';
     }
     return implode("\n", $lignes);
+  }
+}
+
+if (!function_exists('tikras_rad_appliquer_routeur')) {
+  /*
+   * Applique la configuration RADIUS sur le routeur, par l'API.
+   *
+   * Coller un script a la main laisse passer trois erreurs qui ne se voient
+   * pas: une adresse de serveur prise sur un autre reseau, un profil Hotspot
+   * qu'aucun serveur n'utilise, et surtout un ancien serveur RADIUS (User
+   * Manager local en 127.0.0.1) laisse en place. RouterOS interroge les
+   * serveurs dans l'ordre: l'ancien repond avant le notre, ou fait patienter
+   * jusqu'a expiration du delai, et le portail refuse le ticket.
+   *
+   * Retourne un compte-rendu detaille de ce qui a ete change.
+   */
+  function tikras_rad_appliquer_routeur($api, $adresseServeur, $secret, $avecPpp = false)
+  {
+    $rapport = array('ok' => false, 'actions' => array(), 'profils' => array(), 'message' => '');
+    if (!is_object($api)) {
+      $rapport['message'] = 'Routeur injoignable.';
+      return $rapport;
+    }
+    $adresseServeur = trim((string) $adresseServeur);
+    if ($adresseServeur == '' || !filter_var($adresseServeur, FILTER_VALIDATE_IP)) {
+      $rapport['message'] = "Adresse du serveur inconnue pour ce routeur.";
+      return $rapport;
+    }
+
+    try {
+      /*
+       * 1. Les declarations concurrentes. On ne supprime jamais une entree
+       * etrangere: on lui retire seulement le service hotspot, en conservant
+       * ses autres usages (ppp, login...). Une entree qui n'aurait plus aucun
+       * service est desactivee plutot que detruite, pour rester reversible.
+       */
+      $existants = $api->comm('/radius/print');
+      if (is_array($existants)) {
+        foreach ($existants as $entree) {
+          $id = tikras_array_get($entree, '.id', '');
+          if ($id == '') {
+            continue;
+          }
+          if (tikras_array_get($entree, 'comment', '') === 'TIKRAS RADIUS') {
+            $api->comm('/radius/remove', array('.id' => $id));
+            continue;
+          }
+          $services = tikras_array_get($entree, 'service', '');
+          if (strpos($services, 'hotspot') === false) {
+            continue;
+          }
+          $restants = array();
+          foreach (explode(',', $services) as $service) {
+            $service = trim($service);
+            if ($service != '' && $service !== 'hotspot') {
+              $restants[] = $service;
+            }
+          }
+          $adresseAncienne = tikras_array_get($entree, 'address', '?');
+          if (count($restants) > 0) {
+            $api->comm('/radius/set', array('.id' => $id, 'service' => implode(',', $restants)));
+            $rapport['actions'][] = "Ancien serveur RADIUS " . $adresseAncienne
+              . " : service hotspot retiré (ses autres usages sont conservés).";
+          } else {
+            $api->comm('/radius/set', array('.id' => $id, 'disabled' => 'yes'));
+            $rapport['actions'][] = "Ancien serveur RADIUS " . $adresseAncienne . " : désactivé.";
+          }
+        }
+      }
+
+      // 2. Notre serveur.
+      $ajout = $api->comm('/radius/add', array(
+        'service' => 'hotspot' . ($avecPpp ? ',ppp' : ''),
+        'address' => $adresseServeur,
+        'secret' => (string) $secret,
+        'authentication-port' => '1812',
+        'accounting-port' => '1813',
+        'timeout' => '3s',
+        'comment' => 'TIKRAS RADIUS',
+      ));
+      if (is_array($ajout) && isset($ajout['!trap'][0]['message'])) {
+        $rapport['message'] = 'Refus du routeur : ' . $ajout['!trap'][0]['message'];
+        return $rapport;
+      }
+      $rapport['actions'][] = "Serveur " . $adresseServeur . " déclaré sur le routeur.";
+      $api->comm('/radius/incoming/set', array('accept' => 'yes'));
+
+      // 3. Les profils reellement rattaches a un serveur Hotspot.
+      $profils = tikras_rad_profils_actifs($api);
+      foreach ($profils as $profil) {
+        // On passe par l'identifiant interne: designer un profil par son nom
+        // echoue des qu'il contient un espace, ce qui est frequent.
+        $trouve = $api->comm('/ip/hotspot/profile/print', array(
+          '?name' => $profil,
+          '.proplist' => '.id',
+        ));
+        $id = (is_array($trouve) && isset($trouve[0]['.id'])) ? $trouve[0]['.id'] : '';
+        if ($id == '') {
+          continue;
+        }
+        $api->comm('/ip/hotspot/profile/set', array(
+          '.id' => $id,
+          'use-radius' => 'yes',
+          'radius-accounting' => 'yes',
+        ));
+        $rapport['profils'][] = $profil;
+      }
+      $profils = $rapport['profils'];
+      if (count($profils) > 0) {
+        $rapport['actions'][] = "Profil(s) basculé(s) en RADIUS : " . implode(', ', $profils) . ".";
+      } else {
+        $rapport['actions'][] = "Aucun profil Hotspot actif trouvé : vérifiez que ce routeur sert bien un Hotspot.";
+      }
+      if ($avecPpp) {
+        $api->comm('/ppp/aaa/set', array('use-radius' => 'yes', 'accounting' => 'yes'));
+        $rapport['actions'][] = "PPP basculé en RADIUS.";
+      }
+
+      $rapport['ok'] = true;
+      $rapport['message'] = 'Routeur configuré automatiquement.';
+      return $rapport;
+    } catch (Exception $e) {
+      $rapport['message'] = $e->getMessage();
+      return $rapport;
+    }
   }
 }
 ?>
