@@ -65,12 +65,13 @@ echo "</th>";
   <tbody> 
 <?php
 for ($i = 0; $i < $TotalReg; $i++) {
+	// Un cookie sans domaine renseigne n'expose pas la cle correspondante.
 	$cookies = $getcookies[$i];
-	$id = $cookies['.id'];
-	$user = $cookies['user'];
-	$maca = $cookies['mac-address'];
-	$domain = $cookies['domain'];
-	$exp = formatDTM($cookies['expires-in']);
+	$id = tikras_array_get($cookies, '.id', '');
+	$user = tikras_array_get($cookies, 'user', '');
+	$maca = tikras_array_get($cookies, 'mac-address', '');
+	$domain = tikras_array_get($cookies, 'domain', '');
+	$exp = formatDTM(tikras_array_get($cookies, 'expires-in', '0s'));
 
 	$onclickcookie = "loadpage('./?remove-cookie=" . tikras_js_string($id) . "&session=" . tikras_js_string(rawurlencode($session)) . "')";
 

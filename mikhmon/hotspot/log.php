@@ -59,18 +59,23 @@ for ($i = 0; $i < $TotalReg; $i++) {
 	if (substr($log[$i]['message'], 0, 2) == "->") {
 		echo "<td>" . tikras_h($time) . "</td>";
 	//echo substr($mess[1], 0,2);
+		// Les messages du journal RouterOS n'ont pas tous le meme nombre de
+		// segments: on lit chaque position avec un defaut vide.
+		$seg = function ($index) use ($mess) {
+			return isset($mess[$index]) ? $mess[$index] : '';
+		};
 		echo "<td>";
 		if (count($mess) > 6) {
-			echo tikras_h($mess[1] . ":" . $mess[2] . ":" . $mess[3] . ":" . $mess[4] . ":" . $mess[5] . ":" . $mess[6]);
+			echo tikras_h($seg(1) . ":" . $seg(2) . ":" . $seg(3) . ":" . $seg(4) . ":" . $seg(5) . ":" . $seg(6));
 		} else {
-			echo tikras_h($mess[1]);
+			echo tikras_h($seg(1));
 		}
 		echo "</td>";
 		echo "<td>";
 		if (count($mess) > 6) {
-			echo tikras_h(str_replace("trying to", "", $mess[7] . " " . $mess[8] . " " . $mess[9] . " " . $mess[10]));
+			echo tikras_h(trim(str_replace("trying to", "", $seg(7) . " " . $seg(8) . " " . $seg(9) . " " . $seg(10))));
 		} else {
-			echo tikras_h(str_replace("trying to", "", $mess[2] . " " . $mess[3] . " " . $mess[4] . " " . $mess[5]));
+			echo tikras_h(trim(str_replace("trying to", "", $seg(2) . " " . $seg(3) . " " . $seg(4) . " " . $seg(5))));
 		}
 		echo "</td>";
 	} else {

@@ -93,30 +93,35 @@ if (!isset($_SESSION["mikhmon"])) {
 <?php
 for ($i = 0; $i < $TotalReg; $i++) {
 	$hosts = $gethosts[$i];
-	$id = $hosts['.id'];
+	// Les hotes sans bail DHCP ou sans commentaire n'exposent pas ces cles.
+	$id = tikras_array_get($hosts, '.id', '');
 
-	$maca = $hosts['mac-address'];
-	$addr = $hosts['address'];
-	$toaddr = $hosts['to-address'];
-	$server = $hosts['server'];
-	$commt = $hosts['comment'];
+	$maca = tikras_array_get($hosts, 'mac-address', '');
+	$addr = tikras_array_get($hosts, 'address', '');
+	$toaddr = tikras_array_get($hosts, 'to-address', '');
+	$server = tikras_array_get($hosts, 'server', '');
+	$commt = tikras_array_get($hosts, 'comment', '');
+	$hostAuthorized = tikras_array_get($hosts, 'authorized', 'false');
+	$hostDhcp = tikras_array_get($hosts, 'DHCP', 'false');
+	$hostDynamic = tikras_array_get($hosts, 'dynamic', 'false');
+	$hostBypassed = tikras_array_get($hosts, 'bypassed', 'false');
 
 	$onclickhost = "loadpage('./?remove-host=" . tikras_js_string($id) . "&session=" . tikras_js_string(rawurlencode($session)) . "')";
 
 	echo "<tr>";
 	echo "<td style='text-align:center;'><span class='pointer'  title='Remove " . tikras_h($maca) . "' onclick=\"" . tikras_h($onclickhost) . "\"><i class='fa fa-minus-square text-danger'></i></span></td>";
 	echo "<td style='text-align:center;'>";
-	if ($hosts['authorized'] == "true" && $hosts['DHCP'] == "true") {
+	if ($hostAuthorized == "true" && $hostDhcp == "true") {
 		echo "<b class='text-success' title='A - authorized, H - DHCP'>A H</b>";
-	} elseif ($hosts['authorized'] == "true" && $hosts['dynamic'] == "true") {
+	} elseif ($hostAuthorized == "true" && $hostDynamic == "true") {
 		echo "<b class='text-success' title='A - Authorized, D - dynamic'>A D</b>";
-	} elseif ($hosts['authorized'] == "true") {
+	} elseif ($hostAuthorized == "true") {
 		echo "<b class='text-success' title='A - authorized'>A</b>";
-	} elseif ($hosts['DHCP'] == "true") {
+	} elseif ($hostDhcp == "true") {
 		echo "<b class='text-success' title='H - DHCP'>H</b>";
-	} elseif ($hosts['dynamic'] == "true") {
+	} elseif ($hostDynamic == "true") {
 		echo "<b class='text-success' title='D - dynamic'>D</b>";
-	} elseif ($hosts['bypassed'] == "true") {
+	} elseif ($hostBypassed == "true") {
 		echo "<b class='text-primary' title='P - Bypassed'>P</b>";
 	} else {
 	}

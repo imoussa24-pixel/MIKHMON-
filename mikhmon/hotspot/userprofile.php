@@ -76,21 +76,35 @@ if (!isset($_SESSION["mikhmon"])) {
   <tbody>
 <?php
 
+/*
+ * Les planificateurs sont recuperes en une seule fois puis indexes par nom.
+ * Auparavant la page interrogeait le routeur pour chaque profil: avec une
+ * vingtaine de profils et une liaison distante, l'affichage depassait dix
+ * secondes pour une information tenant dans un seul appel.
+ */
+$tikrasSchedulers = array();
+$tikrasSchedulerRows = tikras_routeros_comm($API, "/system/scheduler/print", array(".proplist" => ".id,name,disabled"), array());
+if (is_array($tikrasSchedulerRows)) {
+	foreach ($tikrasSchedulerRows as $tikrasSchedulerRow) {
+		if (isset($tikrasSchedulerRow['name']) && $tikrasSchedulerRow['name'] !== '') {
+			$tikrasSchedulers[(string) $tikrasSchedulerRow['name']] = $tikrasSchedulerRow;
+		}
+	}
+}
+
 for ($i = 0; $i < $TotalReg; $i++) {
 
+	// Un profil sans limite de debit ou sans script n'expose pas ces cles.
 	$profiledetalis = $getprofile[$i];
-	$pid = $profiledetalis['.id'];
-	$pname = $profiledetalis['name'];
-	$psharedu = $profiledetalis['shared-users'];
-	$pratelimit = $profiledetalis['rate-limit'];
-	$ponlogin = $profiledetalis['on-login'];
-	$getmonexpired = $API->comm("/system/scheduler/print", array(
-    "?name" => "$pname",
-  ));
-  $monexpired = $getmonexpired[0];
-  $monid = $monexpired['.id'];
-	$pmon = $monexpired['name'];
-	$chkpmon = $monexpired['disabled'];
+	$pid = tikras_array_get($profiledetalis, '.id', '');
+	$pname = tikras_array_get($profiledetalis, 'name', '');
+	$psharedu = tikras_array_get($profiledetalis, 'shared-users', '');
+	$pratelimit = tikras_array_get($profiledetalis, 'rate-limit', '');
+	$ponlogin = tikras_array_get($profiledetalis, 'on-login', '');
+	$monexpired = isset($tikrasSchedulers[$pname]) ? $tikrasSchedulers[$pname] : array();
+  $monid = tikras_array_get($monexpired, '.id', '');
+	$pmon = tikras_array_get($monexpired, 'name', '');
+	$chkpmon = tikras_array_get($monexpired, 'disabled', '');
 	if(empty($pmon) || $chkpmon == "true"){$moncolor = "text-orange";}else{$moncolor = "text-green";}
 	echo "<tr>";
 	?>
@@ -105,9 +119,14 @@ for ($i = 0; $i < $TotalReg; $i++) {
 	echo "</td>";
 
 	echo "<td>";
-	$getexpmode = explode(",", $ponlogin);
+	// Le script on-login n'existe que sur les profils crees par TIKRAS IT:
+	// ailleurs il est vide et le decoupage ne renvoie qu'un seul segment.
+	$onLoginParts = explode(",", (string) $ponlogin);
+	$partieOnLogin = function ($index) use ($onLoginParts) {
+		return isset($onLoginParts[$index]) ? $onLoginParts[$index] : '';
+	};
 // get expired mode
-	$expmode = $getexpmode[1];
+	$expmode = $partieOnLogin(1);
 	if ($expmode == "rem") {
 		echo "Remove";
 	} elseif ($expmode == "ntf") {
@@ -122,15 +141,13 @@ for ($i = 0; $i < $TotalReg; $i++) {
 	echo "</td>";
 	echo "<td>";
 // get validity
-	$getvalid = explode(",", $ponlogin);
-	echo $getvalid[3];
+	echo tikras_h($partieOnLogin(3));
 
 	echo "</td>";
 
 	echo "<td style='text-align:right;'>";
 // get price
-	$getprice = explode(",", $ponlogin);
-	$price = trim($getprice[2]);
+	$price = trim($partieOnLogin(2));
 	if ($price == "" || $price == "0") {
 		echo "";
 	} else {
@@ -144,8 +161,7 @@ for ($i = 0; $i < $TotalReg; $i++) {
 	echo "</td>";
 	echo "<td style='text-align:right;'>";
 // get price
-	$getsprice = explode(",", $ponlogin);
-	$price = trim($getsprice[4]);
+	$price = trim($partieOnLogin(4));
 	if ($price == "" || $price == "0") {
 		echo "";
 	} else {
@@ -159,8 +175,7 @@ for ($i = 0; $i < $TotalReg; $i++) {
 	echo "</td>";
 	echo "<td>";
 
-	$getgracep = explode(",", $ponlogin);
-	echo $getgracep[6];
+	echo tikras_h($partieOnLogin(6));
 	echo "</td>";
 	echo "</tr>";
 }

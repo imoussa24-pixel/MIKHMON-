@@ -69,21 +69,21 @@ echo "</th>";
 <?php
 for ($i = 0; $i < $TotalReg; $i++) {
 	$lease = $getlease[$i];
-	$id = $lease['.id'];
+	// Un bail sans client connecte n'expose ni nom d'hote ni adresse active.
+	$id = tikras_array_get($lease, '.id', '');
 
-
-	$addr = $lease['address'];
-	$maca = $lease['mac-address'];
-	$server = $lease['server'];
-	$aaddr = $lease['active-address'];
-	$amaca = $lease['active-mac-address'];
-	$ahostname = $lease['host-name'];
-	$status = $lease['status'];
+	$addr = tikras_array_get($lease, 'address', '');
+	$maca = tikras_array_get($lease, 'mac-address', '');
+	$server = tikras_array_get($lease, 'server', '');
+	$aaddr = tikras_array_get($lease, 'active-address', '');
+	$amaca = tikras_array_get($lease, 'active-mac-address', '');
+	$ahostname = tikras_array_get($lease, 'host-name', '');
+	$status = tikras_array_get($lease, 'status', '');
 
 
 	echo "<tr>";
 	echo "<td style='text-align:center;'>";
-	if ($lease['dynamic'] == "true") {
+	if (tikras_array_get($lease, 'dynamic', 'false') == "true") {
 		echo "<b title='D - dynamic'>D</b>";
 	} else {
 		echo "<b title='S - static'>S</b>";

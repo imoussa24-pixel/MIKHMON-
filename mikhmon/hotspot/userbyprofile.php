@@ -39,7 +39,7 @@ if (!isset($_SESSION["mikhmon"])) {
         <div class="box bmh-75 box-bordered <?= $color[rand(1, 11)]; ?>">
           <div class="box-group">
             <div class="box-group-icon">
-              <a title='Open User by profile <?= $pname; ?>'  href='./?hotspot=users&profile=all&session=<?= $session; ?>'>
+              <a title="Ouvrir tous les tickets"  href='./?hotspot=users&profile=all&session=<?= $session; ?>'>
               <i class="fa fa-ticket"></i></a>
             </div>
               <div class="box-group-area">
@@ -53,7 +53,7 @@ if (!isset($_SESSION["mikhmon"])) {
                 ?></h3>
 
               <a title="Open User by profile all" href="./?hotspot=users&profile=all&session=<?= $session; ?>"><i class="fa fa-external-link"></i> <?= $_open ?></a>&nbsp;
-              <a title="Generate User by profile <?= $pname; ?>" href="./?hotspot-user=generate&session=<?= $session; ?>"><i class="fa fa-users"></i> <?= $_generate ?></a>&nbsp;
+              <a title="Générer des tickets" href="./?hotspot-user=generate&session=<?= $session; ?>"><i class="fa fa-users"></i> <?= $_generate ?></a>&nbsp;
               </div>
             </div>
             
@@ -63,9 +63,27 @@ if (!isset($_SESSION["mikhmon"])) {
 // get user profile
 $getprofile = $API->comm("/ip/hotspot/user/profile/print");
 $TotalReg = count($getprofile);
+
+/*
+ * Comptage des tickets par profil en un seul appel. Auparavant la page
+ * interrogeait le routeur une fois par profil, ce qui multipliait le temps
+ * d'affichage par le nombre de profils sur une liaison distante.
+ */
+$tikrasCountByProfile = array();
+$tikrasUserRows = tikras_routeros_comm($API, "/ip/hotspot/user/print", array(".proplist" => "profile"), array());
+if (is_array($tikrasUserRows)) {
+  foreach ($tikrasUserRows as $tikrasUserRow) {
+    $tikrasProfileName = isset($tikrasUserRow['profile']) ? (string) $tikrasUserRow['profile'] : 'default';
+    if (!isset($tikrasCountByProfile[$tikrasProfileName])) {
+      $tikrasCountByProfile[$tikrasProfileName] = 0;
+    }
+    $tikrasCountByProfile[$tikrasProfileName]++;
+  }
+}
+
 for ($i = 0; $i < $TotalReg; $i++) {
   $profiledetalis = $getprofile[$i];
-  $pname = $profiledetalis['name'];
+  $pname = tikras_array_get($profiledetalis, 'name', '');
   ?>
 	     <div class="col-4">
         <div class="box bmh-75 box-bordered <?= $color[rand(1, 11)]; ?>">
@@ -76,12 +94,8 @@ for ($i = 0; $i < $TotalReg; $i++) {
             </div>
               <div class="box-group-area">
                 <h3 >Profile : <?= $pname; ?><br>
-                <?php	$countuser = $API->comm("/ip/hotspot/user/print", array("count-only" => "", "?profile" => "$pname", ));
-                if ($countuser < 2) {
-                  echo $countuser . " Item";
-                } elseif ($countuser > 1) {
-                  echo $countuser . " Items";
-                }
+                <?php	$countuser = isset($tikrasCountByProfile[$pname]) ? $tikrasCountByProfile[$pname] : 0;
+                echo $countuser . ($countuser > 1 ? " Items" : " Item");
                 ?></h3>
 
               <a title="Open User by profile <?= $pname; ?>" href="./?hotspot=users&profile=<?= $pname; ?>&session=<?= $session; ?>"><i class="fa fa-external-link"></i> <?= $_open ?></a>&nbsp;

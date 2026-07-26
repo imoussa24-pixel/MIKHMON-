@@ -209,26 +209,27 @@ echo tikras_ui_page_header('users', $_users, $usersSubtitle, $usersHeaderActions
   <tbody id="tbody">
 <?php
 for ($i = 0; $i < $TotalReg; $i++) {
+  // L'API MikroTik omet les champs vides: on lit chaque cle avec un defaut.
   $userdetails = $getuser[$i];
-  $uid = $userdetails['.id'];
-  $userver = $userdetails['server'];
-  $uname = $userdetails['name'];
-  $upass = $userdetails['password'];
-  $uprofile = $userdetails['profile'];
-  $umacadd = $userdetails['mac-address'];
-  $uuptime = formatDTM($userdetails['uptime']);
-  $ubytesi = formatBytes($userdetails['bytes-in'], 2);
-  $ubyteso = formatBytes($userdetails['bytes-out'], 2);
+  $uid = tikras_array_get($userdetails, '.id', '');
+  $userver = tikras_array_get($userdetails, 'server', '');
+  $uname = tikras_array_get($userdetails, 'name', '');
+  $upass = tikras_array_get($userdetails, 'password', '');
+  $uprofile = tikras_array_get($userdetails, 'profile', '');
+  $umacadd = tikras_array_get($userdetails, 'mac-address', '');
+  $uuptime = formatDTM(tikras_array_get($userdetails, 'uptime', '0s'));
+  $ubytesi = formatBytes(tikras_array_get($userdetails, 'bytes-in', 0), 2);
+  $ubyteso = formatBytes(tikras_array_get($userdetails, 'bytes-out', 0), 2);
 
-  $ucomment = $userdetails['comment'];
-  $udisabled = $userdetails['disabled'];
-  $utimelimit = $userdetails['limit-uptime'];
+  $ucomment = tikras_array_get($userdetails, 'comment', '');
+  $udisabled = tikras_array_get($userdetails, 'disabled', 'false');
+  $utimelimit = tikras_array_get($userdetails, 'limit-uptime', '');
   if ($utimelimit == '1s') {
     $utimelimit = ' expired';
   } else {
     $utimelimit = ' ' . $utimelimit;
   }
-  $udatalimit = $userdetails['limit-bytes-total'];
+  $udatalimit = tikras_array_get($userdetails, 'limit-bytes-total', '');
   if ($udatalimit == '') {
     $udatalimit = '';
   } else {
