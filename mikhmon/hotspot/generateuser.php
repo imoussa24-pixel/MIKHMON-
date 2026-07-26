@@ -303,10 +303,17 @@ tikras_apply_session_timezone();
 	include_once('./lib/tikras_roaming.php');
 	include_once('./lib/tikras_radius.php');
 	$roamingRouterSessions = tikras_roaming_sessions($data);
-	$radiusConfig = tikras_radius_config();
-	$radiusEnabled = tikras_radius_enabled($radiusConfig);
-	$radiusManagerSession = tikras_radius_manager_session($radiusConfig, $session);
-	$radiusDefaultEngine = $radiusEnabled ? tikras_radius_clean_engine($radiusConfig['default_engine']) : "api";
+	/*
+	 * Le partage passe desormais par le serveur RADIUS heberge a cote du
+	 * panneau: il n'est propose que s'il est installe et que le routeur
+	 * courant y a ete raccorde, la selection restant volontairement explicite.
+	 */
+	include_once(dirname(__DIR__) . '/lib/tikras_radius_server.php');
+	$radiusEnabled = tikras_rad_disponible();
+	$radiusRouteurs = $radiusEnabled ? tikras_rad_routeurs() : array();
+	$radiusRouteurRaccorde = isset($radiusRouteurs[$session]);
+	$radiusManagerSession = 'serveur TIKRAS';
+	$radiusDefaultEngine = "api";
 
 	$genprof = tikras_get('genprof');
 	$ValidPrice = "";
@@ -373,9 +380,23 @@ tikras_apply_session_timezone();
 
 	if ($ticketRoamingPage && tikras_post('test_roaming') != "" && tikras_post('qty') != "") {
 		if ($formRoamingEngine == "radius") {
-			$radiusHealth = tikras_radius_manager_status($data, $session, $API);
-			$radiusHealth['profile'] = $formProfile;
-			$roamingHealth = array($radiusHealth);
+			// Controle du serveur RADIUS: presence, raccordement du routeur
+			// courant et nombre de routeurs partageant les tickets.
+			$radiusEtat = tikras_rad_etat();
+			$radiusListe = tikras_rad_routeurs();
+			$roamingHealth = array(array(
+				'session' => 'serveur RADIUS',
+				'hotspot' => $radiusEtat['disponible']
+					? count($radiusListe) . ' routeur(s) raccorde(s)'
+					: 'serveur non installe',
+				'profile' => $formProfile,
+				'ok' => $radiusEtat['disponible'] && isset($radiusListe[$session]),
+				'message' => !$radiusEtat['disponible']
+					? $radiusEtat['erreur']
+					: (isset($radiusListe[$session])
+						? 'Routeur raccorde. ' . $radiusEtat['tickets'] . ' ticket(s) deja partages.'
+						: "Ce routeur n'est pas raccorde au serveur RADIUS."),
+			));
 		} else {
 			$healthTargets = tikras_roaming_target_sessions($data, $session, $formRoamingMode, $formRoamingSessions);
 			$healthProfileRow = $API->comm("/ip/hotspot/user/profile/print", array("?name" => "$formProfile"));
@@ -466,10 +487,10 @@ tikras_apply_session_timezone();
 			$ticketGenerationError = "Impossible de generer " . $qty . " ticket(s) uniques avec ces reglages. Augmentez la longueur ou choisissez un alphabet plus large.";
 		}
 		if ($ticketGenerationError == "" && $ticketRoamingPage && $roamingEngine == "radius" && !$radiusEnabled) {
-			$ticketGenerationError = "Module RADIUS central non actif. Activez-le dans Admin > RADIUS central ou repassez le moteur roaming en copie API.";
+			$ticketGenerationError = "Serveur RADIUS non installe. Voir Serveur RADIUS, ou choisissez la copie sur chaque routeur.";
 		}
-		if ($ticketGenerationError == "" && $ticketRoamingPage && $roamingEngine == "radius" && $radiusManagerSession == "") {
-			$ticketGenerationError = "Routeur User Manager non configure. Choisissez le serveur central dans Admin > RADIUS central.";
+		if ($ticketGenerationError == "" && $ticketRoamingPage && $roamingEngine == "radius" && !$radiusRouteurRaccorde) {
+			$ticketGenerationError = "Ce routeur n'est pas raccorde au serveur RADIUS. Raccordez-le d'abord dans Serveur RADIUS.";
 		}
 
 		if ($ticketGenerationError == "") {
@@ -489,8 +510,26 @@ tikras_apply_session_timezone();
 				"profile_payload" => $profilePayload,
 			);
 			if ($ticketRoamingPage && $roamingEngine == "radius") {
-				$radiusStatus = tikras_radius_sync_tickets($data, $session, $API, $generatedTickets, $roamingParams);
-				$roamingSync = array($radiusStatus);
+				/*
+				 * Enregistrement sur le serveur RADIUS: les tickets valent
+				 * alors sur tous les routeurs raccordes, sans etre recopies.
+				 */
+				$radiusRapport = tikras_rad_enregistrer_tickets($generatedTickets, array(
+					'profile' => $profile,
+					'time_limit' => $timelimit,
+					'data_limit' => $datalimit,
+					'rate_limit' => isset($profilePayload['rate-limit']) ? $profilePayload['rate-limit'] : '',
+				));
+				$roamingSync = array(array(
+					'session' => 'serveur RADIUS',
+					'hotspot' => count(tikras_rad_routeurs()) . ' routeur(s) raccorde(s)',
+					'ok' => $radiusRapport['ok'],
+					'created' => $radiusRapport['crees'],
+					'updated' => 0,
+					'failed' => $radiusRapport['ok'] ? 0 : count($generatedTickets),
+					'queued' => 0,
+					'message' => $radiusRapport['message'],
+				));
 				$roamingQueued = array();
 			} else {
 				$roamingSync = tikras_roaming_sync_tickets($data, $roamingTargets, $session, $API, $generatedTickets, $roamingParams);
@@ -840,14 +879,18 @@ tikras_apply_session_timezone();
     <td class="align-middle">Moteur roaming</td>
     <td>
       <select class="form-control" id="roamingEngine" name="roaming_engine" onchange="updateRoamingEngine();">
-        <option value="radius" <?php if ($formRoamingEngine == "radius") { echo "selected"; } ?>>RADIUS central (User Manager)</option>
-        <option value="api" <?php if ($formRoamingEngine != "radius") { echo "selected"; } ?>>Copie API actuelle</option>
+        <option value="radius" <?php if ($formRoamingEngine == "radius") { echo "selected"; } ?><?php if (!$radiusRouteurRaccorde) { echo " disabled"; } ?>>Serveur RADIUS (ticket unique partagé)</option>
+        <option value="api" <?php if ($formRoamingEngine != "radius") { echo "selected"; } ?>>Copie sur chaque routeur</option>
       </select>
       <small class="tikras-script-help" id="roamingEngineHelp">
-        <?php if ($radiusEnabled) { ?>
-          Serveur central: <?= tikras_radius_h($radiusManagerSession != "" ? $radiusManagerSession : "non configure"); ?>.
+        <?php if (!$radiusEnabled) { ?>
+          Serveur RADIUS non installé. Voir <a href="./admin.php?id=radius-serveur">Serveur RADIUS</a>.
+        <?php } elseif (!$radiusRouteurRaccorde) { ?>
+          Ce routeur n'est pas raccordé au serveur RADIUS. Raccordez-le dans
+          <a href="./admin.php?id=radius-serveur">Serveur RADIUS</a> pour partager un même ticket.
         <?php } else { ?>
-          RADIUS central inactif. Configurez-le dans <a href="./admin.php?id=radius">Admin &gt; RADIUS central</a>.
+          Le ticket sera valable sur les <?= (int) count($radiusRouteurs); ?> routeur(s) raccordés au serveur,
+          sans être recopié sur chacun.
         <?php } ?>
       </small>
     </td>

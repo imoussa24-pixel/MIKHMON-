@@ -12,6 +12,7 @@ include_once(dirname(__DIR__) . '/lib/tikras_config_store.php');
 include_once(dirname(__DIR__) . '/lib/tikras_storage.php');
 include_once(dirname(__DIR__) . '/lib/tikras_ticket_schedule.php');
 include_once(dirname(__DIR__) . '/lib/tikras_notify.php');
+include_once(dirname(__DIR__) . '/lib/tikras_radius_server.php');
 
 if (!isset($_SESSION["mikhmon"])) {
   header("Location:../admin.php?id=login");
@@ -37,6 +38,7 @@ if (tikras_has_post('enregistrer')) {
     'time_limit' => tikras_post('time_limit'),
     'data_limit' => tikras_post('data_limit', '0'),
     'comment' => tikras_post('comment'),
+    'share_radius' => tikras_post('share_radius', '0'),
     'with_qr' => tikras_post('with_qr', '0'),
     'logo_file' => tikras_post('logo_file', ''),
     'channel' => tikras_post('channel', 'email'),
@@ -82,6 +84,10 @@ if (tikras_has_post('executer')) {
 if (tikras_has_get('modifier')) {
   $planEdite = tikras_sched_get(tikras_get('modifier'));
 }
+
+// Le partage RADIUS n'est propose que si le serveur est en place.
+$planRadiusPret = tikras_rad_disponible();
+$planRadiusRouteurs = $planRadiusPret ? count(tikras_rad_routeurs()) : 0;
 
 $planifications = tikras_sched_liste();
 $frequences = tikras_sched_frequences();
@@ -259,6 +265,24 @@ if ($planFlash != '') {
         </div>
       </div>
 
+      <div class="tikras-plan-section"><i class="fa fa-random"></i> Partage entre routeurs</div>
+      <div class="tikras-plan-grille">
+        <div class="tikras-field">
+          <label for="share_radius">Serveur RADIUS</label>
+          <select class="form-control" id="share_radius" name="share_radius">
+            <option value="0"<?= $valeur('share_radius', '0') == '0' ? ' selected' : ''; ?>>Non — tickets propres à ce routeur</option>
+            <option value="1"<?= $valeur('share_radius', '0') == '1' ? ' selected' : ''; ?><?php if (!$planRadiusPret) { echo ' disabled'; } ?>>Oui — valables sur tous les routeurs raccordés</option>
+          </select>
+          <small class="tikras-field-hint">
+            <?php if (!$planRadiusPret) { ?>
+              Serveur RADIUS non installé : voir <a href="./admin.php?id=radius-serveur">Serveur RADIUS</a>.
+            <?php } else { ?>
+              <?= (int) $planRadiusRouteurs; ?> routeur(s) raccordé(s). Les tickets restent aussi créés sur le routeur choisi.
+            <?php } ?>
+          </small>
+        </div>
+      </div>
+
       <div class="tikras-plan-section"><i class="fa fa-print"></i> Apparence du ticket imprimé</div>
       <div class="tikras-plan-grille">
         <div class="tikras-field">
@@ -411,6 +435,7 @@ if ($planFlash != '') {
               <div class="tikras-wg-session">
                 <?= (int) tikras_array_get($plan, 'with_qr', 1) === 1 ? 'avec QR' : 'sans QR'; ?>
                 <?= tikras_array_get($plan, 'logo_file', '') != '' ? ' · logo' : ''; ?>
+                <?= (int) tikras_array_get($plan, 'share_radius', 0) === 1 ? ' · partagé RADIUS' : ''; ?>
               </div>
             </td>
             <td><?= tikras_h($detail); ?></td>

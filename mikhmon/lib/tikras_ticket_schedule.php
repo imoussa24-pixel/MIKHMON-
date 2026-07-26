@@ -37,6 +37,7 @@ if (!function_exists('tikras_sched_table')) {
         time_limit TEXT NOT NULL DEFAULT '',
         data_limit TEXT NOT NULL DEFAULT '0',
         comment TEXT NOT NULL DEFAULT '',
+        share_radius INTEGER NOT NULL DEFAULT 0,
         with_qr INTEGER NOT NULL DEFAULT 1,
         logo_file TEXT NOT NULL DEFAULT '',
         channel TEXT NOT NULL DEFAULT 'email',
@@ -68,6 +69,9 @@ if (!function_exists('tikras_sched_table')) {
     }
     if (!in_array('logo_file', $colonnes)) {
       $pdo->exec("ALTER TABLE ticket_schedules ADD COLUMN logo_file TEXT NOT NULL DEFAULT ''");
+    }
+    if (!in_array('share_radius', $colonnes)) {
+      $pdo->exec("ALTER TABLE ticket_schedules ADD COLUMN share_radius INTEGER NOT NULL DEFAULT 0");
     }
     return true;
   }
@@ -202,6 +206,7 @@ if (!function_exists('tikras_sched_enregistrer')) {
       'time_limit' => (string) tikras_array_get($champs, 'time_limit', ''),
       'data_limit' => (string) tikras_array_get($champs, 'data_limit', '0'),
       'comment' => (string) tikras_array_get($champs, 'comment', ''),
+      'share_radius' => tikras_array_get($champs, 'share_radius', '0') == '1' ? 1 : 0,
       'with_qr' => tikras_array_get($champs, 'with_qr', '1') == '1' ? 1 : 0,
       'logo_file' => basename((string) tikras_array_get($champs, 'logo_file', '')),
       'channel' => $canal,
@@ -220,17 +225,17 @@ if (!function_exists('tikras_sched_enregistrer')) {
       if ($id > 0) {
         $sql = 'UPDATE ticket_schedules SET label=?, session=?, profile=?, server=?, quantity=?,
           user_mode=?, code_length=?, code_chars=?, prefix=?, time_limit=?, data_limit=?, comment=?,
-          with_qr=?, logo_file=?, channel=?, target=?, frequency=?, hour=?, weekday=?, monthday=?,
-          enabled=?, updated_at=? WHERE id=?';
+          share_radius=?, with_qr=?, logo_file=?, channel=?, target=?, frequency=?, hour=?, weekday=?,
+          monthday=?, enabled=?, updated_at=? WHERE id=?';
         $valeurs = array_values($donnees);
         $valeurs[] = $now;
         $valeurs[] = $id;
         $pdo->prepare($sql)->execute($valeurs);
       } else {
         $sql = 'INSERT INTO ticket_schedules (label, session, profile, server, quantity, user_mode,
-          code_length, code_chars, prefix, time_limit, data_limit, comment, with_qr, logo_file,
-          channel, target, frequency, hour, weekday, monthday, enabled, created_at, updated_at)
-          VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)';
+          code_length, code_chars, prefix, time_limit, data_limit, comment, share_radius, with_qr,
+          logo_file, channel, target, frequency, hour, weekday, monthday, enabled, created_at, updated_at)
+          VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)';
         $valeurs = array_values($donnees);
         $valeurs[] = $now;
         $valeurs[] = $now;
@@ -487,6 +492,28 @@ if (!function_exists('tikras_sched_executer')) {
         . ($premiereErreur != '' ? ' : ' . $premiereErreur : '.');
       $rapport['statut'] = 'creation_echouee';
       return $rapport;
+    }
+
+    /*
+     * Partage RADIUS: les memes codes sont enregistres sur le serveur, ce qui
+     * les rend valables sur tous les routeurs raccordes. Un echec ici n'annule
+     * pas les tickets deja crees sur le routeur, il est seulement signale.
+     */
+    if ((int) tikras_array_get($plan, 'share_radius', 0) === 1) {
+      if (!function_exists('tikras_rad_enregistrer_tickets')) {
+        include_once(dirname(__FILE__) . '/tikras_radius_server.php');
+      }
+      if (function_exists('tikras_rad_enregistrer_tickets')) {
+        $partage = tikras_rad_enregistrer_tickets($ticketsCrees, array(
+          'profile' => (string) $plan['profile'],
+          'time_limit' => (string) $plan['time_limit'],
+          'data_limit' => (string) $plan['data_limit'],
+        ));
+        $rapport['radius'] = $partage;
+        if (!$partage['ok']) {
+          $rapport['erreur'] = trim($rapport['erreur'] . ' Partage RADIUS : ' . $partage['message']);
+        }
+      }
     }
     if ($premiereErreur != '') {
       $rapport['erreur'] = 'Certains tickets ont ete refuses : ' . $premiereErreur;
