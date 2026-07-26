@@ -186,6 +186,9 @@ if ($tikrasLoginRequest) {
 } elseif ($id == "radius") {
   include_once('./include/menu.php');
   include_once('./settings/radius.php');
+} elseif ($id == "wireguard") {
+  include_once('./include/menu.php');
+  include_once('./settings/wireguard.php');
 } elseif ($id == "backup") {
   include_once('./include/menu.php');
   include_once('./settings/backup.php');

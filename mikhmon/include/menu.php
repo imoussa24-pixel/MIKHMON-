@@ -30,7 +30,7 @@ $tikrasMenuFlags = array(
   'sabout', 'sactive', 'sadduser', 'sadduserprof', 'saudit', 'sbackup',
   'schmenu', 'scookies', 'seditor', 'settmenu', 'sgenuser', 'shome', 'shosts',
   'sipbind', 'slease', 'slog', 'snsettings', 'spactive', 'spprofile', 'squick',
-  'sradius', 'sroaminguser', 'srouterlog', 'ssch', 'sscriptgenerator',
+  'sradius', 'sroaminguser', 'srouterlog', 'ssch', 'sscriptgenerator', 'swireguard',
   'ssecrets', 'sselling', 'ssesslist', 'ssett', 'ssettings', 'sstorage',
   'stickets', 'strafficmonitor', 'sulog', 'suplogo', 'suserprof',
   'suserprofiles', 'susers', 'susersbp', 'susersl', 'sysmenu', 'teditor',
@@ -226,6 +226,9 @@ if ($hotspot == "dashboard" || substr($tikrasMenuUrlTail, 0, 8) == "?session") {
   } elseif ($id == "radius") {
     $sradius = "active";
     $mpage = "RADIUS central";
+  } elseif ($id == "wireguard") {
+    $swireguard = "active";
+    $mpage = "Acces de secours";
   } elseif ($id == "backup") {
     $sbackup = "active";
     $mpage = "Sauvegarde";
@@ -310,6 +313,7 @@ if($idleto != "disable"){
   <a href="./admin.php?id=settings&router=new-<?= rand(1111,9999) ?>" class="menu <?= $snsettings ?>"><i class="fa fa-plus"></i> <?= $_add_router ?></a>
   <a href="./admin.php?id=tickets" class="menu <?= $stickets; ?>"><i class="fa fa-ticket"></i> Tickets roaming</a>
   <a href="./admin.php?id=radius" class="menu <?= $sradius; ?>"><i class="fa fa-key"></i> RADIUS central</a>
+  <a href="./admin.php?id=wireguard" class="menu <?= $swireguard; ?>"><i class="fa fa-shield"></i> Accès de secours</a>
   <a href="./admin.php?id=storage" class="menu <?= $sstorage; ?>"><i class="fa fa-database"></i> Base locale</a>
   <a href="./admin.php?id=backup" class="menu <?= $sbackup; ?>"><i class="fa fa-save"></i> Sauvegarde</a>
   <a href="./admin.php?id=audit" class="menu <?= $saudit; ?>"><i class="fa fa-history"></i> Journal systeme</a>
