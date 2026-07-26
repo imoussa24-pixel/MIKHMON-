@@ -93,11 +93,17 @@ if (!function_exists('tikras_ui_router_card')) {
     }
     $html .= '</div>';
     $html .= '</div></div>';
+    /*
+     * Une seule action porte son libelle: c'est celle qu'on vient chercher.
+     * Les autres gardent leur icone et passent leur libelle en infobulle et
+     * en nom accessible. Sur un parc de cent routeurs, quatre libelles par
+     * ligne faisaient tenir la liste sur une trentaine d'ecrans.
+     */
     $html .= '<div class="tikras-router-actions">';
     $html .= '<a class="tikras-btn tikras-btn-primary connect" id="' . $safeSession . '" href="./admin.php?id=connect&session=' . $sessionUrl . '">' . tikras_ui_icon('external-link') . '<span>Ouvrir</span></a>';
-    $html .= '<a class="tikras-btn tikras-btn-muted" href="./admin.php?id=settings&session=' . $sessionUrl . '">' . tikras_ui_icon('edit') . '<span>Éditer</span></a>';
-    $html .= '<a class="tikras-btn tikras-btn-muted" href="./?system=script-generator&session=' . $sessionUrl . '">' . tikras_ui_icon('code') . '<span>Scripts</span></a>';
-    $html .= '<a class="tikras-btn tikras-btn-danger" href="javascript:void(0)" onclick="' . tikras_h($confirm) . '">' . tikras_ui_icon('trash') . '<span>Supprimer</span></a>';
+    $html .= '<a class="tikras-btn tikras-btn-muted tikras-btn-icon" title="Éditer" aria-label="Éditer ' . $displayName . '" href="./admin.php?id=settings&session=' . $sessionUrl . '">' . tikras_ui_icon('edit') . '<span>Éditer</span></a>';
+    $html .= '<a class="tikras-btn tikras-btn-muted tikras-btn-icon" title="Scripts" aria-label="Scripts de ' . $displayName . '" href="./?system=script-generator&session=' . $sessionUrl . '">' . tikras_ui_icon('code') . '<span>Scripts</span></a>';
+    $html .= '<a class="tikras-btn tikras-btn-danger tikras-btn-icon" title="Supprimer" aria-label="Supprimer ' . $displayName . '" href="javascript:void(0)" onclick="' . tikras_h($confirm) . '">' . tikras_ui_icon('trash') . '<span>Supprimer</span></a>';
     $html .= '</div>';
     $html .= '</article>';
     return $html;

@@ -7,7 +7,7 @@
 :root {
   --one-sidebar: 236px;
   --one-navbar: 64px;
-  --one-radius: 14px;
+  --one-radius: 12px;
   --one-gap: 18px;
   --one-primary: #6366f1;
   --one-primary-strong: #4f46e5;
@@ -20,6 +20,37 @@
   --flux-grad: linear-gradient(135deg, #6366f1 0%, #8b5cf6 55%, #06b6d4 130%);
   --flux-grad-soft: linear-gradient(135deg, rgba(99, 102, 241, 0.14), rgba(139, 92, 246, 0.10) 55%, rgba(6, 182, 212, 0.12));
   --flux-speed: 0.22s;
+
+  /*
+   * Echelles de reference.
+   *
+   * Les rayons, espacements et tailles de texte etaient jusqu'ici ecrits au
+   * cas par cas: six valeurs de rayon differentes cohabitaient, ce qui se
+   * voit immediatement sur un ecran ou plusieurs composants se cotoient.
+   * Ces quatre echelles fixent le vocabulaire commun; un composant qui a
+   * besoin d'autre chose signale un cas particulier, pas une preference.
+   */
+  --r-sm: 8px;
+  --r-md: 12px;
+  --r-lg: 16px;
+  --r-pill: 999px;
+
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 24px;
+  --sp-6: 32px;
+
+  --fs-xs: 11.5px;
+  --fs-sm: 12.5px;
+  --fs-md: 14.5px;
+  --fs-lg: 17px;
+  --fs-xl: 21px;
+
+  /* Deux profondeurs suffisent: pose sur le fond, ou detache au-dessus. */
+  --sh-1: 0 1px 2px rgba(16, 20, 50, 0.06), 0 2px 8px rgba(49, 46, 129, 0.05);
+  --sh-2: 0 2px 6px rgba(16, 20, 50, 0.07), 0 12px 32px rgba(49, 46, 129, 0.10);
 }
 
 /* ------------------------------------------------------------------ */
@@ -43,9 +74,9 @@ body[data-theme="blue"] {
   --one-nav: rgba(255, 255, 255, 0.78);
   --one-side: rgba(255, 255, 255, 0.92);
   --one-side-soft: #eef0ff;
-  --one-shadow: 0 24px 60px rgba(49, 46, 129, 0.13);
-  --one-shadow-sm: 0 8px 24px rgba(49, 46, 129, 0.08);
-  --flux-glow: 0 0 0 1px rgba(99, 102, 241, 0.16), 0 12px 34px rgba(99, 102, 241, 0.16);
+  --one-shadow: var(--sh-2);
+  --one-shadow-sm: var(--sh-1);
+  --flux-glow: 0 0 0 1px rgba(99, 102, 241, 0.16), 0 6px 20px rgba(99, 102, 241, 0.14);
   color-scheme: light;
 }
 
@@ -65,18 +96,27 @@ body[data-theme="dark"] {
   --one-side: rgba(14, 19, 39, 0.92);
   --one-side-soft: #171e3c;
   --one-primary-soft: rgba(99, 102, 241, 0.16);
-  --one-shadow: 0 26px 64px rgba(0, 0, 0, 0.5);
-  --one-shadow-sm: 0 10px 28px rgba(0, 0, 0, 0.38);
-  --flux-glow: 0 0 0 1px rgba(129, 140, 248, 0.28), 0 12px 36px rgba(99, 102, 241, 0.30);
+  /* Sur fond sombre l'ombre porte peu: c'est le contraste des surfaces qui
+     detache les elements, l'ombre reste donc discrete. */
+  --one-shadow: 0 2px 6px rgba(0, 0, 0, 0.32), 0 12px 32px rgba(0, 0, 0, 0.34);
+  --one-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.28), 0 2px 8px rgba(0, 0, 0, 0.24);
+  --flux-glow: 0 0 0 1px rgba(129, 140, 248, 0.28), 0 6px 22px rgba(99, 102, 241, 0.26);
   color-scheme: dark;
 }
 
-/* Fond aurora anime tres discret */
+/*
+ * Voile colore de l'arriere-plan.
+ *
+ * Il donne sa couleur a l'application, mais entre en concurrence avec le
+ * contenu des qu'un ecran est dense: les teintes sont ramenees a la moitie
+ * de leur intensite, assez pour rester perceptibles derriere les surfaces
+ * claires, plus assez pour rivaliser avec un tableau ou un formulaire.
+ */
 body[data-theme] {
   background-image:
-    radial-gradient(900px 460px at 8% -6%, rgba(99, 102, 241, 0.12), transparent 60%),
-    radial-gradient(760px 420px at 96% 4%, rgba(6, 182, 212, 0.10), transparent 55%),
-    radial-gradient(720px 520px at 55% 108%, rgba(139, 92, 246, 0.10), transparent 60%) !important;
+    radial-gradient(900px 460px at 8% -6%, rgba(99, 102, 241, 0.06), transparent 60%),
+    radial-gradient(760px 420px at 96% 4%, rgba(6, 182, 212, 0.05), transparent 55%),
+    radial-gradient(720px 520px at 55% 108%, rgba(139, 92, 246, 0.05), transparent 60%) !important;
   background-attachment: fixed !important;
 }
 
@@ -731,4 +771,161 @@ body[data-theme] .lds-dual-ring::after {
   body[data-theme] #cpage {
     display: none;
   }
+}
+
+/* ------------------------------------------------------------------ */
+/* Densite des listes                                                  */
+/* ------------------------------------------------------------------ */
+
+/*
+ * Une ligne de routeur occupait 205 px, ses quatre actions etant empilees
+ * l'une sous l'autre. Sur un parc de cent routeurs la liste s'etendait sur
+ * plus de vingt mille pixels: retrouver un site demandait de faire defiler
+ * une trentaine d'ecrans. Les actions reviennent sur une ligne, et seule
+ * celle qu'on vient chercher garde son libelle.
+ */
+
+body[data-theme] .tikras-router-card {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-4);
+}
+
+body[data-theme] .tikras-router-actions {
+  flex-direction: row;
+  align-items: center;
+  flex-wrap: nowrap;
+  gap: var(--sp-2);
+}
+
+body[data-theme] .tikras-router-actions .tikras-btn {
+  width: auto;
+  min-height: 34px;
+}
+
+/* Actions secondaires: l'icone seule, le libelle reste accessible. */
+body[data-theme] .tikras-router-actions .tikras-btn-icon {
+  width: 34px;
+  padding: 0;
+  justify-content: center;
+}
+
+body[data-theme] .tikras-router-actions .tikras-btn-icon span {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* Le nom prime; le reste de la ligne se lit d'un coup d'oeil. */
+body[data-theme] .tikras-router-copy h3 {
+  font-size: var(--fs-lg);
+  font-weight: 800;
+}
+
+body[data-theme] .tikras-router-copy p,
+body[data-theme] .tikras-router-meta span {
+  font-size: var(--fs-sm);
+}
+
+body[data-theme] .tikras-router-meta {
+  gap: var(--sp-2);
+  margin-top: var(--sp-1);
+}
+
+body[data-theme] .tikras-router-meta span {
+  padding: 2px var(--sp-2);
+  border-radius: var(--r-sm);
+}
+
+/*
+ * Le survol soulevait chaque carte de trois pixels. Repete sur une liste
+ * dense, ce mouvement fait tressauter la page au passage de la souris: la
+ * carte se signale desormais par sa surface, sans bouger.
+ */
+body[data-theme] .tikras-router-card {
+  transition: background var(--flux-speed) ease, border-color var(--flux-speed) ease;
+}
+
+body[data-theme] .tikras-router-card:hover {
+  background: var(--one-surface-soft) !important;
+  box-shadow: var(--one-shadow-sm) !important;
+}
+
+@media (max-width: 620px) {
+  /* Trop etroit pour une ligne: les actions repassent sous le nom, mais
+     restent cote a cote plutot qu'empilees. */
+  body[data-theme] .tikras-router-card {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  body[data-theme] .tikras-router-actions {
+    justify-content: flex-start;
+  }
+
+  /*
+   * Au doigt, une cible de 34 px se manque: les icones reprennent la taille
+   * confortable admise pour le tactile. La place existe, la ligne d'actions
+   * etant seule sur sa rangee a cette largeur.
+   */
+  body[data-theme] .tikras-router-actions .tikras-btn {
+    min-height: 44px;
+  }
+
+  body[data-theme] .tikras-router-actions .tikras-btn-icon {
+    width: 44px;
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* Hierarchie des actions                                              */
+/* ------------------------------------------------------------------ */
+
+/*
+ * Le bouton de suppression etait rouge plein sur chaque ligne. Repete cent
+ * fois, c'est lui qui structurait la page: l'action la plus visible etait
+ * la seule irreversible, alors que le regard cherche "Ouvrir".
+ *
+ * Dans une liste il redevient neutre et ne prend sa couleur d'alerte qu'au
+ * survol et au focus clavier, au moment ou il est sur le point d'etre
+ * actionne. Ailleurs (barres d'outils, formulaires), un bouton de danger
+ * reste plein: il y est unique et annonce l'enjeu de l'ecran.
+ */
+body[data-theme] .tikras-router-actions .tikras-btn-danger {
+  color: var(--one-muted) !important;
+  background: transparent !important;
+  border: 1px solid var(--one-line) !important;
+  transition: color var(--flux-speed) ease, background var(--flux-speed) ease,
+    border-color var(--flux-speed) ease;
+}
+
+body[data-theme] .tikras-router-actions .tikras-btn-danger:hover,
+body[data-theme] .tikras-router-actions .tikras-btn-danger:focus-visible {
+  color: #ffffff !important;
+  background: var(--one-red) !important;
+  border-color: var(--one-red) !important;
+}
+
+/*
+ * Meme raison pour l'action principale: un degrade par ligne fait onze
+ * degrades a l'ecran. Il est reserve aux boutons uniques d'un ecran, et
+ * la liste s'en tient a un aplat de la couleur d'accent.
+ */
+/*
+ * Le ton soutenu, et non le ton clair: sur du texte blanc de 13 px, l'indigo
+ * clair plafonne a 4,47 de contraste, sous le seuil lisible de 4,5. Le ton
+ * soutenu le porte au-dela de 6 sans changer l'identite de la couleur.
+ */
+body[data-theme] .tikras-router-actions .tikras-btn-primary {
+  background: var(--one-primary-strong) !important;
+  box-shadow: none !important;
+}
+
+body[data-theme] .tikras-router-actions .tikras-btn-primary:hover,
+body[data-theme] .tikras-router-actions .tikras-btn-primary:focus-visible {
+  background: #4338ca !important;
 }
