@@ -170,6 +170,7 @@ if (!isset($_SESSION["mikhmon"])) {
 		if (tikras_routeros_connect($API, $iphost, $userhost, decrypt($passwdhost), $session)) {
 			$getData = $API->comm("/system/script/print", array(
 				"?source" => "$idhr",
+				".proplist" => "name",
 			));
 			$TotalReg = count($getData);
 		}
@@ -178,8 +179,11 @@ if (!isset($_SESSION["mikhmon"])) {
 		$shd = "inline-block";
 	} elseif (strlen($idbl) > "0") {
 		if (tikras_routeros_connect($API, $iphost, $userhost, decrypt($passwdhost), $session)) {
+			// Seul le nom du script porte les donnees de vente: sans .proplist,
+			// RouterOS renvoie aussi tout le code source de chaque enregistrement.
 			$getData = $API->comm("/system/script/print", array(
 				"?owner" => "$idbl",
+				".proplist" => "name",
 			));
 			$TotalReg = count($getData);
 		}
@@ -190,6 +194,7 @@ if (!isset($_SESSION["mikhmon"])) {
 		if (tikras_routeros_connect($API, $iphost, $userhost, decrypt($passwdhost), $session)) {
 			$getData = $API->comm("/system/script/print", array(
 				"?comment" => "mikhmon",
+				".proplist" => "name",
 			));
 			$TotalReg = count($getData);
 		}
@@ -198,8 +203,11 @@ if (!isset($_SESSION["mikhmon"])) {
 		$shd = "none";
 	} elseif (strlen($idbl) > "0" ) {
 		if (tikras_routeros_connect($API, $iphost, $userhost, decrypt($passwdhost), $session)) {
+			// Seul le nom du script porte les donnees de vente: sans .proplist,
+			// RouterOS renvoie aussi tout le code source de chaque enregistrement.
 			$getData = $API->comm("/system/script/print", array(
 				"?owner" => "$idbl",
+				".proplist" => "name",
 			));
 			$TotalReg = count($getData);
 		}

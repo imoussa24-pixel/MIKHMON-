@@ -35,8 +35,11 @@ if (!isset($_SESSION["mikhmon"])) {
 
 	if (strlen($idhr) > "0") {
 		if (tikras_routeros_connect($API, $iphost, $userhost, decrypt($passwdhost), $session)) {
+			// Seul le nom du script est exploite: .proplist evite de rapatrier
+			// le code source de chaque enregistrement.
 			$ARRAY = $API->comm("/system/script/print", array(
 				"?source" => "$idhr",
+				".proplist" => "name",
 			));
 			$API->disconnect();
 		}
@@ -47,6 +50,7 @@ if (!isset($_SESSION["mikhmon"])) {
 		if (tikras_routeros_connect($API, $iphost, $userhost, decrypt($passwdhost), $session)) {
 			$ARRAY = $API->comm("/system/script/print", array(
 				"?owner" => "$idbl",
+				".proplist" => "name",
 			));
 			$API->disconnect();
 		}
@@ -57,6 +61,7 @@ if (!isset($_SESSION["mikhmon"])) {
 		if (tikras_routeros_connect($API, $iphost, $userhost, decrypt($passwdhost), $session)) {
 			$ARRAY = $API->comm("/system/script/print", array(
 				"?comment" => "mikhmon",
+				".proplist" => "name",
 			));
 			$API->disconnect();
 		}

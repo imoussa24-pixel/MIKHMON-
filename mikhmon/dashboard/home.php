@@ -37,8 +37,22 @@ if (!isset($_SESSION["mikhmon"])) {
   $resource = $getresource[0];
 
 // get routeboard info
-  $getrouterboard = $API->comm("/system/routerboard/print");
-  $routerboard = $getrouterboard[0];
+  /*
+   * Les caracteristiques materielles ne changent pas tant que le routeur reste
+   * le meme: sur une liaison distante, cet appel coutait plusieurs centaines de
+   * millisecondes a chaque affichage du tableau de bord. On le garde en session
+   * pendant une heure, avec repli immediat en cas d'absence.
+   */
+  $tikrasRbCle = 'routerboard_' . $session;
+  $tikrasRbCache = tikras_session_get($tikrasRbCle, array());
+  if (is_array($tikrasRbCache) && isset($tikrasRbCache['data']) && isset($tikrasRbCache['at'])
+      && (time() - (int) $tikrasRbCache['at']) < 3600) {
+    $routerboard = $tikrasRbCache['data'];
+  } else {
+    $getrouterboard = $API->comm("/system/routerboard/print");
+    $routerboard = isset($getrouterboard[0]) && is_array($getrouterboard[0]) ? $getrouterboard[0] : array();
+    $_SESSION[$tikrasRbCle] = array('data' => $routerboard, 'at' => time());
+  }
 /*
 // move hotspot log to disk *
   $getlogging = $API->comm("/system/logging/print", array("?prefix" => "->", ));
@@ -135,7 +149,13 @@ if (!isset($_SESSION["mikhmon"])) {
   $profileSales = array();
   $todaySalesId = date("Y-m-d");
   $monthSalesId = date("m") . date("Y");
-  $getSalesMonth = $API->comm("/system/script/print", array("?owner" => "$monthSalesId"));
+  /*
+   * Chaque vente est enregistree comme un script sur le routeur, et seul son
+   * nom porte l'information. Sans .proplist, RouterOS renvoie aussi le code
+   * source de chaque script: sur un mois charge, cet appel depassait treize
+   * secondes a lui seul et bloquait tout le tableau de bord.
+   */
+  $getSalesMonth = tikras_routeros_comm($API, "/system/script/print", array("?owner" => "$monthSalesId", ".proplist" => "name"), array());
 
   if (is_array($getSalesMonth)) {
     foreach ($getSalesMonth as $saleRow) {
@@ -785,8 +805,11 @@ if (!isset($_SESSION["mikhmon"])) {
 
               <div class="card-body">
   
-                  <?php $getinterface = $API->comm("/interface/print");
-                  $interface = $getinterface[$iface - 1]['name']; 
+                  <?php // Liste deja recuperee plus haut: on la reutilise.
+                  $getinterface = isset($dashboardInterfaces) && is_array($dashboardInterfaces)
+                    ? $dashboardInterfaces
+                    : $API->comm("/interface/print");
+                  $interface = tikras_array_get(tikras_array_get($getinterface, $dashboardIfaceIndex, array()), 'name', '');
                   /*$TotalReg = count($getinterface);
                   for ($i = 0; $i < $TotalReg; $i++) {
                     echo $getinterface[$i]['name'].'<br>';
