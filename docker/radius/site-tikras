@@ -57,8 +57,10 @@ server default {
 	}
 
 	accounting {
-		detail
 		# Les sessions sont enregistrees pour le suivi de consommation.
+		# Le module "detail" doublerait cet enregistrement dans des fichiers
+		# texte par routeur, qu'il echoue a creer sous notre utilisateur et
+		# que rien ne relit: seul "sql" tient le journal des sessions.
 		sql
 		exec
 		attr_filter.accounting_response

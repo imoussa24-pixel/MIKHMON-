@@ -94,7 +94,16 @@ if (!function_exists('tikras_rad_routeurs')) {
       $lignes = tikras_rad_pdo()->query('SELECT id, nasname, shortname, secret, description FROM nas')->fetchAll();
       $map = array();
       foreach ($lignes as $ligne) {
-        $map[(string) $ligne['shortname']] = $ligne;
+        $nom = (string) $ligne['shortname'];
+        // Un routeur occupe une ligne par chemin d'acces (ZeroTier, tunnel).
+        // N'en montrer qu'une laisserait croire que les autres ne sont pas
+        // reconnues, alors que c'est justement ce qui rend le raccordement
+        // robuste au changement de chemin.
+        if (!isset($map[$nom])) {
+          $map[$nom] = $ligne;
+          $map[$nom]['adresses'] = array();
+        }
+        $map[$nom]['adresses'][] = (string) $ligne['nasname'];
       }
       return $map;
     } catch (Exception $e) {

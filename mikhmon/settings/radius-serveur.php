@@ -287,7 +287,16 @@ if (!$radEtat['disponible']) {
                 <div class="tikras-wg-session"><?= tikras_h($nom); ?></div>
               </td>
               <td>
-                <?= tikras_h($raccorde ? $radRouteurs[$nom]['nasname'] : $hote); ?>
+                <?php
+                if ($raccorde) {
+                  $adressesNas = isset($radRouteurs[$nom]['adresses'])
+                    ? (array) $radRouteurs[$nom]['adresses']
+                    : array($radRouteurs[$nom]['nasname']);
+                  echo tikras_h(implode(', ', $adressesNas));
+                } else {
+                  echo tikras_h($hote);
+                }
+                ?>
                 <?php if (!$enLigne) { ?><div class="tikras-wg-session">hors ligne</div><?php } ?>
               </td>
               <td>
