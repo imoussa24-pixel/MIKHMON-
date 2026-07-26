@@ -1,0 +1,44 @@
+# Module SQL de FreeRADIUS, adosse a la base SQLite partagee avec TIKRAS IT.
+# Les tickets ecrits par le panneau sont ainsi authentifies directement,
+# sans passer par User Manager.
+sql {
+	dialect = "sqlite"
+	driver = "rlm_sql_${dialect}"
+
+	sqlite {
+		filename = "/data/radius/radius.sqlite"
+		busy_timeout = 5000
+		bootstrap = "/etc/raddb/mods-config/sql/main/sqlite/schema.sql"
+	}
+
+	# Tables standard du schema FreeRADIUS.
+	acct_table1 = "radacct"
+	acct_table2 = "radacct"
+	postauth_table = "radpostauth"
+	authcheck_table = "radcheck"
+	authreply_table = "radreply"
+	groupcheck_table = "radgroupcheck"
+	groupreply_table = "radgroupreply"
+	usergroup_table = "radusergroup"
+	read_groups = yes
+	delete_stale_sessions = yes
+
+	pool {
+		start = 1
+		min = 1
+		max = 8
+		spare = 1
+		uses = 0
+		lifetime = 0
+		idle_timeout = 60
+	}
+
+	client_table = "nas"
+	# Les routeurs autorises sont lus en base: activer un routeur dans le
+	# panneau suffit, sans redemarrer le service.
+	read_clients = yes
+
+	group_attribute = "SQL-Group"
+
+	$INCLUDE ${modconfdir}/${.:name}/main/${dialect}/queries.conf
+}

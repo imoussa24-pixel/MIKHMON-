@@ -1,0 +1,83 @@
+# Site FreeRADIUS pour TIKRAS IT.
+# Authentification des tickets Hotspot et PPP a partir de la base SQLite
+# alimentee par le panneau, et comptabilisation des sessions.
+server default {
+	listen {
+		type = auth
+		ipaddr = *
+		port = 0
+		limit {
+			max_connections = 16
+			lifetime = 0
+			idle_timeout = 30
+		}
+	}
+
+	listen {
+		type = acct
+		ipaddr = *
+		port = 0
+		limit {
+		}
+	}
+
+	# Hotspot et PPP MikroTik utilisent PAP, CHAP ou MS-CHAP: le module EAP,
+	# destine au 802.1X, est volontairement absent.
+	authorize {
+		filter_username
+		preprocess
+		chap
+		mschap
+		digest
+		suffix
+		# Les identifiants viennent de la base partagee avec le panneau.
+		sql
+		expiration
+		logintime
+		pap
+	}
+
+	authenticate {
+		Auth-Type PAP {
+			pap
+		}
+		Auth-Type CHAP {
+			chap
+		}
+		Auth-Type MS-CHAP {
+			mschap
+		}
+		digest
+	}
+
+	preacct {
+		preprocess
+		acct_unique
+		suffix
+	}
+
+	accounting {
+		detail
+		# Les sessions sont enregistrees pour le suivi de consommation.
+		sql
+		exec
+		attr_filter.accounting_response
+	}
+
+	session {
+		sql
+	}
+
+	post-auth {
+		update {
+			&reply: += &session-state:
+		}
+		sql
+		exec
+
+		Post-Auth-Type REJECT {
+			sql
+			attr_filter.access_reject
+		}
+	}
+}
