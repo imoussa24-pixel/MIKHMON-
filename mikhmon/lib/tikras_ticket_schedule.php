@@ -346,6 +346,21 @@ if (!function_exists('tikras_sched_executer')) {
       return $rapport;
     }
 
+    /*
+     * Prix et validite sont portes par le script "on-login" du profil, comme
+     * pour la generation manuelle: le ticket imprime affiche ainsi les memes
+     * informations commerciales.
+     */
+    $prixProfil = '';
+    $validiteProfil = '';
+    $lignesProfil = tikras_routeros_comm($api, '/ip/hotspot/user/profile/print',
+      array('?name' => (string) $plan['profile'], '.proplist' => 'name,on-login'), array());
+    if (is_array($lignesProfil) && isset($lignesProfil[0]['on-login'])) {
+      $partsProfil = explode(',', (string) $lignesProfil[0]['on-login']);
+      $prixProfil = isset($partsProfil[2]) ? trim($partsProfil[2]) : '';
+      $validiteProfil = isset($partsProfil[3]) ? trim($partsProfil[3]) : '';
+    }
+
     // Codes existants: on evite de recreer un identifiant deja attribue.
     $existants = array();
     $lignes = tikras_routeros_comm($api, '/ip/hotspot/user/print', array('.proplist' => 'name'), array());
@@ -438,10 +453,10 @@ if (!function_exists('tikras_sched_executer')) {
       'hotspotname' => $hotspot,
       'dnsname' => $dns,
       'profile' => (string) $plan['profile'],
-      'validity' => '',
+      'validity' => $validiteProfil,
       'timelimit' => (string) $plan['time_limit'],
       'datalimit' => (string) $plan['data_limit'],
-      'price' => '',
+      'price' => $prixProfil,
       'currency' => $devise,
     );
     if (!tikras_ticket_pdf_generate($chemin, $ticketsCrees, $meta)) {

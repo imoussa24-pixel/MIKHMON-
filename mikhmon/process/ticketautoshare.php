@@ -155,6 +155,8 @@ $meta = array(
   "timelimit" => $timelimit,
   "datalimit" => $datalimit,
   "price" => $price,
+  // La devise accompagne le prix sur le ticket imprime.
+  "currency" => isset($currency) ? $currency : "",
 );
 
 if (!tikras_ticket_pdf_generate($pdfPath, $tickets, $meta)) {

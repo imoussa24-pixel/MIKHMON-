@@ -150,29 +150,60 @@ if (!function_exists('tikras_ticket_pdf_draw_ticket')) {
     $password = isset($ticket['password']) ? $ticket['password'] : "";
     $mode = ($password == "" || $username == $password) ? "vc" : "up";
     $hotspot = tikras_pdf_fit(isset($meta['hotspotname']) ? $meta['hotspotname'] : "Hotspot", 24);
-    $details = trim((isset($meta['validity']) ? $meta['validity'] : "") . " " . (isset($meta['timelimit']) ? $meta['timelimit'] : "") . " " . (isset($meta['datalimit']) ? $meta['datalimit'] : "") . " " . (isset($meta['price']) ? $meta['price'] : ""));
-    $details = tikras_pdf_fit($details, 42);
+
+    /*
+     * Le ticket reprend les informations du modele imprimable: identifiants,
+     * adresse de connexion et conditions. Sans l'adresse, le client ne sait
+     * pas ou se connecter une fois le ticket en main.
+     */
+    $adresse = trim((string) (isset($meta['dnsname']) ? $meta['dnsname'] : ""));
+    $adresse = $adresse != "" ? tikras_pdf_fit($adresse, 34) : "";
+
+    $conditions = array();
+    if (isset($meta['validity']) && trim((string) $meta['validity']) != "") {
+      $conditions[] = "Validite " . trim((string) $meta['validity']);
+    }
+    if (isset($meta['timelimit']) && trim((string) $meta['timelimit']) != "" && $meta['timelimit'] != "0") {
+      $conditions[] = trim((string) $meta['timelimit']);
+    }
+    if (isset($meta['datalimit']) && trim((string) $meta['datalimit']) != "" && $meta['datalimit'] != "0") {
+      $conditions[] = trim((string) $meta['datalimit']);
+    }
+    $prix = trim((string) (isset($meta['price']) ? $meta['price'] : ""));
+    if ($prix != "" && $prix != "0") {
+      // Selon l'appelant, le prix porte deja la devise: on ne la repete pas.
+      $devise = trim((string) (isset($meta['currency']) ? $meta['currency'] : ""));
+      if ($devise != "" && stripos($prix, $devise) === false) {
+        $prix = trim($prix . " " . $devise);
+      }
+      $conditions[] = $prix;
+    }
+    $details = tikras_pdf_fit(implode("  -  ", $conditions), 42);
 
     $pdf->rect($x, $y, $w, $h);
-    $pdf->text($x + 2, $y + 4.4, $hotspot, 8, true, "left", 30);
-    $pdf->text($x + 35, $y + 4.4, "[" . $num . "]", 7, true, "right", 8);
-    $pdf->line($x, $y + 6.3, $x + $w, $y + 6.3);
+    $pdf->text($x + 2, $y + 4.2, $hotspot, 8, true, "left", 30);
+    $pdf->text($x + 35, $y + 4.2, "[" . $num . "]", 7, true, "right", 8);
+    $pdf->line($x, $y + 5.8, $x + $w, $y + 5.8);
 
     if ($mode == "vc") {
-      $pdf->text($x + 2, $y + 11, "Kode Voucher", 7, false, "center", $w - 4);
-      $pdf->rect($x + 4, $y + 12, $w - 8, 6);
-      $pdf->text($x + 4, $y + 16.2, tikras_pdf_fit($username, 22), 9, true, "center", $w - 8);
-      $pdf->rect($x + 4, $y + 19.5, $w - 8, 5.5);
-      $pdf->text($x + 4, $y + 23.2, $details, 6.2, true, "center", $w - 8);
+      $pdf->text($x + 2, $y + 9.6, "Code d'acces", 6.5, false, "center", $w - 4);
+      $pdf->rect($x + 4, $y + 10.6, $w - 8, 6);
+      $pdf->text($x + 4, $y + 14.8, tikras_pdf_fit($username, 22), 9, true, "center", $w - 8);
     } else {
-      $pdf->text($x + 3, $y + 11, "Username", 6.5, false, "center", ($w - 8) / 2);
-      $pdf->text($x + 4 + (($w - 8) / 2), $y + 11, "Password", 6.5, false, "center", ($w - 8) / 2);
-      $pdf->rect($x + 4, $y + 12, ($w - 8) / 2, 6);
-      $pdf->rect($x + 4 + (($w - 8) / 2), $y + 12, ($w - 8) / 2, 6);
-      $pdf->text($x + 4, $y + 16.2, tikras_pdf_fit($username, 14), 7.2, true, "center", ($w - 8) / 2);
-      $pdf->text($x + 4 + (($w - 8) / 2), $y + 16.2, tikras_pdf_fit($password, 14), 7.2, true, "center", ($w - 8) / 2);
-      $pdf->rect($x + 4, $y + 19.5, $w - 8, 5.5);
-      $pdf->text($x + 4, $y + 23.2, $details, 6.2, true, "center", $w - 8);
+      $pdf->text($x + 3, $y + 9.6, "Utilisateur", 6, false, "center", ($w - 8) / 2);
+      $pdf->text($x + 4 + (($w - 8) / 2), $y + 9.6, "Mot de passe", 6, false, "center", ($w - 8) / 2);
+      $pdf->rect($x + 4, $y + 10.6, ($w - 8) / 2, 6);
+      $pdf->rect($x + 4 + (($w - 8) / 2), $y + 10.6, ($w - 8) / 2, 6);
+      $pdf->text($x + 4, $y + 14.8, tikras_pdf_fit($username, 14), 7.2, true, "center", ($w - 8) / 2);
+      $pdf->text($x + 4 + (($w - 8) / 2), $y + 14.8, tikras_pdf_fit($password, 14), 7.2, true, "center", ($w - 8) / 2);
+    }
+
+    if ($adresse != "") {
+      $pdf->text($x + 2, $y + 20.2, "Connexion : " . $adresse, 6, false, "center", $w - 4);
+    }
+    if ($details != "") {
+      $pdf->rect($x + 4, $y + 21.6, $w - 8, 5);
+      $pdf->text($x + 4, $y + 25, $details, 6, true, "center", $w - 8);
     }
   }
 }
