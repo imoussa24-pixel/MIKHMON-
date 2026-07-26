@@ -12,7 +12,8 @@ body[data-theme] {
   --modern-border-strong: #cbd5e1;
   --modern-text: #172033;
   --modern-muted: #64748b;
-  --modern-accent: #0b63ff;
+  /* Suit la couleur d'accent commune plutot que de figer l'ancien bleu. */
+  --modern-accent: var(--one-primary, #6366f1);
   --modern-danger: #be123c;
   --modern-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
 }
@@ -265,8 +266,8 @@ body.login-screen[data-theme] .tikras-login-card {
 
 body.login-screen[data-theme] .tikras-login-submit {
   color: #ffffff !important;
-  background: #0b63ff !important;
-  border-color: #0b63ff !important;
+  background: var(--one-primary) !important;
+  border-color: var(--one-primary) !important;
 }
 
 .tikras-admin-grid {
@@ -553,8 +554,9 @@ body[data-theme] .tikras-ticket-page .card-header h3 {
   font-weight: 700;
 }
 
+/* Etat "pret": le vert de reussite, et non un bleu d'accent sur fond vert. */
 .tikras-ticket-preview-note.is-ready {
-  color: #0b63ff;
+  color: #0f766e;
   background: rgba(20, 184, 166, 0.10);
   border-color: rgba(20, 184, 166, 0.30);
 }

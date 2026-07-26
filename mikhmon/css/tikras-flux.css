@@ -882,6 +882,67 @@ body[data-theme] .tikras-router-card:hover {
 }
 
 /* ------------------------------------------------------------------ */
+/* Tableaux                                                            */
+/* ------------------------------------------------------------------ */
+
+/*
+ * Les ecrans du hotspot heritent des tableaux "table-bordered", qui tracent
+ * un trait autour de chaque cellule. Sur un tableau de tickets, cette
+ * grille compte plus de traits que de donnees et c'est elle qu'on voit en
+ * premier. Seules les lignes horizontales sont conservees: elles suffisent
+ * a suivre une ligne du regard, la colonne etant deja tenue par
+ * l'alignement.
+ */
+body[data-theme] .table-bordered,
+body[data-theme] .table-bordered thead,
+body[data-theme] .table-bordered tbody {
+  border: 0 !important;
+}
+
+body[data-theme] .table-bordered th,
+body[data-theme] .table-bordered td {
+  border-right: 0 !important;
+  border-left: 0 !important;
+  border-top: 0 !important;
+  border-bottom: 1px solid var(--one-line) !important;
+}
+
+/* L'en-tete se detache par un trait un peu plus marque, pas par un cadre. */
+body[data-theme] .table-bordered thead th {
+  border-bottom: 2px solid var(--one-line-strong) !important;
+}
+
+body[data-theme] .table tbody tr:last-child td {
+  border-bottom: 0 !important;
+}
+
+/*
+ * L'icone de suppression des lignes est rouge au repos. Sur la liste des
+ * tickets, qui compte plusieurs milliers de lignes, cela forme une colonne
+ * rouge continue: le premier element que l'oeil rencontre en arrivant sur
+ * l'ecran est la commande de destruction, repetee.
+ *
+ * Elle reste a sa place et garde sa forme, mais ne prend sa couleur qu'au
+ * survol et au focus. On ne vise que les icones cliquables d'un tableau:
+ * ailleurs, "text-danger" qualifie un texte d'alerte qui doit rester rouge.
+ */
+body[data-theme] .table td i.text-danger.pointer {
+  color: var(--one-muted) !important;
+  transition: color var(--flux-speed) ease, transform var(--flux-speed) ease;
+}
+
+body[data-theme] .table td i.text-danger.pointer:hover,
+body[data-theme] .table td i.text-danger.pointer:focus-visible {
+  color: var(--one-red) !important;
+  transform: scale(1.12);
+}
+
+/* La ligne survolee annonce la couleur avant meme d'atteindre l'icone. */
+body[data-theme] .table tbody tr:hover td i.text-danger.pointer {
+  color: #fb7185 !important;
+}
+
+/* ------------------------------------------------------------------ */
 /* Hierarchie des actions                                              */
 /* ------------------------------------------------------------------ */
 

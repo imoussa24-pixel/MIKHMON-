@@ -102,7 +102,7 @@ body[data-theme] .navbar-hover:hover {
 
 body[data-theme="dark"] .navbar a:hover,
 body[data-theme="dark"] .navbar-hover:hover {
-  background: rgba(11, 99, 255, 0.20) !important;
+  background: rgba(99, 102, 241,0.20) !important;
 }
 
 body[data-theme] #brand {
@@ -128,7 +128,7 @@ body[data-theme] #brand::before {
     linear-gradient(135deg, #5fc6ff 0%, var(--one-primary) 100%);
   border: 1px solid rgba(255, 255, 255, 0.7);
   border-radius: var(--one-radius);
-  box-shadow: 0 8px 18px rgba(11, 99, 255, 0.22);
+  box-shadow: 0 8px 18px rgba(99, 102, 241,0.22);
 }
 
 body[data-theme] #brand::after {
@@ -270,13 +270,13 @@ body[data-theme] .sidenav a:hover,
 body[data-theme] .active {
   color: var(--one-primary) !important;
   background: var(--one-primary-soft) !important;
-  border-color: rgba(11, 99, 255, 0.18) !important;
+  border-color: rgba(99, 102, 241,0.18) !important;
 }
 
 body[data-theme="dark"] .dropdown-btn:hover,
 body[data-theme="dark"] .sidenav a:hover,
 body[data-theme="dark"] .active {
-  background: rgba(11, 99, 255, 0.18) !important;
+  background: rgba(99, 102, 241,0.18) !important;
 }
 
 body[data-theme] .active i,
@@ -542,7 +542,7 @@ body[data-theme] select:focus,
 body[data-theme] textarea:focus {
   border-color: var(--one-primary) !important;
   outline: 0 !important;
-  box-shadow: 0 0 0 3px rgba(11, 99, 255, 0.14) !important;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241,0.14) !important;
 }
 
 body[data-theme] .form-control:disabled,
@@ -603,7 +603,7 @@ body[data-theme] .table th a {
 
 body[data-theme] .table-hover:hover tbody tr:hover,
 body[data-theme] .table-hover tbody tr:hover td {
-  background: rgba(11, 99, 255, 0.08) !important;
+  background: rgba(99, 102, 241,0.08) !important;
 }
 
 body[data-theme] .overflow,
@@ -799,7 +799,7 @@ body[data-theme] .report-stat strong {
 body[data-theme] #notify {
   top: calc(var(--one-navbar) + 12px);
   color: #ffffff !important;
-  background: rgba(11, 99, 255, 0.90) !important;
+  background: rgba(99, 102, 241,0.90) !important;
   border: 0 !important;
   border-radius: var(--one-radius) !important;
 }
@@ -2095,7 +2095,7 @@ button:focus-visible,
 select:focus-visible,
 input:focus-visible,
 textarea:focus-visible {
-  outline: 2px solid #0b63ff;
+  outline: 2px solid var(--one-primary);
   outline-offset: 2px;
   border-radius: 6px;
 }
