@@ -24,7 +24,25 @@ Plage du tunnel : `10.200.0.0/16`, choisie hors des plages ZeroTier
 (10.12, 10.51, 10.82, 10.92, 10.147, 10.241, 10.242, 172.27, 172.30) et LAN
 (192.168.x, 10.0.x, 10.10.x) deja utilisees.
 
-## Ajouter un routeur depuis le panneau (methode recommandee)
+## Cas courant : routeur neuf configure sur le reseau local
+
+Un routeur que vous venez de preparer chez vous n'est pas joignable depuis le
+serveur en ligne : le bouton *Raccorder* ne peut donc pas s'appliquer. Le
+parcours est le suivant, entierement dans le panneau.
+
+1. Menu **Acces de secours**, section **Nouveau routeur configure en local**.
+2. Saisir un nom (ex. `BOUTIQUE-CENTRE`) puis **Reserver une adresse**.
+3. Copier le script affiche et le coller dans le routeur, via Winbox ou
+   WebFig, dans **New Terminal**. Vous etes encore sur le reseau local.
+4. Le routeur contacte le concentrateur en quelques secondes. Il apparait dans
+   **Routeurs prepares** avec la mention *Tunnel actif*.
+5. Renseigner l'identifiant et le mot de passe du routeur, puis
+   **Ajouter a TIKRAS IT** : il est enregistre avec son adresse de tunnel.
+
+A partir de la, le routeur est administrable de n'importe ou, meme s'il change
+d'operateur ou de lieu, sans adresse publique ni redirection de port.
+
+## Ajouter un routeur deja joignable depuis le panneau
 
 Menu **Acces de secours**. Chaque routeur en ligne dispose d'un bouton
 **Raccorder** : un clic suffit, il n'y a aucune commande a taper.
