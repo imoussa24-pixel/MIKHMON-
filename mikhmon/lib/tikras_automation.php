@@ -36,6 +36,9 @@ if (!function_exists('tikras_automation_config')) {
       'roaming_retry' => tikras_automation_env_int('TIKRAS_AUTO_ROAMING_INTERVAL', 600),
       'auto_backup'   => tikras_automation_env_int('TIKRAS_AUTO_BACKUP_INTERVAL', 86400),
       'prune'         => tikras_automation_env_int('TIKRAS_AUTO_PRUNE_INTERVAL', 604800),
+      // Les creneaux des planifications sont a l'heure: un passage toutes les
+      // dix minutes suffit a les honorer sans surcharger les routeurs.
+      'tickets'       => tikras_automation_env_int('TIKRAS_AUTO_TICKETS_INTERVAL', 600),
       'backup_keep'   => max(1, tikras_automation_env_int('TIKRAS_AUTO_BACKUP_KEEP', 10)),
       'audit_keep_days' => max(7, tikras_automation_env_int('TIKRAS_AUTO_AUDIT_KEEP_DAYS', 90)),
       'health_timeout' => max(1, tikras_automation_env_int('TIKRAS_AUTO_HEALTH_TIMEOUT', 2)),
@@ -249,6 +252,20 @@ if (!function_exists('tikras_automation_job_backup')) {
   }
 }
 
+if (!function_exists('tikras_automation_job_tickets')) {
+  /* Generation planifiee de tickets et envoi du PDF aux destinataires. */
+  function tikras_automation_job_tickets($data)
+  {
+    if (!function_exists('tikras_sched_cycle')) {
+      include_once(dirname(__FILE__) . '/tikras_ticket_schedule.php');
+    }
+    if (!function_exists('tikras_sched_cycle')) {
+      return array('executees' => 0, 'note' => 'planification indisponible');
+    }
+    return tikras_sched_cycle($data);
+  }
+}
+
 if (!function_exists('tikras_automation_job_prune')) {
   function tikras_automation_job_prune($config)
   {
@@ -331,6 +348,14 @@ if (!function_exists('tikras_automation_tick')) {
         $report['skipped'][] = 'auto_backup';
       }
 
+      if ($force || tikras_automation_due('tickets', $config['tickets'], $now)) {
+        $tickets = tikras_automation_job_tickets($data);
+        tikras_automation_mark('tickets', $now, json_encode($tickets));
+        $report['ran']['tickets'] = $tickets;
+      } else {
+        $report['skipped'][] = 'tickets';
+      }
+
       if ($force || tikras_automation_due('prune', $config['prune'], $now)) {
         $prune = tikras_automation_job_prune($config);
         tikras_automation_mark('prune', $now, json_encode($prune));
@@ -355,7 +380,7 @@ if (!function_exists('tikras_automation_status')) {
   function tikras_automation_status()
   {
     $config = tikras_automation_config();
-    $jobs = array('sync_routers', 'health_check', 'roaming_retry', 'auto_backup', 'prune');
+    $jobs = array('sync_routers', 'health_check', 'roaming_retry', 'tickets', 'auto_backup', 'prune');
     $status = array('last_tick' => (int) tikras_automation_meta_get('auto.last_tick', '0'), 'jobs' => array());
     foreach ($jobs as $job) {
       $status['jobs'][$job] = array(
