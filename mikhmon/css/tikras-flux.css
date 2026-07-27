@@ -774,6 +774,65 @@ body[data-theme] .lds-dual-ring::after {
 }
 
 /* ------------------------------------------------------------------ */
+/* Favoris                                                             */
+/* ------------------------------------------------------------------ */
+
+/*
+ * Sur cent six routeurs, on n'en exploite qu'une poignee au quotidien.
+ * L'etoile les remonte en tete de liste; discrete tant qu'elle n'est pas
+ * posee, pour ne pas ajouter cent six taches de couleur a l'ecran.
+ */
+body[data-theme] .tikras-router-favori-forme {
+  display: flex;
+  margin: 0;
+}
+
+body[data-theme] .tikras-favori-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  color: var(--one-line-strong);
+  background: transparent;
+  border: 0;
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  transition: color var(--flux-speed) ease, background var(--flux-speed) ease;
+}
+
+body[data-theme] .tikras-favori-btn:hover,
+body[data-theme] .tikras-favori-btn:focus-visible {
+  color: var(--one-amber);
+  background: var(--one-surface-soft);
+}
+
+body[data-theme] .tikras-favori-btn.est-favori {
+  color: var(--one-amber);
+}
+
+/* Un liseré suffit a distinguer un favori dans la liste. */
+body[data-theme] .tikras-router-card.tikras-router-favori {
+  border-left: 3px solid var(--one-amber) !important;
+}
+
+/* Le filtre actif doit se voir: sinon on cherche un routeur absent de la
+   liste sans comprendre qu'on l'a soi-meme masque. */
+body[data-theme] #filtreFavoris.est-actif {
+  color: #ffffff !important;
+  background: var(--one-amber) !important;
+  border-color: var(--one-amber) !important;
+}
+
+@media (max-width: 620px) {
+  body[data-theme] .tikras-favori-btn {
+    width: 40px;
+    height: 40px;
+  }
+}
+
+/* ------------------------------------------------------------------ */
 /* Densite des listes                                                  */
 /* ------------------------------------------------------------------ */
 

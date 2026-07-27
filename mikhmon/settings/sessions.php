@@ -85,13 +85,27 @@ if (!isset($_SESSION["mikhmon"])) {
 <?php
 include_once(dirname(__DIR__) . '/lib/tikras_storage.php');
 include_once(dirname(__DIR__) . '/lib/tikras_automation.php');
+include_once(dirname(__DIR__) . '/lib/tikras_favoris.php');
+
+/*
+ * Bascule d'un favori. La page se recharge a la meme place: la liste est
+ * longue, et repartir du haut apres chaque marquage serait penible.
+ */
+if (tikras_has_post('favori')) {
+  $cibleFavori = (string) tikras_post('session');
+  tikras_favoris_basculer($cibleFavori);
+  tikras_redirect('./admin.php?id=sessions#routeur-' . rawurlencode($cibleFavori));
+  return;
+}
 
 $routerStatuses = tikras_storage_all_router_statuses();
+$routerFavoris = tikras_favoris_liste();
 $routerTotal = 0;
 $routerOnline = 0;
 $routerOffline = 0;
 $routerCards = '';
-foreach ($data as $value => $routerConfig) {
+// Les favoris passent en tete; le reste garde son ordre d'origine.
+foreach (tikras_favoris_trier($data) as $value => $routerConfig) {
   if ($value == "" || $value == "mikhmon") {
     continue;
   }
@@ -109,7 +123,8 @@ foreach ($data as $value => $routerConfig) {
     tikras_cfg_value($data, $value, 4, '%', ''),
     tikras_cfg_value($data, $value, 5, '^', ''),
     tikras_cfg_value($data, $value, 6, '&', ''),
-    $routerStatus
+    $routerStatus,
+    in_array((string) $value, $routerFavoris, true)
   );
 }
 $autoStatus = tikras_automation_status();
@@ -153,6 +168,12 @@ $routerSubtitle = $routerTotal . ' routeur(s) · ' . $routerOnline . ' en ligne 
     <div class="tikras-panel-body">
       <div class="tikras-router-tools">
         <input id="adminRouterSearch" class="form-control" type="search" placeholder="<?= $_search ?> routeur, session, DNS">
+        <?php if (count($routerFavoris) > 0) { ?>
+        <button id="filtreFavoris" class="tikras-btn tikras-btn-muted" type="button"
+          aria-pressed="false" title="N'afficher que les routeurs favoris">
+          <i class="fa fa-star-o"></i><span>Favoris (<?= count($routerFavoris); ?>)</span>
+        </button>
+        <?php } ?>
       </div>
       <div class="tikras-router-list">
         <?= $routerCards; ?>
@@ -226,13 +247,39 @@ $routerSubtitle = $routerTotal . ' routeur(s) · ' . $routerOnline . ' en ligne 
   </section>
 </div>
 <script>
-  $("#adminRouterSearch").on("input", function(){
-    var term = $(this).val().toLowerCase();
+  /*
+   * Recherche et filtre favoris se combinent: filtrer sur les favoris puis
+   * taper un nom doit chercher parmi les favoris, et non tout reafficher.
+   */
+  var favorisSeuls = false;
+
+  function appliquerFiltres() {
+    var term = ($("#adminRouterSearch").val() || "").toLowerCase();
+    var visibles = 0;
     $(".tikras-router-row").each(function(){
-      var router = $(this).data("router");
-      $(this).toggle(router.indexOf(term) !== -1);
+      var correspond = String($(this).data("router")).indexOf(term) !== -1;
+      if (favorisSeuls && String($(this).data("favori")) !== "1") {
+        correspond = false;
+      }
+      $(this).toggle(correspond);
+      if (correspond) { visibles++; }
     });
-  });
+    return visibles;
+  }
+
+  $("#adminRouterSearch").on("input", appliquerFiltres);
+
+  var boutonFavoris = document.getElementById("filtreFavoris");
+  if (boutonFavoris) {
+    boutonFavoris.addEventListener("click", function(){
+      favorisSeuls = !favorisSeuls;
+      this.setAttribute("aria-pressed", favorisSeuls ? "true" : "false");
+      this.classList.toggle("est-actif", favorisSeuls);
+      var icone = this.querySelector("i");
+      if (icone) { icone.className = favorisSeuls ? "fa fa-star" : "fa fa-star-o"; }
+      appliquerFiltres();
+    });
+  }
 
   document.getElementById("runAutomations").addEventListener("click", function(){
     var btn = this;

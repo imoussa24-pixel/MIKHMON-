@@ -68,7 +68,7 @@ if (!function_exists('tikras_ui_status_badge')) {
 }
 
 if (!function_exists('tikras_ui_router_card')) {
-  function tikras_ui_router_card($session, $hotspotName, $dnsName, $currency, $status = null)
+  function tikras_ui_router_card($session, $hotspotName, $dnsName, $currency, $status = null, $favori = false)
   {
     $sessionUrl = rawurlencode($session);
     $safeSession = tikras_h($session);
@@ -78,8 +78,24 @@ if (!function_exists('tikras_ui_router_card')) {
     $displayName = $safeHotspot != '' ? $safeHotspot : $safeSession;
     $confirm = "if(confirm('Voulez-vous vraiment supprimer ce routeur " . tikras_js_string($session) . " (" . tikras_js_string($hotspotName) . ") ?')){loadpage('./admin.php?id=remove-session&session=" . tikras_js_string($sessionUrl) . "')}else{}";
 
-    $html = '<article class="tikras-router-card tikras-router-row" data-router="' . tikras_h(strtolower($session . ' ' . $hotspotName . ' ' . $dnsName)) . '">';
+    $html = '<article id="routeur-' . $safeSession . '" class="tikras-router-card tikras-router-row'
+      . ($favori ? ' tikras-router-favori' : '')
+      . '" data-favori="' . ($favori ? '1' : '0')
+      . '" data-router="' . tikras_h(strtolower($session . ' ' . $hotspotName . ' ' . $dnsName)) . '">';
     $html .= '<div class="tikras-router-main">';
+    /*
+     * L'etoile est un bouton de formulaire et non un lien: marquer un favori
+     * modifie un etat, ce qu'une adresse ouverte par erreur ne doit pas faire.
+     */
+    $html .= '<form method="post" action="./admin.php?id=sessions" class="tikras-router-favori-forme">';
+    $html .= '<input type="hidden" name="session" value="' . $safeSession . '">';
+    $html .= '<button type="submit" name="favori" value="1" class="tikras-favori-btn'
+      . ($favori ? ' est-favori' : '') . '"'
+      . ' title="' . ($favori ? 'Retirer des favoris' : 'Ajouter aux favoris') . '"'
+      . ' aria-label="' . ($favori ? 'Retirer ' : 'Ajouter ') . $displayName . ' des favoris"'
+      . ' aria-pressed="' . ($favori ? 'true' : 'false') . '">'
+      . tikras_ui_icon($favori ? 'star' : 'star-o') . '</button>';
+    $html .= '</form>';
     $html .= '<span class="tikras-router-icon">' . tikras_ui_icon('server') . '</span>';
     $html .= '<div class="tikras-router-copy">';
     $html .= '<h3 title="' . $displayName . '">' . $displayName . ' ' . tikras_ui_status_badge($status) . '</h3>';
