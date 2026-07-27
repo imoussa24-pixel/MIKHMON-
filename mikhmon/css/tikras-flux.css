@@ -865,6 +865,9 @@ body[data-theme] .tikras-router-card:hover {
 
   body[data-theme] .tikras-router-actions {
     justify-content: flex-start;
+    /* Cinq actions ne tiennent pas sur la largeur d'un telephone: sans
+       retour a la ligne, la derniere sort du cadre et devient inatteignable. */
+    flex-wrap: wrap;
   }
 
   /*
@@ -878,6 +881,195 @@ body[data-theme] .tikras-router-card:hover {
 
   body[data-theme] .tikras-router-actions .tikras-btn-icon {
     width: 44px;
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* Tableau de bord                                                     */
+/* ------------------------------------------------------------------ */
+
+body[data-theme] .tikras-bord-chiffres {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: var(--sp-3);
+  margin-bottom: var(--sp-3);
+}
+
+body[data-theme] .tikras-bord-carte {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+  padding: var(--sp-4);
+  background: var(--one-surface-strong);
+  border: 1px solid var(--one-line);
+  border-radius: var(--r-md);
+  box-shadow: var(--sh-1);
+}
+
+/* La recette du jour est le chiffre qu'on vient chercher: elle porte la
+   couleur d'accent, les autres restent en retrait. */
+body[data-theme] .tikras-bord-carte-forte {
+  background: var(--flux-grad);
+  border-color: transparent;
+  color: #ffffff;
+}
+
+body[data-theme] .tikras-bord-libelle {
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  color: var(--one-muted);
+}
+
+body[data-theme] .tikras-bord-carte-forte .tikras-bord-libelle,
+body[data-theme] .tikras-bord-carte-forte .tikras-bord-detail,
+body[data-theme] .tikras-bord-carte-forte .tikras-bord-hausse,
+body[data-theme] .tikras-bord-carte-forte .tikras-bord-baisse {
+  color: rgba(255, 255, 255, 0.86);
+}
+
+body[data-theme] .tikras-bord-valeur {
+  font-size: 26px;
+  font-weight: 800;
+  line-height: 1.15;
+  color: var(--one-text);
+}
+
+body[data-theme] .tikras-bord-carte-forte .tikras-bord-valeur {
+  color: #ffffff;
+}
+
+body[data-theme] .tikras-bord-sur {
+  font-size: var(--fs-lg);
+  font-weight: 600;
+  color: var(--one-muted);
+}
+
+body[data-theme] .tikras-bord-carte-forte .tikras-bord-sur {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+body[data-theme] .tikras-bord-detail {
+  font-size: var(--fs-sm);
+  color: var(--one-text-soft);
+}
+
+body[data-theme] .tikras-bord-hausse { color: #0d9f6e; font-weight: 700; }
+body[data-theme] .tikras-bord-baisse { color: var(--one-red); font-weight: 700; }
+
+body[data-theme] .tikras-bord-note {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-2);
+  padding: var(--sp-3) var(--sp-4);
+  margin-bottom: var(--sp-3);
+  font-size: var(--fs-sm);
+  color: var(--one-text-soft);
+  background: var(--one-surface-soft);
+  border: 1px solid var(--one-line);
+  border-radius: var(--r-md);
+}
+
+body[data-theme] .tikras-bord-grille {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: var(--sp-3);
+  /* Chaque panneau prend sa hauteur propre: sans cela le plus court s'etire
+     pour suivre son voisin et laisse un grand vide sous son contenu. */
+  align-items: start;
+  margin-bottom: var(--sp-3);
+}
+
+/* Histogramme des recettes: des barres proportionnelles suffisent, sans
+   bibliotheque ni requete exterieure. */
+body[data-theme] .tikras-bord-graphe {
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  height: 150px;
+}
+
+body[data-theme] .tikras-bord-barre {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  height: 100%;
+  min-width: 0;
+}
+
+body[data-theme] .tikras-bord-barre-remplissage {
+  width: 100%;
+  background: var(--flux-grad);
+  border-radius: var(--r-sm) var(--r-sm) 0 0;
+  transition: opacity var(--flux-speed) ease;
+}
+
+body[data-theme] .tikras-bord-barre:hover .tikras-bord-barre-remplissage {
+  opacity: 0.75;
+}
+
+body[data-theme] .tikras-bord-barre-jour {
+  margin-top: var(--sp-1);
+  font-size: 10px;
+  color: var(--one-muted);
+  white-space: nowrap;
+}
+
+body[data-theme] .tikras-bord-pannes {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+body[data-theme] .tikras-bord-pannes li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-2);
+  padding: var(--sp-2) var(--sp-3);
+  background: var(--one-surface-soft);
+  border-radius: var(--r-sm);
+}
+
+body[data-theme] .tikras-bord-pannes strong {
+  display: block;
+  font-size: var(--fs-md);
+  color: var(--one-text);
+}
+
+body[data-theme] .tikras-bord-pannes span {
+  font-size: var(--fs-xs);
+  color: var(--one-muted);
+}
+
+body[data-theme] .tikras-bord-pannes em {
+  flex: none;
+  font-size: var(--fs-xs);
+  font-style: normal;
+  color: var(--one-muted);
+}
+
+body[data-theme] .tikras-bord-montant {
+  font-weight: 800;
+  text-align: right;
+  white-space: nowrap;
+}
+
+@media (max-width: 620px) {
+  body[data-theme] .tikras-bord-valeur {
+    font-size: 22px;
+  }
+
+  /* Sur un ecran etroit, quatorze libelles de jour se chevauchent: on garde
+     les barres, qui portent la tendance, et une date sur deux. */
+  body[data-theme] .tikras-bord-barre:nth-child(even) .tikras-bord-barre-jour {
+    visibility: hidden;
   }
 }
 

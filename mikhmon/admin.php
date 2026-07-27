@@ -107,7 +107,9 @@ if ($tikrasLoginRequest) {
         tikras_login_throttle('success');
         tikras_session_regenerate();
         $_SESSION["mikhmon"] = $effectiveUser;
-        tikras_redirect('./admin.php?id=sessions');
+        // On ouvre sur la vue d'ensemble: la liste des routeurs ne repond a
+        // aucune des questions qu'on se pose en arrivant.
+        tikras_redirect('./admin.php?id=bord');
       } else {
         tikras_login_throttle('failure');
         $error = '<div style="width: 100%; padding:5px 0px 5px 0px; border-radius:5px;" class="bg-danger"><i class="fa fa-ban"></i> Alert!<br>Invalid username or password.</div>';
@@ -121,6 +123,11 @@ if ($tikrasLoginRequest) {
   tikras_redirect('./admin.php?id=login');
 } elseif (substr($url, -1) == "/" || substr($url, -4) == ".php") {
   tikras_redirect('./admin.php?id=sessions');
+
+} elseif ($id == "bord") {
+  $_SESSION["connect"] = "";
+  include_once('./include/menu.php');
+  include_once('./settings/bord.php');
 
 } elseif ($id == "sessions") {
   $_SESSION["connect"] = "";

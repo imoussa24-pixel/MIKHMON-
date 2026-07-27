@@ -27,7 +27,7 @@ tikras_bootstrap_errors(false);
  */
 $tikrasMenuFlags = array(
   'cmenu', 'hamenu', 'hmenu', 'ibmenu', 'lmenu', 'log', 'mppp', 'pppmenu',
-  'sabout', 'sactive', 'sadduser', 'sadduserprof', 'saudit', 'sbackup',
+  'sabout', 'sactive', 'sadduser', 'sadduserprof', 'saudit', 'sbackup', 'sbord',
   'schmenu', 'scookies', 'seditor', 'settmenu', 'sgenuser', 'shome', 'shosts',
   'sipbind', 'slease', 'slog', 'snsettings', 'spactive', 'spprofile', 'squick',
   'sradius', 'sroaminguser', 'srouterlog', 'ssch', 'sscriptgenerator', 'swireguard', 'splanning',
@@ -209,6 +209,9 @@ if ($hotspot == "dashboard" || substr($tikrasMenuUrlTail, 0, 8) == "?session") {
   } elseif ($hotspot == "about") {
     $mpage = $_about;
     $sabout = "active";
+  } elseif ($id == "bord") {
+    $sbord = "active";
+    $mpage = "Tableau de bord";
   } elseif ($id == "sessions" || $id == "remove" || $router == "new") {
     $ssesslist = "active";
     $mpage = $_admin_settings;
@@ -316,6 +319,7 @@ if($idleto != "disable"){
   <div class="menu spa"></div>
 <?php 
 } ?>  
+  <a href="./admin.php?id=bord" class="menu <?= $sbord; ?>"><i class="fa fa-line-chart"></i> Tableau de bord</a>
   <a href="./admin.php?id=sessions" class="menu <?= $ssesslist; ?>"><i class="fa fa-gear"></i> <?= $_admin_settings ?></a>
   <a href="./admin.php?id=settings&router=new-<?= rand(1111,9999) ?>" class="menu <?= $snsettings ?>"><i class="fa fa-plus"></i> <?= $_add_router ?></a>
   <a href="./admin.php?id=tickets" class="menu <?= $stickets; ?>"><i class="fa fa-ticket"></i> Tickets roaming</a>

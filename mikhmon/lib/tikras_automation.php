@@ -44,6 +44,13 @@ if (!function_exists('tikras_automation_config')) {
       'health_timeout' => max(1, tikras_automation_env_int('TIKRAS_AUTO_HEALTH_TIMEOUT', 2)),
       'health_batch'  => max(5, tikras_automation_env_int('TIKRAS_AUTO_HEALTH_BATCH', 30)),
       'notify_down'   => tikras_automation_env_int('TIKRAS_AUTO_NOTIFY_DOWN', 1),
+      /*
+       * Releve des recettes. Un routeur demande environ quatre secondes:
+       * huit par passage tiennent le cycle sous la minute, et suffisent a
+       * faire le tour des routeurs en ligne en moins de deux heures.
+       */
+      'sales_sync'    => tikras_automation_env_int('TIKRAS_AUTO_SALES_INTERVAL', 900),
+      'sales_batch'   => max(1, tikras_automation_env_int('TIKRAS_AUTO_SALES_BATCH', 8)),
     );
   }
 }
@@ -338,6 +345,20 @@ if (!function_exists('tikras_automation_tick')) {
         $report['ran']['roaming_retry'] = $roaming;
       } else {
         $report['skipped'][] = 'roaming_retry';
+      }
+
+      /*
+       * Releve des recettes. Sans lui, la base ne connait que les routeurs
+       * dont on a ouvert la page Rapport a la main, et aucun total du parc
+       * n'est possible.
+       */
+      if ($force || tikras_automation_due('sales_sync', $config['sales_sync'], $now)) {
+        include_once(dirname(__FILE__) . '/tikras_sales.php');
+        $ventes = tikras_sales_releve_parc($data, $config['sales_batch']);
+        tikras_automation_mark('sales_sync', $now, json_encode($ventes));
+        $report['ran']['sales_sync'] = $ventes;
+      } else {
+        $report['skipped'][] = 'sales_sync';
       }
 
       if ($force || tikras_automation_due('auto_backup', $config['auto_backup'], $now)) {
