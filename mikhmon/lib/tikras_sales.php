@@ -233,7 +233,13 @@ if (!function_exists('tikras_sales_source')) {
    */
   function tikras_sales_source()
   {
-    return '(SELECT session, ticket_code, profile, currency, sold_at, MAX(price) AS price
+    /*
+     * La devise est ramenee en majuscules: le parc contient a la fois "CFA"
+     * et "Cfa" pour la meme monnaie, ce qui les faisait compter comme deux
+     * devises distinctes.
+     */
+    return '(SELECT session, ticket_code, profile, UPPER(TRIM(currency)) AS currency,
+                    sold_at, MAX(price) AS price
              FROM sales_cache GROUP BY session, ticket_code, sold_at)';
   }
 }
@@ -251,6 +257,7 @@ if (!function_exists('tikras_sales_synthese')) {
       'mois' => array('total' => 0, 'nombre' => 0),
       'hier' => array('total' => 0, 'nombre' => 0),
       'devise' => '',
+      'devises' => array(),
       'par_routeur' => array(),
       'par_profil' => array(),
       'jours' => array(),
@@ -270,39 +277,60 @@ if (!function_exists('tikras_sales_synthese')) {
       $synthese['disponible'] = true;
       $source = tikras_sales_source();
 
-      $req = $pdo->prepare('SELECT COUNT(*) n, COALESCE(SUM(price), 0) t FROM ' . $source . ' WHERE substr(sold_at, 1, 10) = ?');
+      /*
+       * Le parc n'encaisse pas dans une seule monnaie: des routeurs sont au
+       * Niger (CFA) et d'autres au Nigeria (NGN). Additionner les deux
+       * donnerait un nombre qui ne veut rien dire. La monnaie principale est
+       * celle qui porte le plus gros volume; les autres sont totalisees a
+       * part et affichees en complement.
+       */
+      $req = $pdo->prepare('SELECT currency, COUNT(*) n, COALESCE(SUM(price), 0) t FROM ' . $source . '
+        WHERE substr(sold_at, 1, 10) >= ? GROUP BY currency ORDER BY t DESC');
+      $req->execute(array($debutMois));
+      $parDevise = $req->fetchAll();
+      $synthese['devises'] = array();
+      foreach ($parDevise as $ligne) {
+        $synthese['devises'][] = array(
+          'devise' => (string) $ligne['currency'],
+          'total' => (float) $ligne['t'],
+          'nombre' => (int) $ligne['n'],
+        );
+      }
+      $synthese['devise'] = count($parDevise) > 0 ? (string) $parDevise[0]['currency'] : '';
+      $principale = $synthese['devise'];
+
+      $req = $pdo->prepare('SELECT COUNT(*) n, COALESCE(SUM(price), 0) t FROM ' . $source . '
+        WHERE substr(sold_at, 1, 10) = ? AND currency = ?');
       foreach (array('jour' => $aujourdhui, 'hier' => $hier) as $cle => $jour) {
-        $req->execute(array($jour));
+        $req->execute(array($jour, $principale));
         $ligne = $req->fetch();
         $synthese[$cle] = array('total' => (float) $ligne['t'], 'nombre' => (int) $ligne['n']);
       }
 
-      $req = $pdo->prepare('SELECT COUNT(*) n, COALESCE(SUM(price), 0) t FROM ' . $source . ' WHERE substr(sold_at, 1, 10) >= ?');
-      $req->execute(array($debutMois));
+      $req = $pdo->prepare('SELECT COUNT(*) n, COALESCE(SUM(price), 0) t FROM ' . $source . '
+        WHERE substr(sold_at, 1, 10) >= ? AND currency = ?');
+      $req->execute(array($debutMois, $principale));
       $ligne = $req->fetch();
       $synthese['mois'] = array('total' => (float) $ligne['t'], 'nombre' => (int) $ligne['n']);
 
-      $req = $pdo->prepare('SELECT currency FROM sales_cache WHERE currency != "" ORDER BY id DESC LIMIT 1');
-      $req->execute();
-      $devise = $req->fetchColumn();
-      $synthese['devise'] = $devise === false ? '' : (string) $devise;
-
+      /* Classements et courbe restent dans la monnaie principale, pour que
+         les montants affiches soient comparables entre eux. */
       $req = $pdo->prepare('SELECT session, COUNT(*) n, COALESCE(SUM(price), 0) t FROM ' . $source . '
-        WHERE substr(sold_at, 1, 10) >= ? GROUP BY session ORDER BY t DESC LIMIT 6');
-      $req->execute(array($debutMois));
+        WHERE substr(sold_at, 1, 10) >= ? AND currency = ? GROUP BY session ORDER BY t DESC LIMIT 6');
+      $req->execute(array($debutMois, $principale));
       $synthese['par_routeur'] = $req->fetchAll();
 
       $req = $pdo->prepare('SELECT profile, COUNT(*) n, COALESCE(SUM(price), 0) t FROM ' . $source . '
-        WHERE substr(sold_at, 1, 10) >= ? GROUP BY profile ORDER BY t DESC LIMIT 6');
-      $req->execute(array($debutMois));
+        WHERE substr(sold_at, 1, 10) >= ? AND currency = ? GROUP BY profile ORDER BY t DESC LIMIT 6');
+      $req->execute(array($debutMois, $principale));
       $synthese['par_profil'] = $req->fetchAll();
 
       // Quatorze jours: assez pour lire une tendance, assez court pour rester
       // lisible sur un telephone.
       $depuis = date('Y-m-d', strtotime('-13 days'));
       $req = $pdo->prepare('SELECT substr(sold_at, 1, 10) j, COUNT(*) n, COALESCE(SUM(price), 0) t
-        FROM ' . $source . ' WHERE substr(sold_at, 1, 10) >= ? GROUP BY j ORDER BY j');
-      $req->execute(array($depuis));
+        FROM ' . $source . ' WHERE substr(sold_at, 1, 10) >= ? AND currency = ? GROUP BY j ORDER BY j');
+      $req->execute(array($depuis, $principale));
       $parJour = array();
       foreach ($req->fetchAll() as $ligne) {
         $parJour[(string) $ligne['j']] = array('nombre' => (int) $ligne['n'], 'total' => (float) $ligne['t']);

@@ -142,7 +142,22 @@ foreach ($bordSynthese['jours'] as $bordJour) {
   <div class="tikras-bord-carte">
     <span class="tikras-bord-libelle">Recette du mois</span>
     <strong class="tikras-bord-valeur"><?= tikras_h(tikras_bord_montant($bordSynthese['mois']['total'], $bordDevise)); ?></strong>
-    <span class="tikras-bord-detail"><?= (int) $bordSynthese['mois']['nombre']; ?> ticket(s) depuis le 1<sup>er</sup></span>
+    <span class="tikras-bord-detail">
+      <?= (int) $bordSynthese['mois']['nombre']; ?> ticket(s) depuis le 1<sup>er</sup>
+      <?php
+      /*
+       * Une partie du parc encaisse dans une autre monnaie. On ne l'ajoute
+       * pas au total - la somme n'aurait pas de sens - mais on l'affiche,
+       * sans quoi ces recettes sembleraient perdues.
+       */
+      foreach ($bordSynthese['devises'] as $bordAutre) {
+        if ($bordAutre['devise'] === $bordDevise) {
+          continue;
+        }
+      ?>
+        <br><span class="tikras-bord-autre-devise">+ <?= tikras_h(tikras_bord_montant($bordAutre['total'], $bordAutre['devise'])); ?></span>
+      <?php } ?>
+    </span>
   </div>
 
   <div class="tikras-bord-carte">

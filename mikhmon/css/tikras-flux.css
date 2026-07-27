@@ -958,6 +958,19 @@ body[data-theme] .tikras-bord-detail {
 body[data-theme] .tikras-bord-hausse { color: #0d9f6e; font-weight: 700; }
 body[data-theme] .tikras-bord-baisse { color: var(--one-red); font-weight: 700; }
 
+/* Recettes encaissees dans une autre monnaie: presentes, mais nettement
+   distinctes du total principal auquel elles ne s'ajoutent pas. */
+body[data-theme] .tikras-bord-autre-devise {
+  display: inline-block;
+  margin-top: var(--sp-1);
+  padding: 1px var(--sp-2);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  color: var(--one-text-soft);
+  background: var(--one-surface-soft);
+  border-radius: var(--r-pill);
+}
+
 body[data-theme] .tikras-bord-note {
   display: flex;
   align-items: flex-start;
