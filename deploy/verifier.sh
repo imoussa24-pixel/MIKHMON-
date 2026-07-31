@@ -81,14 +81,45 @@ else
 fi
 
 titre "Automatisations"
-if docker exec "$CONTENEUR" test -f /data/automations.log; then
-  DERNIER=$(docker exec "$CONTENEUR" stat -c '%Y' /data/automations.log 2>/dev/null || echo 0)
+# On interroge les marqueurs enregistres par les taches elles-memes, et non la
+# date d'un fichier journal: le journal n'est ecrit que par le planificateur
+# interne du conteneur, si bien qu'un declenchement par la minuterie du systeme
+# passait pour une panne. Ces marqueurs, eux, disent ce qui a reellement tourne.
+DERNIER=$(docker exec -u www-data "$CONTENEUR" php -r '
+require "/var/www/html/lib/tikras_core.php";
+require "/var/www/html/lib/tikras_storage.php";
+require "/var/www/html/lib/tikras_automation.php";
+$recent = 0;
+foreach (array("sync_routers", "health_check", "roaming_retry", "tickets", "sales_sync") as $tache) {
+  $marqueur = (int) tikras_automation_meta_get("auto.last." . $tache, "0");
+  if ($marqueur > $recent) { $recent = $marqueur; }
+}
+echo $recent;
+' 2>/dev/null | tr -dc '0-9')
+[ -z "$DERNIER" ] && DERNIER=0
+
+if [ "$DERNIER" -gt 0 ]; then
   AGE=$(( $(date +%s) - DERNIER ))
   if [ "$AGE" -lt 900 ]; then
     bon "dernier cycle il y a ${AGE}s"
   else
     attention "dernier cycle il y a ${AGE}s (plus de 15 min)"
   fi
+else
+  attention "aucune tache automatique n'a encore tourne"
+fi
+
+# Un cycle laisse en attente sur un routeur muet figeait autrefois tout le
+# planificateur: on verifie qu'aucun n'est en cours depuis trop longtemps.
+FIGE=$(docker exec "$CONTENEUR" sh -c "ps -o etimes=,cmd= -C php 2>/dev/null | awk '\$1 > 600 && /cron.php/' | wc -l" 2>/dev/null | tr -dc '0-9')
+[ -z "$FIGE" ] && FIGE=0
+if [ "$FIGE" -eq 0 ]; then
+  bon "aucun cycle bloque"
+else
+  attention "${FIGE} cycle(s) en cours depuis plus de 10 min (bloque ?)"
+fi
+
+if docker exec "$CONTENEUR" test -f /data/automations.log; then
   ERR=$(docker exec "$CONTENEUR" sh -c 'grep -c "\"ok\": false" /data/automations.log 2>/dev/null | head -1' | tr -dc '0-9')
   [ -z "$ERR" ] && ERR=0
   [ "$ERR" -eq 0 ] && bon "aucun cycle en erreur" || attention "$ERR cycle(s) en erreur dans le journal"
