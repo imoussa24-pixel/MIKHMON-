@@ -24,11 +24,22 @@ chown -R www-data:www-data /var/www/html/share /var/www/html/img /var/www/html/v
 # Planificateur interne: execute les automatisations 24h/24 sans dependre d'un
 # cron externe. Toujours lance en www-data pour que les fichiers crees (SQLite,
 # sauvegardes) restent accessibles en ecriture a Apache.
+#
+# Le cycle est borne dans le temps par "timeout". Sans cette limite, un cycle
+# reste indefiniment en attente sur un routeur qui accepte la connexion sans
+# jamais repondre: le "max_execution_time" de PHP ne l'interrompt pas, car il
+# ne compte pas le temps passe bloque sur une socket. La boucle attendant la
+# fin du cycle precedent, c'est alors TOUT le planificateur qui se fige - un
+# cycle est ainsi reste bloque pres de trois jours, arretant sans le moindre
+# signal les tickets planifies, le releve des recettes et les sauvegardes.
 if [ "${TIKRAS_INTERNAL_CRON:-1}" = "1" ]; then
   (
     sleep 20
     while true; do
-      su www-data -s /bin/sh -c "php /var/www/html/cron.php" >> "${DATA_DIR}/automations.log" 2>&1 || true
+      timeout --kill-after=15s "${TIKRAS_INTERNAL_CRON_TIMEOUT:-180}" \
+        su www-data -s /bin/sh -c "php /var/www/html/cron.php" \
+        >> "${DATA_DIR}/automations.log" 2>&1 \
+        || echo "{\"ok\":false,\"error\":\"cycle interrompu (delai depasse)\",\"at\":\"$(date -Is)\"}" >> "${DATA_DIR}/automations.log"
       sleep "${TIKRAS_INTERNAL_CRON_INTERVAL:-300}"
     done
   ) &
