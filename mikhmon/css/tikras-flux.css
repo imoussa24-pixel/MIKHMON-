@@ -825,6 +825,17 @@ body[data-theme] #filtreFavoris.est-actif {
   border-color: var(--one-amber) !important;
 }
 
+/* Invitation a deplier le reste du parc, centree sous la liste. */
+body[data-theme] .tikras-router-plus {
+  display: flex;
+  justify-content: center;
+  margin-top: var(--sp-3);
+}
+
+body[data-theme] .tikras-router-plus[hidden] {
+  display: none;
+}
+
 @media (max-width: 620px) {
   body[data-theme] .tikras-favori-btn {
     width: 40px;

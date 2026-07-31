@@ -178,6 +178,20 @@ $routerSubtitle = $routerTotal . ' routeur(s) · ' . $routerOnline . ' en ligne 
       <div class="tikras-router-list">
         <?= $routerCards; ?>
       </div>
+      <?php
+      /*
+       * Au-dela d'une trentaine de routeurs, la page s'etirait sur pres de
+       * vingt mille pixels. On n'en montre qu'une partie a l'ouverture; la
+       * recherche et le filtre favoris, eux, portent toujours sur la totalite
+       * du parc, sinon masquer reviendrait a cacher des routeurs a qui les
+       * cherche.
+       */
+      ?>
+      <div id="zoneVoirTout" class="tikras-router-plus" hidden>
+        <button id="voirTousRouteurs" class="tikras-btn tikras-btn-muted" type="button">
+          <i class="fa fa-chevron-down"></i><span>Afficher les <span id="resteRouteurs"></span> autres routeurs</span>
+        </button>
+      </div>
     </div>
   </section>
 
@@ -252,22 +266,45 @@ $routerSubtitle = $routerTotal . ' routeur(s) · ' . $routerOnline . ' en ligne 
    * taper un nom doit chercher parmi les favoris, et non tout reafficher.
    */
   var favorisSeuls = false;
+  var LIMITE_INITIALE = 30;
+  var toutAffiche = false;
 
   function appliquerFiltres() {
     var term = ($("#adminRouterSearch").val() || "").toLowerCase();
+    // Des qu'on cherche ou qu'on filtre, la limite d'affichage n'a plus lieu
+    // d'etre: on cherche dans tout le parc, pas dans les trente premiers.
+    var limiter = !toutAffiche && term === "" && !favorisSeuls;
     var visibles = 0;
     $(".tikras-router-row").each(function(){
       var correspond = String($(this).data("router")).indexOf(term) !== -1;
       if (favorisSeuls && String($(this).data("favori")) !== "1") {
         correspond = false;
       }
+      if (correspond && limiter && visibles >= LIMITE_INITIALE) {
+        correspond = false;
+      }
       $(this).toggle(correspond);
       if (correspond) { visibles++; }
     });
+    var total = $(".tikras-router-row").length;
+    var reste = total - visibles;
+    $("#zoneVoirTout").prop("hidden", !(limiter && reste > 0));
+    $("#resteRouteurs").text(reste);
     return visibles;
   }
 
+  var boutonVoirTout = document.getElementById("voirTousRouteurs");
+  if (boutonVoirTout) {
+    boutonVoirTout.addEventListener("click", function(){
+      toutAffiche = true;
+      appliquerFiltres();
+    });
+  }
+
   $("#adminRouterSearch").on("input", appliquerFiltres);
+
+  // Applique la limite d'affichage des l'ouverture de la page.
+  appliquerFiltres();
 
   var boutonFavoris = document.getElementById("filtreFavoris");
   if (boutonFavoris) {
