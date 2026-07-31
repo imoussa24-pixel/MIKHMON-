@@ -80,6 +80,37 @@ else
   attention "base absente: elle sera creee au premier cycle d'automatisation"
 fi
 
+titre "Pages"
+# Chaque page est reellement rendue, session ouverte.
+#
+# Un deploiement partiel - une page envoyee sans la bibliotheque qu'elle
+# appelle - produit une erreur fatale et une page blanche, invisible de
+# l'exterieur: la requete repond alors 200 avec un corps presque vide, ou
+# redirige vers la connexion. Rien ne le signalait jusqu'ici.
+SID=$(docker exec -u www-data "$CONTENEUR" php -r '
+session_start(); $_SESSION["mikhmon"] = "verificateur"; session_write_close(); echo session_id();
+' 2>/dev/null | tr -dc 'a-zA-Z0-9,-')
+
+if [ -n "$SID" ]; then
+  PAGES_KO=0
+  for PAGE in bord sessions tickets planning radius-serveur wireguard backup audit storage; do
+    REP=$(docker exec "$CONTENEUR" sh -c "curl -s -o /tmp/_v.html -w '%{http_code}|%{size_download}' -b 'PHPSESSID=${SID}' 'http://127.0.0.1/admin.php?id=${PAGE}'" 2>/dev/null)
+    CODE=$(echo "$REP" | cut -d'|' -f1)
+    TAILLE=$(echo "$REP" | cut -d'|' -f2)
+    FATALE=$(docker exec "$CONTENEUR" sh -c "grep -ci 'fatal error\|Parse error' /tmp/_v.html 2>/dev/null" | tr -dc '0-9')
+    [ -z "$FATALE" ] && FATALE=0
+    # Une page valide depasse largement 3 Ko: en deca, c'est un rendu tronque.
+    if [ "$CODE" != "200" ] || [ "${TAILLE:-0}" -lt 3000 ] || [ "$FATALE" -gt 0 ]; then
+      mauvais "page '${PAGE}': code ${CODE}, ${TAILLE} octets$([ "$FATALE" -gt 0 ] && echo ', erreur fatale')"
+      PAGES_KO=$((PAGES_KO + 1))
+    fi
+  done
+  docker exec "$CONTENEUR" sh -c "rm -f /tmp/_v.html" 2>/dev/null || true
+  [ "$PAGES_KO" -eq 0 ] && bon "les 9 pages du panneau s'affichent"
+else
+  attention "impossible d'ouvrir une session de verification"
+fi
+
 titre "Automatisations"
 # On interroge les marqueurs enregistres par les taches elles-memes, et non la
 # date d'un fichier journal: le journal n'est ecrit que par le planificateur
