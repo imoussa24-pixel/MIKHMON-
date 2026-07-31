@@ -186,6 +186,15 @@ if (!function_exists('tikras_sales_releve_parc')) {
       tikras_sales_marquer_releve($session);
     }
 
+    /*
+     * Le releve vient de modifier les recettes: la synthese en cache ne vaut
+     * plus rien. On la jette pour que le prochain affichage montre les
+     * nouveaux chiffres, sans attendre l'expiration du delai.
+     */
+    if ($rapport['ventes'] > 0) {
+      tikras_sales_cache_ecrire('synthese', null);
+    }
+
     return $rapport;
   }
 }
@@ -267,6 +276,19 @@ if (!function_exists('tikras_sales_synthese')) {
       return $vide;
     }
 
+    /*
+     * Resultat garde en memoire deux minutes.
+     *
+     * Les recettes ne changent qu'au rythme du releve, qui passe tous les
+     * quinze minutes: recalculer a chaque affichage ferait patienter pour un
+     * chiffre identique. Deux minutes gardent la page vive au rechargement
+     * sans jamais montrer une valeur sensiblement perimee.
+     */
+    $cache = tikras_sales_cache_lire('synthese', 120);
+    if ($cache !== null) {
+      return $cache;
+    }
+
     try {
       $pdo = tikras_storage_pdo();
       $aujourdhui = date('Y-m-d');
@@ -278,63 +300,68 @@ if (!function_exists('tikras_sales_synthese')) {
       $source = tikras_sales_source();
 
       /*
-       * Le parc n'encaisse pas dans une seule monnaie: des routeurs sont au
-       * Niger (CFA) et d'autres au Nigeria (NGN). Additionner les deux
-       * donnerait un nombre qui ne veut rien dire. La monnaie principale est
-       * celle qui porte le plus gros volume; les autres sont totalisees a
-       * part et affichees en complement.
+       * Une seule lecture, agregee par jour et par monnaie.
+       *
+       * Chaque chiffre du tableau de bord etait auparavant demande a la base
+       * separement: recette du jour, de la veille, du mois, par monnaie, par
+       * jour... Or le dedoublonnage impose de regrouper les 73 000 ventes a
+       * chaque fois. Six questions, six parcours complets de la table, et
+       * trois secondes d'attente a l'ouverture.
+       *
+       * Un seul parcours ramene desormais le total par (jour, monnaie) - une
+       * centaine de lignes - dont tous les autres chiffres se deduisent en
+       * memoire, pour un cout negligeable.
        */
-      $req = $pdo->prepare('SELECT currency, COUNT(*) n, COALESCE(SUM(price), 0) t FROM ' . $source . '
-        WHERE substr(sold_at, 1, 10) >= ? GROUP BY currency ORDER BY t DESC');
-      $req->execute(array($debutMois));
-      $parDevise = $req->fetchAll();
+      $depuis = min($debutMois, date('Y-m-d', strtotime('-13 days')));
+      $req = $pdo->prepare('SELECT substr(sold_at, 1, 10) j, currency, COUNT(*) n, COALESCE(SUM(price), 0) t
+        FROM ' . $source . ' WHERE substr(sold_at, 1, 10) >= ? GROUP BY j, currency');
+      $req->execute(array($depuis));
+      $agregats = $req->fetchAll();
+
+      // Monnaie principale: celle qui porte le plus gros volume sur le mois.
+      $volumeParDevise = array();
+      $nombreParDevise = array();
+      foreach ($agregats as $ligne) {
+        if ((string) $ligne['j'] < $debutMois) {
+          continue;
+        }
+        $devise = (string) $ligne['currency'];
+        $volumeParDevise[$devise] = (isset($volumeParDevise[$devise]) ? $volumeParDevise[$devise] : 0) + (float) $ligne['t'];
+        $nombreParDevise[$devise] = (isset($nombreParDevise[$devise]) ? $nombreParDevise[$devise] : 0) + (int) $ligne['n'];
+      }
+      arsort($volumeParDevise);
       $synthese['devises'] = array();
-      foreach ($parDevise as $ligne) {
+      foreach ($volumeParDevise as $devise => $total) {
         $synthese['devises'][] = array(
-          'devise' => (string) $ligne['currency'],
-          'total' => (float) $ligne['t'],
-          'nombre' => (int) $ligne['n'],
+          'devise' => $devise,
+          'total' => (float) $total,
+          'nombre' => (int) $nombreParDevise[$devise],
         );
       }
-      $synthese['devise'] = count($parDevise) > 0 ? (string) $parDevise[0]['currency'] : '';
+      $synthese['devise'] = count($volumeParDevise) > 0 ? (string) key($volumeParDevise) : '';
       $principale = $synthese['devise'];
 
-      $req = $pdo->prepare('SELECT COUNT(*) n, COALESCE(SUM(price), 0) t FROM ' . $source . '
-        WHERE substr(sold_at, 1, 10) = ? AND currency = ?');
-      foreach (array('jour' => $aujourdhui, 'hier' => $hier) as $cle => $jour) {
-        $req->execute(array($jour, $principale));
-        $ligne = $req->fetch();
-        $synthese[$cle] = array('total' => (float) $ligne['t'], 'nombre' => (int) $ligne['n']);
+      // Recettes du jour, de la veille et du mois, dans la monnaie principale.
+      $parJour = array();
+      foreach ($agregats as $ligne) {
+        if ((string) $ligne['currency'] !== $principale) {
+          continue;
+        }
+        $jour = (string) $ligne['j'];
+        $parJour[$jour] = array('nombre' => (int) $ligne['n'], 'total' => (float) $ligne['t']);
+        if ($jour === $aujourdhui) {
+          $synthese['jour'] = $parJour[$jour];
+        } elseif ($jour === $hier) {
+          $synthese['hier'] = $parJour[$jour];
+        }
+        if ($jour >= $debutMois) {
+          $synthese['mois']['total'] += (float) $ligne['t'];
+          $synthese['mois']['nombre'] += (int) $ligne['n'];
+        }
       }
-
-      $req = $pdo->prepare('SELECT COUNT(*) n, COALESCE(SUM(price), 0) t FROM ' . $source . '
-        WHERE substr(sold_at, 1, 10) >= ? AND currency = ?');
-      $req->execute(array($debutMois, $principale));
-      $ligne = $req->fetch();
-      $synthese['mois'] = array('total' => (float) $ligne['t'], 'nombre' => (int) $ligne['n']);
-
-      /* Classements et courbe restent dans la monnaie principale, pour que
-         les montants affiches soient comparables entre eux. */
-      $req = $pdo->prepare('SELECT session, COUNT(*) n, COALESCE(SUM(price), 0) t FROM ' . $source . '
-        WHERE substr(sold_at, 1, 10) >= ? AND currency = ? GROUP BY session ORDER BY t DESC LIMIT 6');
-      $req->execute(array($debutMois, $principale));
-      $synthese['par_routeur'] = $req->fetchAll();
-
-      $req = $pdo->prepare('SELECT profile, COUNT(*) n, COALESCE(SUM(price), 0) t FROM ' . $source . '
-        WHERE substr(sold_at, 1, 10) >= ? AND currency = ? GROUP BY profile ORDER BY t DESC LIMIT 6');
-      $req->execute(array($debutMois, $principale));
-      $synthese['par_profil'] = $req->fetchAll();
 
       // Quatorze jours: assez pour lire une tendance, assez court pour rester
       // lisible sur un telephone.
-      $depuis = date('Y-m-d', strtotime('-13 days'));
-      $req = $pdo->prepare('SELECT substr(sold_at, 1, 10) j, COUNT(*) n, COALESCE(SUM(price), 0) t
-        FROM ' . $source . ' WHERE substr(sold_at, 1, 10) >= ? AND currency = ? GROUP BY j ORDER BY j');
-      $req->execute(array($depuis, $principale));
-      $parJour = array();
-      foreach ($req->fetchAll() as $ligne) {
-        $parJour[(string) $ligne['j']] = array('nombre' => (int) $ligne['n'], 'total' => (float) $ligne['t']);
-      }
       $jours = array();
       for ($i = 13; $i >= 0; $i--) {
         $jour = date('Y-m-d', strtotime('-' . $i . ' days'));
@@ -346,9 +373,70 @@ if (!function_exists('tikras_sales_synthese')) {
       }
       $synthese['jours'] = $jours;
 
+      /* Classements: deux lectures supplementaires, car un regroupement par
+         routeur ou par forfait ne se deduit pas d'un total par jour. */
+      $req = $pdo->prepare('SELECT session, COUNT(*) n, COALESCE(SUM(price), 0) t FROM ' . $source . '
+        WHERE substr(sold_at, 1, 10) >= ? AND currency = ? GROUP BY session ORDER BY t DESC LIMIT 6');
+      $req->execute(array($debutMois, $principale));
+      $synthese['par_routeur'] = $req->fetchAll();
+
+      $req = $pdo->prepare('SELECT profile, COUNT(*) n, COALESCE(SUM(price), 0) t FROM ' . $source . '
+        WHERE substr(sold_at, 1, 10) >= ? AND currency = ? GROUP BY profile ORDER BY t DESC LIMIT 6');
+      $req->execute(array($debutMois, $principale));
+      $synthese['par_profil'] = $req->fetchAll();
+
+      tikras_sales_cache_ecrire('synthese', $synthese);
       return $synthese;
     } catch (Exception $e) {
       return $vide;
+    }
+  }
+}
+
+if (!function_exists('tikras_sales_cache_lire')) {
+  /*
+   * Petit cache de resultats, range dans la base avec son horodatage.
+   *
+   * Il n'est jamais bloquant: toute anomalie de lecture rend simplement la
+   * main pour un calcul complet, plutot que de faire echouer l'affichage.
+   */
+  function tikras_sales_cache_lire($nom, $secondes)
+  {
+    try {
+      $pdo = tikras_storage_pdo();
+      $stmt = $pdo->prepare('SELECT meta_value, updated_at FROM app_meta WHERE meta_key = ? LIMIT 1');
+      $stmt->execute(array('sales.cache.' . $nom));
+      $ligne = $stmt->fetch();
+      if (!$ligne || !isset($ligne['meta_value'])) {
+        return null;
+      }
+      $enveloppe = json_decode((string) $ligne['meta_value'], true);
+      if (!is_array($enveloppe) || !isset($enveloppe['t'], $enveloppe['v'])) {
+        return null;
+      }
+      if ((time() - (int) $enveloppe['t']) > (int) $secondes) {
+        return null;
+      }
+      return $enveloppe['v'];
+    } catch (Exception $e) {
+      return null;
+    }
+  }
+}
+
+if (!function_exists('tikras_sales_cache_ecrire')) {
+  function tikras_sales_cache_ecrire($nom, $valeur)
+  {
+    try {
+      $pdo = tikras_storage_pdo();
+      $stmt = $pdo->prepare('INSERT OR REPLACE INTO app_meta(meta_key, meta_value, updated_at) VALUES(?, ?, ?)');
+      $stmt->execute(array(
+        'sales.cache.' . $nom,
+        json_encode(array('t' => time(), 'v' => $valeur)),
+        tikras_storage_now(),
+      ));
+    } catch (Exception $e) {
+      // Un cache qui ne s'ecrit pas ne doit pas empecher l'affichage.
     }
   }
 }
