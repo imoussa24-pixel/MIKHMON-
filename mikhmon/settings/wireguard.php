@@ -13,6 +13,7 @@ include_once(dirname(__DIR__) . '/lib/tikras_storage.php');
 include_once(dirname(__DIR__) . '/lib/tikras_routeros.php');
 include_once(dirname(__DIR__) . '/lib/tikras_wireguard.php');
 include_once(dirname(__DIR__) . '/lib/tikras_wg_appareils.php');
+include_once(dirname(__DIR__) . '/lib/tikras_qr.php');
 
 if (!isset($_SESSION["mikhmon"])) {
   header("Location:../admin.php?id=login");
@@ -425,6 +426,32 @@ foreach ($wgPeers as $nom => $pair) {
        * l'utilisateur a trier lui-meme ce qui le concerne.
        */
       ?>
+      <?php
+      /*
+       * Sur telephone, le code QR evite tout transfert de fichier: on le
+       * scanne depuis l'application WireGuard elle-meme.
+       */
+      $wgQrTexte = $estTel ? tikras_wga_configuration_compacte($wgConfigNom) : '';
+      $wgQr = $wgQrTexte !== '' ? tikras_qr_svg($wgQrTexte, 5) : '';
+      ?>
+      <?php if ($wgQr !== '') { ?>
+      <div class="tikras-qr-bloc">
+        <div class="tikras-qr-image"><?= $wgQr; ?></div>
+        <div class="tikras-qr-aide">
+          <strong>Le plus simple : scannez ce code</strong>
+          <p>
+            Dans l'application WireGuard du téléphone, touchez <strong>+</strong> puis
+            <strong>Scanner depuis un code QR</strong>, et visez cet écran.
+            Donnez un nom au tunnel, puis activez-le.
+          </p>
+          <p class="tikras-qr-note">
+            Ce code vaut clé d'accès à tout votre parc : ne le photographiez pas
+            et ne le montrez à personne.
+          </p>
+        </div>
+      </div>
+      <p class="tikras-wg-intro"><strong>Ou bien, par fichier :</strong></p>
+      <?php } ?>
       <ol class="tikras-etapes">
         <?php if ($estTel) { ?>
           <li>Installez l'application <strong>WireGuard</strong> depuis le Play Store ou l'App Store.</li>

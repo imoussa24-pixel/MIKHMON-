@@ -315,6 +315,50 @@ if (!function_exists('tikras_wga_configuration')) {
   }
 }
 
+if (!function_exists('tikras_wga_configuration_compacte')) {
+  /*
+   * Meme configuration, reduite a l'essentiel pour tenir dans un code QR.
+   *
+   * L'encodeur couvre 213 caracteres; la version commentee en depasse 400.
+   * On retire donc les commentaires, les espaces autour des signes egal et
+   * les lignes vides - le format accepte les deux ecritures. Les reseaux
+   * locaux des sites sont omis: ils allongent la ligne "AllowedIPs" sans
+   * limite connue d'avance, et le reseau du concentrateur suffit a joindre
+   * les routeurs. Qui a besoin des sites prend le fichier.
+   */
+  function tikras_wga_configuration_compacte($identifiant)
+  {
+    if (!tikras_wg_table()) {
+      return '';
+    }
+    try {
+      $stmt = tikras_storage_pdo()->prepare("SELECT * FROM wireguard_peers WHERE session = ? AND peer_type = 'appareil' LIMIT 1");
+      $stmt->execute(array((string) $identifiant));
+      $appareil = $stmt->fetch();
+    } catch (Exception $e) {
+      return '';
+    }
+    if (!$appareil) {
+      return '';
+    }
+
+    $config = tikras_wg_config();
+    $lignes = array(
+      '[Interface]',
+      'PrivateKey=' . (string) $appareil['private_key'],
+      'Address=' . (string) $appareil['tunnel_ip'] . '/32',
+      '[Peer]',
+      'PublicKey=' . (string) $config['cle_publique'],
+      'Endpoint=' . (string) $config['endpoint'] . ':' . (int) $config['port'],
+      'AllowedIPs=' . (string) $config['reseau'],
+    );
+    $texte = implode("\n", $lignes);
+
+    // Au-dela de la capacite, mieux vaut aucun QR qu'un code tronque.
+    return strlen($texte) <= 213 ? $texte : '';
+  }
+}
+
 if (!function_exists('tikras_wga_definir_lan')) {
   /*
    * Declare le reseau local situe derriere un routeur.
