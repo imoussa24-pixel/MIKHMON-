@@ -359,6 +359,76 @@ if (!function_exists('tikras_wga_configuration_compacte')) {
   }
 }
 
+if (!function_exists('tikras_wga_ouvrir_site')) {
+  /*
+   * Autorise le trafic du tunnel a traverser le routeur vers son reseau local.
+   *
+   * Un routeur raccorde repond deja au tunnel: RouterOS accepte ce qui lui est
+   * destine ("input"). Mais ce qui le TRAVERSE ("forward") reste bloque par
+   * defaut, si bien que les antennes et points d'acces du site restent
+   * injoignables alors que le routeur, lui, repond. C'est la difference qui
+   * fait croire a un probleme de configuration des antennes.
+   *
+   * La regle est placee en tete de la chaine: RouterOS evalue dans l'ordre, et
+   * ajoutee a la fin elle serait precedee par les regles de rejet du modele
+   * par defaut, donc sans effet.
+   */
+  function tikras_wga_ouvrir_site($api, $interfaceWg = '')
+  {
+    if (!is_object($api)) {
+      return array('ok' => false, 'message' => 'Routeur injoignable.');
+    }
+
+    // Nom reel de l'interface WireGuard sur ce routeur.
+    if ($interfaceWg === '') {
+      $interfaces = $api->comm('/interface/wireguard/print', array('.proplist' => 'name'));
+      if (is_array($interfaces) && isset($interfaces[0]['name'])) {
+        $interfaceWg = (string) $interfaces[0]['name'];
+      }
+    }
+    if ($interfaceWg === '') {
+      return array('ok' => false, 'message' => "Aucune interface WireGuard sur ce routeur : raccordez-le d'abord.");
+    }
+
+    $commentaire = 'TIKRAS acces site';
+
+    // Deja fait ? On ne veut pas empiler des regles identiques.
+    $existantes = $api->comm('/ip/firewall/filter/print', array(
+      '?chain' => 'forward',
+      '?comment' => $commentaire,
+    ));
+    if (is_array($existantes) && count($existantes) > 0) {
+      return array('ok' => true, 'message' => "L'accès au réseau du site était déjà ouvert.", 'deja' => true);
+    }
+
+    // Position de la premiere regle, pour inserer avant elle.
+    $premieres = $api->comm('/ip/firewall/filter/print', array(
+      '?chain' => 'forward',
+      '.proplist' => '.id',
+    ));
+    $parametres = array(
+      'chain' => 'forward',
+      'in-interface' => $interfaceWg,
+      'action' => 'accept',
+      'comment' => $commentaire,
+    );
+    if (is_array($premieres) && isset($premieres[0]['.id'])) {
+      $parametres['place-before'] = (string) $premieres[0]['.id'];
+    }
+
+    $reponse = $api->comm('/ip/firewall/filter/add', $parametres);
+    if (is_array($reponse) && isset($reponse['!trap'][0]['message'])) {
+      return array('ok' => false, 'message' => 'Refus du routeur : ' . $reponse['!trap'][0]['message']);
+    }
+
+    return array(
+      'ok' => true,
+      'message' => "Accès ouvert : les équipements du site sont joignables depuis vos appareils.",
+      'interface' => $interfaceWg,
+    );
+  }
+}
+
 if (!function_exists('tikras_wga_definir_lan')) {
   /*
    * Declare le reseau local situe derriere un routeur.

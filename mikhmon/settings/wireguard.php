@@ -77,9 +77,38 @@ if (tikras_has_post('voir_config')) {
 }
 
 if (tikras_has_post('definir_lan')) {
-  $rapport = tikras_wga_definir_lan(tikras_post('session'), tikras_post('lan_subnet'));
+  $cibleLan = (string) tikras_post('session');
+  $rapport = tikras_wga_definir_lan($cibleLan, tikras_post('lan_subnet'));
   $wgFlash = $rapport['message'];
   $wgFlashType = $rapport['ok'] ? 'success' : 'danger';
+
+  /*
+   * Declarer le reseau cote serveur ne suffit pas: le routeur bloque encore
+   * ce qui le traverse. Les deux reglages vont ensemble, on les applique donc
+   * d'un seul geste plutot que de laisser l'utilisateur decouvrir qu'il en
+   * manque un.
+   */
+  if ($rapport['ok'] && trim((string) tikras_post('lan_subnet')) !== '') {
+    $ipRouteur = tikras_cfg_value($data, $cibleLan, 1, '!', '');
+    $userRouteur = tikras_cfg_value($data, $cibleLan, 2, '@|@', '');
+    $passRouteur = decrypt(tikras_cfg_value($data, $cibleLan, 3, '#|#', ''));
+    if ($ipRouteur != '') {
+      $apiLan = tikras_routeros_create();
+      $apiLan->attempts = 1;
+      $apiLan->timeout = 8;
+      if (tikras_routeros_connect($apiLan, $ipRouteur, $userRouteur, $passRouteur, $cibleLan, array('timeout' => 8, 'force' => true))) {
+        $ouverture = tikras_wga_ouvrir_site($apiLan);
+        $wgFlash .= ' ' . $ouverture['message'];
+        if (!$ouverture['ok']) {
+          $wgFlashType = 'warning';
+        }
+        tikras_routeros_disconnect($apiLan);
+      } else {
+        $wgFlash .= " Le routeur est injoignable : l'autorisation sur le routeur reste à appliquer.";
+        $wgFlashType = 'warning';
+      }
+    }
+  }
   $wgPeers = tikras_wg_liste();
 }
 
@@ -346,6 +375,41 @@ foreach ($wgPeers as $nom => $pair) {
       un appareil doit recevoir sa configuration : le panneau la prépare, vous
       l'installez une fois sur l'appareil.
     </p>
+    <details class="tikras-aide-antennes">
+      <summary>Joindre les antennes d'un site : ce qui est automatique et ce qui ne l'est pas</summary>
+      <div class="tikras-aide-corps">
+        <p>
+          Une fois votre appareil raccordé, vous atteignez les <strong>routeurs</strong>
+          par leur adresse en 10.200.1.x. Pour atteindre les <strong>antennes</strong>
+          d'un site, il faut en plus déclarer son réseau dans la colonne
+          « Réseau du site » du tableau ci-dessous.
+        </p>
+        <p>
+          <strong>Comment trouver le bon réseau ?</strong> Un routeur en a souvent
+          plusieurs, et les antennes ne sont que sur l'un d'eux. Dans Winbox, ouvrez
+          <strong>IP → ARP</strong> : la liste montre les équipements présents et leur
+          interface. Une antenne en 10.10.9.254 sur l'interface HOTSPOT signifie qu'il
+          faut déclarer le réseau de cette interface, ici 10.10.8.0/22.
+        </p>
+        <p>
+          Le panneau se charge alors du concentrateur <em>et</em> de l'autorisation sur
+          le routeur. Reste un réglage <strong>sur chaque antenne</strong>, qu'aucun
+          logiciel ne peut faire à votre place : sa
+          <strong>passerelle par défaut</strong> doit être l'adresse du MikroTik sur ce
+          réseau. Sans cela l'antenne fonctionne localement mais ne peut répondre à
+          personne d'extérieur. Donnez-lui aussi une <strong>adresse fixe</strong>, faute
+          de quoi elle changera d'adresse et deviendra introuvable.
+        </p>
+        <p>
+          Enfin, Winbox ne listera jamais vos routeurs dans l'onglet « Neighbors » à
+          travers le tunnel : cette découverte utilise une diffusion réseau, qui ne
+          traverse aucun tunnel. Connectez-vous par adresse. Ce n'est pas une panne.
+        </p>
+        <p class="tikras-version-note">
+          Le détail complet figure dans le fichier GUIDE_ACCES_ANTENNES.md du projet.
+        </p>
+      </div>
+    </details>
     <?php if (!$wgConfig['disponible']) { ?>
       <?= tikras_ui_alert('warning', "Le concentrateur n'est pas encore actif sur le serveur : lancez deploy/wireguard-hub.sh."); ?>
     <?php } else { ?>
@@ -554,8 +618,8 @@ foreach ($wgPeers as $nom => $pair) {
               <form method="post" action="" class="tikras-wg-lan-forme">
                 <input type="hidden" name="session" value="<?= tikras_h($nom); ?>">
                 <input class="form-control tikras-wg-lan" type="text" name="lan_subnet"
-                  value="<?= tikras_h($lanActuel); ?>" placeholder="ex : 192.168.88.0/24"
-                  title="Reseau local de ce site : ses antennes deviennent joignables depuis vos appareils"
+                  value="<?= tikras_h($lanActuel); ?>" placeholder="ex : 10.10.8.0/22"
+                  title="Reseau ou vivent les antennes de ce site. Dans Winbox: IP > ARP pour voir sur quel reseau elles repondent."
                   aria-label="Reseau local derriere <?= tikras_h($nom); ?>">
                 <button class="tikras-btn tikras-btn-muted tikras-btn-icon" type="submit" name="definir_lan" value="1"
                   title="Enregistrer le réseau du site">

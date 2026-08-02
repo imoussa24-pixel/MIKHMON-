@@ -977,6 +977,31 @@ body[data-theme] .tikras-qr-note {
   color: var(--one-red);
 }
 
+/* Aide depliable: presente sans encombrer ceux qui savent deja. */
+body[data-theme] .tikras-aide-antennes {
+  margin-bottom: var(--sp-4);
+  border: 1px solid var(--one-line);
+  border-radius: var(--r-md);
+  background: var(--one-surface-strong);
+}
+
+body[data-theme] .tikras-aide-antennes summary {
+  padding: var(--sp-3);
+  font-weight: 700;
+  color: var(--one-text);
+  cursor: pointer;
+}
+
+body[data-theme] .tikras-aide-corps {
+  padding: 0 var(--sp-4) var(--sp-3);
+  color: var(--one-text-soft);
+}
+
+body[data-theme] .tikras-aide-corps p {
+  margin: 0 0 var(--sp-3);
+  line-height: 1.6;
+}
+
 body[data-theme] .tikras-config-repli {
   margin-bottom: var(--sp-3);
 }
