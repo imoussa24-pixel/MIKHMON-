@@ -67,6 +67,13 @@ sysctl -q -w net.ipv4.ip_forward=1
 if command -v ufw > /dev/null 2>&1; then
   ufw allow "${PORT}/udp" > /dev/null 2>&1 || true
   echo "   port ${PORT}/udp ouvert"
+  # Activer le routage du noyau ne suffit pas: UFW rejette par defaut tout ce
+  # qui traverse la machine. Sans cette regle, chaque pair atteint le serveur
+  # mais aucun n'atteint les autres - un ordinateur raccorde ne voit alors
+  # aucun routeur, et rien ne l'explique. Le defaut est reste invisible
+  # jusqu'a ce que 156 000 paquets aient ete rejetes en silence.
+  ufw route allow in on wg0 out on wg0 > /dev/null 2>&1 || true
+  echo "   relais entre pairs autorise"
 fi
 
 echo "== [5/5] Demarrage =="

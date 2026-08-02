@@ -825,6 +825,69 @@ body[data-theme] #filtreFavoris.est-actif {
   border-color: var(--one-amber) !important;
 }
 
+/* ------------------------------------------------------------------ */
+/* Concentrateur : appareils et reseaux des sites                      */
+/* ------------------------------------------------------------------ */
+
+body[data-theme] .tikras-wg-appareil-forme {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-4);
+}
+
+body[data-theme] .tikras-wg-appareil-forme input {
+  flex: 1 1 240px;
+  min-width: 0;
+}
+
+/* Champ du reseau local, dans une cellule de tableau: il doit rester
+   compact pour ne pas elargir la colonne au-dela du lisible. */
+body[data-theme] .tikras-wg-lan-forme {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1);
+  margin: 0;
+}
+
+body[data-theme] .tikras-wg-lan {
+  width: 150px;
+  min-width: 0;
+  padding: 4px var(--sp-2) !important;
+  font-size: var(--fs-sm);
+}
+
+body[data-theme] .tikras-wg-config {
+  margin-top: var(--sp-4);
+  padding-top: var(--sp-4);
+  border-top: 1px solid var(--one-line);
+}
+
+body[data-theme] .tikras-wg-config h4 {
+  margin: 0 0 var(--sp-2);
+  font-size: var(--fs-lg);
+  font-weight: 800;
+  color: var(--one-text);
+}
+
+/* La configuration contient une cle: police a chasse fixe pour la relire
+   sans confondre les caracteres. */
+body[data-theme] #wgConfigTexte {
+  font-family: "Cascadia Mono", Consolas, "Courier New", monospace;
+  font-size: var(--fs-sm);
+  line-height: 1.5;
+}
+
+@media (max-width: 620px) {
+  body[data-theme] .tikras-wg-lan {
+    width: 100%;
+  }
+
+  body[data-theme] .tikras-wg-lan-forme {
+    flex-wrap: wrap;
+  }
+}
+
 /* Invitation a deplier le reste du parc, centree sous la liste. */
 body[data-theme] .tikras-router-plus {
   display: flex;

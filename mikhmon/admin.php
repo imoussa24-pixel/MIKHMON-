@@ -63,6 +63,28 @@ if ($_SESSION['theme'] == "") {
 }
 
 
+/*
+ * Telechargement du fichier de configuration d'un appareil du concentrateur.
+ *
+ * Traite avant toute autre chose: headhtml.php ci-dessous ouvre la page HTML,
+ * et le fichier partirait alors precede de toute l'interface - WireGuard le
+ * refuserait. La session est deja ouverte, l'acces reste donc protege.
+ */
+if ($id == 'wireguard' && tikras_get('config_appareil') != '' && isset($_SESSION['mikhmon'])) {
+  include_once('./lib/tikras_wg_appareils.php');
+  $wgCible = (string) tikras_get('config_appareil');
+  $wgContenu = tikras_wga_configuration($wgCible);
+  if ($wgContenu !== '') {
+    header('Content-Type: text/plain; charset=utf-8');
+    header('Content-Disposition: attachment; filename="'
+      . preg_replace('/[^A-Za-z0-9_.-]/', '-', $wgCible) . '.conf"');
+    // Ce fichier porte une cle privee: aucun cache, nulle part.
+    header('Cache-Control: no-store, no-cache, must-revalidate');
+    echo $wgContenu;
+    exit;
+  }
+}
+
 // load config
 include_once('./include/headhtml.php');
 include('./include/config.php');
@@ -194,6 +216,8 @@ if ($tikrasLoginRequest) {
   include_once('./include/menu.php');
   include_once('./settings/radius.php');
 } elseif ($id == "wireguard") {
+  // Le telechargement d'une configuration d'appareil est intercepte plus haut,
+  // avant l'ouverture de la page HTML.
   include_once('./include/menu.php');
   include_once('./settings/wireguard.php');
 } elseif ($id == "radius-serveur") {
