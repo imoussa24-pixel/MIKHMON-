@@ -34,14 +34,27 @@ $wgScriptSession = '';
 $wgScriptIp = '';
 $wgConfigAffichee = '';
 $wgConfigNom = '';
+$wgConfigLabel = '';
+
+/* Retrouve le nom lisible d'un appareil, pour ne pas afficher son identifiant. */
+function tikras_wg_label_appareil($identifiant)
+{
+  foreach (tikras_wga_liste() as $ligne) {
+    if ((string) $ligne['session'] === (string) $identifiant) {
+      return (string) $ligne['label'];
+    }
+  }
+  return '';
+}
 
 if (tikras_has_post('ajouter_appareil')) {
-  $rapport = tikras_wga_creer(tikras_post('appareil_nom'));
+  $rapport = tikras_wga_creer(tikras_post('appareil_nom'), tikras_post('appareil_type'));
   $wgFlash = $rapport['message'];
   $wgFlashType = $rapport['ok'] ? 'success' : 'danger';
   if ($rapport['ok']) {
     $wgConfigAffichee = tikras_wga_configuration($rapport['identifiant']);
     $wgConfigNom = (string) $rapport['identifiant'];
+    $wgConfigLabel = trim((string) tikras_post('appareil_nom'));
   }
 }
 
@@ -55,6 +68,7 @@ if (tikras_has_post('voir_config')) {
   $cible = (string) tikras_post('appareil');
   $wgConfigAffichee = tikras_wga_configuration($cible);
   $wgConfigNom = $cible;
+  $wgConfigLabel = tikras_wg_label_appareil($cible);
   if ($wgConfigAffichee === '') {
     $wgFlash = 'Configuration introuvable pour cet appareil.';
     $wgFlashType = 'danger';
@@ -325,89 +339,124 @@ foreach ($wgPeers as $nom => $pair) {
       et les équipements de leurs sites, où que vous soyez. C'est ce qui permet
       d'ouvrir Winbox sur une antenne sans être présent sur place.
     </p>
+    <p class="tikras-wg-intro tikras-wg-nuance">
+      <i class="fa fa-info-circle"></i>
+      À la différence d'un routeur, que le panneau configure lui-même à distance,
+      un appareil doit recevoir sa configuration : le panneau la prépare, vous
+      l'installez une fois sur l'appareil.
+    </p>
     <?php if (!$wgConfig['disponible']) { ?>
       <?= tikras_ui_alert('warning', "Le concentrateur n'est pas encore actif sur le serveur : lancez deploy/wireguard-hub.sh."); ?>
     <?php } else { ?>
     <form method="post" action="" class="tikras-wg-appareil-forme">
       <input class="form-control" type="text" name="appareil_nom" maxlength="40" required
         placeholder="Nom de l'appareil (ex : Portable Ibrahim)" aria-label="Nom du nouvel appareil">
+      <select class="form-control" name="appareil_type" aria-label="Type d'appareil">
+        <option value="ordinateur">Ordinateur</option>
+        <option value="telephone">Téléphone</option>
+      </select>
       <button class="tikras-btn tikras-btn-primary" type="submit" name="ajouter_appareil" value="1">
-        <i class="fa fa-plus"></i><span>Ajouter cet appareil</span>
+        <i class="fa fa-plus"></i><span>Préparer la configuration</span>
       </button>
     </form>
 
     <?php if (count($wgAppareils) > 0) { ?>
-    <div class="tikras-table-wrap">
-      <table class="table">
-        <thead>
-          <tr>
-            <th>Appareil</th>
-            <th>Adresse dans le tunnel</th>
-            <th>État</th>
-            <th class="text-right">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-        <?php foreach ($wgAppareils as $appareil) {
-          $etatApp = tikras_wg_etat_pair((string) $appareil['session']);
-          $hsApp = isset($etatApp['handshake']) ? (int) $etatApp['handshake'] : 0;
-          $actifApp = $hsApp > 0 && (time() - $hsApp) < 300;
-        ?>
-          <tr>
-            <td>
-              <strong><?= tikras_h($appareil['label'] != '' ? $appareil['label'] : $appareil['session']); ?></strong>
-              <div class="tikras-wg-session"><?= tikras_h($appareil['session']); ?></div>
-            </td>
-            <td><?= tikras_h($appareil['tunnel_ip']); ?></td>
-            <td>
-              <?php if ($actifApp) {
-                echo '<span class="tikras-status tikras-status-online"><i class="fa fa-check-circle"></i> Connecté</span>';
-              } elseif ($hsApp > 0) {
-                echo '<span class="tikras-status tikras-status-offline"><i class="fa fa-clock-o"></i> Vu ' . tikras_h(date('d/m H:i', $hsApp)) . '</span>';
-              } else {
-                echo '<span class="tikras-status tikras-status-unknown"><i class="fa fa-hourglass-half"></i> Jamais connecté</span>';
-              } ?>
-            </td>
-            <td class="text-right">
-              <form method="post" action="" class="tikras-wg-form">
-                <input type="hidden" name="appareil" value="<?= tikras_h($appareil['session']); ?>">
-                <button class="tikras-btn tikras-btn-muted" type="submit" name="voir_config" value="1"
-                  title="Afficher la configuration à installer">
-                  <i class="fa fa-eye"></i><span>Configuration</span>
-                </button>
-                <a class="tikras-btn tikras-btn-muted tikras-btn-icon" title="Télécharger le fichier"
-                  href="./admin.php?id=wireguard&config_appareil=<?= rawurlencode((string) $appareil['session']); ?>">
-                  <i class="fa fa-download"></i><span>Télécharger</span>
-                </a>
-                <button class="tikras-btn tikras-btn-danger tikras-btn-icon" type="submit" name="retirer_appareil" value="1"
-                  title="Retirer cet appareil"
-                  onclick="return confirm('Retirer cet appareil du concentrateur ? Il perdra l\'accès à vos routeurs.');">
-                  <i class="fa fa-trash"></i><span>Retirer</span>
-                </button>
-              </form>
-            </td>
-          </tr>
-        <?php } ?>
-        </tbody>
-      </table>
-    </div>
+    <?php
+    /*
+     * Une liste et non un tableau d'etat: un appareil n'a pas de "session"
+     * ni d'adresse a surveiller comme un routeur du parc. Ce qui compte est
+     * son nom, s'il s'est deja connecte, et comment recuperer sa
+     * configuration.
+     */
+    ?>
+    <ul class="tikras-appareils">
+      <?php foreach ($wgAppareils as $appareil) {
+        $etatApp = tikras_wg_etat_pair((string) $appareil['session']);
+        $hsApp = isset($etatApp['handshake']) ? (int) $etatApp['handshake'] : 0;
+        $actifApp = $hsApp > 0 && (time() - $hsApp) < 300;
+        $estTelephone = strpos((string) $appareil['session'], 'tel-') === 0;
+      ?>
+      <li class="tikras-appareil">
+        <span class="tikras-appareil-icone"><i class="fa fa-<?= $estTelephone ? 'mobile' : 'laptop'; ?>"></i></span>
+        <div class="tikras-appareil-nom">
+          <strong><?= tikras_h($appareil['label'] != '' ? $appareil['label'] : $appareil['session']); ?></strong>
+          <span>
+            <?php if ($actifApp) {
+              echo 'connecté en ce moment';
+            } elseif ($hsApp > 0) {
+              echo 'dernière connexion le ' . tikras_h(date('d/m à H:i', $hsApp));
+            } else {
+              echo 'configuration prête, pas encore installée';
+            } ?>
+          </span>
+        </div>
+        <form method="post" action="" class="tikras-appareil-actions">
+          <input type="hidden" name="appareil" value="<?= tikras_h($appareil['session']); ?>">
+          <a class="tikras-btn tikras-btn-primary"
+            href="./admin.php?id=wireguard&config_appareil=<?= rawurlencode((string) $appareil['session']); ?>">
+            <i class="fa fa-download"></i><span>Fichier</span>
+          </a>
+          <button class="tikras-btn tikras-btn-muted" type="submit" name="voir_config" value="1"
+            title="Revoir la marche à suivre">
+            <i class="fa fa-list-ol"></i><span>Marche à suivre</span>
+          </button>
+          <button class="tikras-btn tikras-btn-danger tikras-btn-icon" type="submit" name="retirer_appareil" value="1"
+            title="Retirer cet appareil"
+            onclick="return confirm('Retirer cet appareil du concentrateur ? Il perdra l\'accès à vos routeurs.');">
+            <i class="fa fa-trash"></i><span>Retirer</span>
+          </button>
+        </form>
+      </li>
+      <?php } ?>
+    </ul>
     <?php } ?>
     <?php } ?>
 
-    <?php if ($wgConfigAffichee != '') { ?>
+    <?php if ($wgConfigAffichee != '') {
+      $estTel = strpos($wgConfigNom, 'tel-') === 0;
+    ?>
     <div class="tikras-wg-config">
-      <h4>Configuration de <?= tikras_h($wgConfigNom); ?></h4>
+      <h4><i class="fa fa-list-ol"></i> Installer sur « <?= tikras_h($wgConfigLabel != '' ? $wgConfigLabel : $wgConfigNom); ?> »</h4>
+      <?php
+      /*
+       * La marche a suivre differe selon l'appareil: sur telephone on importe
+       * un fichier depuis l'application WireGuard, sur ordinateur on l'ouvre
+       * depuis le client de bureau. Donner les deux a la fois obligerait
+       * l'utilisateur a trier lui-meme ce qui le concerne.
+       */
+      ?>
+      <ol class="tikras-etapes">
+        <?php if ($estTel) { ?>
+          <li>Installez l'application <strong>WireGuard</strong> depuis le Play Store ou l'App Store.</li>
+          <li>Appuyez sur <strong>Fichier</strong> ci-dessous : le téléphone enregistre la configuration.</li>
+          <li>Dans WireGuard, touchez <strong>+</strong> puis <strong>Importer depuis un fichier</strong>, et choisissez le fichier téléchargé.</li>
+          <li>Activez le tunnel. Vos routeurs deviennent joignables, où que vous soyez.</li>
+        <?php } else { ?>
+          <li>Installez <strong>WireGuard</strong> depuis wireguard.com sur cet ordinateur.</li>
+          <li>Cliquez sur <strong>Fichier</strong> ci-dessous pour télécharger la configuration.</li>
+          <li>Dans WireGuard, choisissez <strong>Importer un tunnel depuis un fichier</strong> et sélectionnez-le.</li>
+          <li>Cliquez sur <strong>Activer</strong>. Winbox peut alors joindre vos routeurs par leur adresse en 10.200.1.x.</li>
+        <?php } ?>
+      </ol>
       <p class="tikras-wg-intro">
-        Installez WireGuard sur l'appareil, puis importez ce texte (ou le fichier
-        téléchargé). Sur téléphone, l'application WireGuard permet d'importer un fichier.
-        <strong>Ce texte contient une clé privée : ne le transmettez à personne.</strong>
+        <strong>Ce fichier contient une clé privée</strong> : il donne accès à tout votre parc.
+        Ne le transmettez à personne et ne l'envoyez pas par messagerie.
       </p>
-      <textarea id="wgConfigTexte" class="form-control" rows="12" readonly><?= tikras_h($wgConfigAffichee); ?></textarea>
+      <details class="tikras-config-repli">
+        <summary>Voir le contenu du fichier (si l'import échoue)</summary>
+        <textarea id="wgConfigTexte" class="form-control" rows="12" readonly><?= tikras_h($wgConfigAffichee); ?></textarea>
+        <div class="tikras-form-actions">
+          <button class="tikras-btn tikras-btn-muted" type="button" onclick="copierConfigAppareil()">
+            <i class="fa fa-copy"></i><span>Copier</span>
+          </button>
+          <span class="tikras-version-note" id="wgConfigCopie"></span>
+        </div>
+      </details>
       <div class="tikras-form-actions">
-        <button class="tikras-btn tikras-btn-primary" type="button" onclick="copierConfigAppareil()">
-          <i class="fa fa-copy"></i><span>Copier</span>
-        </button>
-        <span class="tikras-version-note" id="wgConfigCopie"></span>
+        <a class="tikras-btn tikras-btn-primary"
+          href="./admin.php?id=wireguard&config_appareil=<?= rawurlencode($wgConfigNom); ?>">
+          <i class="fa fa-download"></i><span>Fichier de configuration</span>
+        </a>
       </div>
     </div>
     <?php } ?>

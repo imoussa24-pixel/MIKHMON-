@@ -124,7 +124,7 @@ if (!function_exists('tikras_wga_identifiant')) {
    * indexee par cette valeur, elle ne peut donc contenir que des caracteres
    * simples et doit rester unique.
    */
-  function tikras_wga_identifiant($nom)
+  function tikras_wga_identifiant($nom, $type = 'ordinateur')
   {
     $base = strtolower(trim((string) $nom));
     $base = preg_replace('/[^a-z0-9]+/', '-', $base);
@@ -132,7 +132,9 @@ if (!function_exists('tikras_wga_identifiant')) {
     if ($base === '') {
       $base = 'appareil';
     }
-    $base = 'app-' . substr($base, 0, 28);
+    // Le prefixe porte le type: la marche a suivre affichee plus tard en
+    // depend, et il se lit sans avoir a relire la base.
+    $base = ($type === 'telephone' ? 'tel-' : 'app-') . substr($base, 0, 28);
 
     $existants = tikras_wg_liste();
     if (!isset($existants[$base])) {
@@ -156,12 +158,13 @@ if (!function_exists('tikras_wga_creer')) {
    * a l'emploi a quelqu'un qui n'a pas WireGuard en ligne de commande. Elle
    * reste dans la base du serveur, qui contient deja les acces des routeurs.
    */
-  function tikras_wga_creer($nom)
+  function tikras_wga_creer($nom, $type = 'ordinateur')
   {
     $nom = trim((string) $nom);
     if ($nom === '') {
       return array('ok' => false, 'message' => "Donnez un nom à l'appareil.");
     }
+    $type = ($type === 'telephone') ? 'telephone' : 'ordinateur';
     if (!tikras_wg_table()) {
       return array('ok' => false, 'message' => 'Base locale indisponible.');
     }
@@ -181,7 +184,7 @@ if (!function_exists('tikras_wga_creer')) {
       return array('ok' => false, 'message' => "Impossible de generer les cles (extension sodium absente ?).");
     }
 
-    $identifiant = tikras_wga_identifiant($nom);
+    $identifiant = tikras_wga_identifiant($nom, $type);
     $maintenant = date('Y-m-d H:i:s');
 
     try {

@@ -857,10 +857,111 @@ body[data-theme] .tikras-wg-lan {
   font-size: var(--fs-sm);
 }
 
+/* Rappel de ce qui distingue un appareil d'un routeur. */
+body[data-theme] .tikras-wg-nuance {
+  padding: var(--sp-2) var(--sp-3);
+  background: var(--one-surface-soft);
+  border-left: 3px solid var(--one-primary);
+  border-radius: var(--r-sm);
+}
+
+/* Liste des appareils: ni tableau ni etat technique, un appareil n'est pas
+   un equipement du parc a surveiller. */
+body[data-theme] .tikras-appareils {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  margin: 0 0 var(--sp-3);
+  padding: 0;
+  list-style: none;
+}
+
+body[data-theme] .tikras-appareil {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-3);
+  background: var(--one-surface-strong);
+  border: 1px solid var(--one-line);
+  border-radius: var(--r-md);
+}
+
+body[data-theme] .tikras-appareil-icone {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 38px;
+  height: 38px;
+  color: var(--one-primary);
+  background: var(--one-primary-soft);
+  border-radius: var(--r-sm);
+}
+
+body[data-theme] .tikras-appareil-nom {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+body[data-theme] .tikras-appareil-nom strong {
+  display: block;
+  color: var(--one-text);
+}
+
+body[data-theme] .tikras-appareil-nom span {
+  font-size: var(--fs-sm);
+  color: var(--one-muted);
+}
+
+body[data-theme] .tikras-appareil-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  margin: 0;
+}
+
+/* Marche a suivre numerotee: c'est le coeur de l'ecran pour un appareil,
+   la ou un routeur se contente d'un bouton. */
+body[data-theme] .tikras-etapes {
+  margin: 0 0 var(--sp-3);
+  padding-left: var(--sp-5);
+  color: var(--one-text-soft);
+}
+
+body[data-theme] .tikras-etapes li {
+  margin-bottom: var(--sp-2);
+  line-height: 1.5;
+}
+
+body[data-theme] .tikras-config-repli {
+  margin-bottom: var(--sp-3);
+}
+
+body[data-theme] .tikras-config-repli summary {
+  padding: var(--sp-2) 0;
+  color: var(--one-muted);
+  font-size: var(--fs-sm);
+  cursor: pointer;
+}
+
 body[data-theme] .tikras-wg-config {
   margin-top: var(--sp-4);
   padding-top: var(--sp-4);
   border-top: 1px solid var(--one-line);
+}
+
+@media (max-width: 620px) {
+  body[data-theme] .tikras-appareil {
+    flex-wrap: wrap;
+  }
+
+  body[data-theme] .tikras-appareil-nom {
+    flex: 1 1 60%;
+  }
+
+  body[data-theme] .tikras-appareil-actions {
+    flex: 1 1 100%;
+  }
 }
 
 body[data-theme] .tikras-wg-config h4 {
