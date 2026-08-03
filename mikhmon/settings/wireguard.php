@@ -109,8 +109,33 @@ if (tikras_has_post('definir_lan')) {
       }
     }
   }
-  $wgPeers = tikras_wg_liste();
+  /*
+   * Envoi, redirection, affichage.
+   *
+   * Sans cette redirection, la page se rend directement en reponse au
+   * formulaire: recharger la revient a redeclarer le reseau, et rien ne
+   * distingue a l'ecran une declaration prise en compte d'un formulaire
+   * simplement reaffiche. L'ancre ramene sur le routeur concerne, la liste
+   * etant longue.
+   */
+  $_SESSION['wg_flash'] = $wgFlash;
+  $_SESSION['wg_flash_type'] = $wgFlashType;
+  tikras_redirect('./admin.php?id=wireguard&modifie=' . rawurlencode($cibleLan) . '#routeur-' . rawurlencode($cibleLan));
+  return;
 }
+
+/* Message rapporte par la redirection ci-dessus. */
+if (isset($_SESSION['wg_flash'])) {
+  $wgFlash = (string) $_SESSION['wg_flash'];
+  $wgFlashType = isset($_SESSION['wg_flash_type']) ? (string) $_SESSION['wg_flash_type'] : 'success';
+  unset($_SESSION['wg_flash'], $_SESSION['wg_flash_type']);
+}
+
+/*
+ * Routeur a mettre en evidence au retour: on ne peut pas lire l'ancre depuis
+ * le serveur, la ligne concernee est donc signalee explicitement.
+ */
+$lanActuelSurligne = (string) tikras_get('modifie', '');
 
 $wgAppareils = tikras_wga_liste();
 
@@ -590,7 +615,7 @@ foreach ($wgPeers as $nom => $pair) {
           $handshake = isset($etatPair['handshake']) ? (int) $etatPair['handshake'] : 0;
           $vivant = $handshake > 0 && (time() - $handshake) < 300;
           ?>
-          <tr class="tikras-wg-row" data-recherche="<?= tikras_h(strtolower($nom . ' ' . $libelle . ' ' . $hote)); ?>">
+          <tr id="routeur-<?= tikras_h($nom); ?>" class="tikras-wg-row<?= ($lanActuelSurligne === $nom ? ' tikras-wg-vient-de-changer' : ''); ?>" data-recherche="<?= tikras_h(strtolower($nom . ' ' . $libelle . ' ' . $hote)); ?>">
             <td>
               <strong><?= tikras_h($libelle != '' ? $libelle : $nom); ?></strong>
               <div class="tikras-wg-session"><?= tikras_h($nom); ?></div>

@@ -252,4 +252,39 @@
       tikrasBoot(document);
     });
   }
+
+  /*
+   * Rafraichissement apres une action.
+   *
+   * Les suppressions, activations et desactivations passent par loadpage(),
+   * qui charge l'adresse dans un conteneur invisible: l'action s'execute bien
+   * cote serveur, mais l'ecran continue d'afficher l'etat precedent. On
+   * supprime un routeur, il reste dans la liste; on desactive un compte, il
+   * parait toujours actif. L'utilisateur recharge alors a la main, ou croit
+   * que rien ne s'est passe et recommence.
+   *
+   * Ces fonctions sont redefinies ici, apres mikhmon.js, plutot que dans ce
+   * fichier minifie.
+   */
+  if (window.jQuery) {
+    var rechargerApresAction = function (adresse) {
+      var cible = window.jQuery("#temp");
+      if (cible.length === 0) {
+        window.location.href = adresse;
+        return;
+      }
+      cible.load(adresse, function () {
+        // Un court delai laisse au routeur le temps d'appliquer avant que la
+        // page ne relise son etat, sans quoi elle afficherait encore l'ancien.
+        window.setTimeout(function () {
+          window.location.reload();
+        }, 350);
+      });
+    };
+
+    window.loadpage = rechargerApresAction;
+    window.dellSelected = rechargerApresAction;
+    // Le changement de theme rend une page entiere: on la recharge de meme.
+    window.stheme = rechargerApresAction;
+  }
 })();

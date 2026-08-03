@@ -977,6 +977,16 @@ body[data-theme] .tikras-qr-note {
   color: var(--one-red);
 }
 
+/* Ligne qui vient d'etre modifiee: sur un tableau de cent routeurs, un
+   message en haut de page ne suffit pas a retrouver ce qu'on a change. */
+body[data-theme] .tikras-wg-vient-de-changer > td {
+  background: var(--one-primary-soft) !important;
+}
+
+body[data-theme] .tikras-wg-vient-de-changer > td:first-child {
+  box-shadow: inset 3px 0 0 var(--one-primary);
+}
+
 /* Aide depliable: presente sans encombrer ceux qui savent deja. */
 body[data-theme] .tikras-aide-antennes {
   margin-bottom: var(--sp-4);
