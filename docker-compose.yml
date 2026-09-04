@@ -16,8 +16,12 @@ services:
       TIKRAS_DATA_DIR: /data
     volumes:
       - tikras-data:/data
+    # Adresse de publication HTTP. Par defaut le port 80 sur toutes les
+    # interfaces, comme avant. Une fois le tunnel Cloudflare en service, mettre
+    # TIKRAS_HTTP_ADRESSE=127.0.0.1 et TIKRAS_HTTP_PORT=8080 dans .env : plus
+    # rien n'entre par l'IP du VPS, la boucle locale ne sert qu'au diagnostic.
     ports:
-      - "${TIKRAS_HTTP_PORT:-80}:80"
+      - "${TIKRAS_HTTP_ADRESSE:-0.0.0.0}:${TIKRAS_HTTP_PORT:-80}:80"
     healthcheck:
       test: ["CMD-SHELL", "php -r 'exit(@file_get_contents(\"http://localhost/admin.php?id=login\") ? 0 : 1);'"]
       interval: 30s
@@ -60,6 +64,38 @@ services:
       - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy-data:/data
       - caddy-config:/config
+
+  # Connexion sortante vers le bord Cloudflare : aucun port entrant a ouvrir
+  # sur le VPS, et le mot de passe admin ne circule plus en clair sur l'IP.
+  # Le jeton vient du tunnel cree dans le tableau de bord Zero Trust, ou le
+  # nom d'hote public pointe vers http://app:80 — l'adresse INTERNE du
+  # conteneur, avec son prefixe http://. Y mettre le domaine public fait
+  # boucler le tunnel sur lui-meme : 502 au bout de 30 s.
+  #
+  # Service optionnel, derriere un profil : sans domaine Cloudflare, le
+  # panneau tourne comme avant.
+  #   docker compose up -d                        # panneau seul
+  #   docker compose --profile cloudflare up -d   # + acces public par tunnel
+  tunnel:
+    profiles: ["cloudflare"]
+    # Version epinglee, et pas `latest` : une mise a jour de cloudflared se
+    # decide. Meme version que le tunnel de Mikhmon sur cette machine.
+    image: cloudflare/cloudflared:2026.7.3
+    container_name: tikras-tunnel
+    restart: unless-stopped
+    command: ["tunnel", "--no-autoupdate", "run"]
+    environment:
+      # Obligatoire seulement quand le profil cloudflare est actif : sans lui,
+      # cloudflared s'arrete aussitot avec un message explicite.
+      TUNNEL_TOKEN: ${CLOUDFLARE_TUNNEL_TOKEN:-}
+    depends_on:
+      app:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          cpus: "0.25"
+          memory: 128M
 
 volumes:
   tikras-data:
