@@ -31,6 +31,7 @@
    * besoin d'autre chose signale un cas particulier, pas une preference.
    */
   --r-sm: 8px;
+  --r-ctl: 10px;
   --r-md: 12px;
   --r-lg: 16px;
   --r-pill: 999px;
@@ -77,6 +78,24 @@ body[data-theme="blue"] {
   --one-shadow: var(--sh-2);
   --one-shadow-sm: var(--sh-1);
   --flux-glow: 0 0 0 1px rgba(99, 102, 241, 0.16), 0 6px 20px rgba(99, 102, 241, 0.14);
+
+  /*
+   * Recette du verre, en trois valeurs.
+   *
+   * Le flou etait jusqu'ici ecrit a la main sur la barre et le panneau
+   * lateral seulement; les cartes restaient opaques, si bien que deux
+   * traitements de surface cohabitaient sur le meme ecran. Ces jetons
+   * fixent la recette une fois, et toutes les surfaces flottantes s'y
+   * referent.
+   *
+   * Leger veut dire flou court et transparence haute: un flou long donne
+   * un aspect laiteux qui mange le fond au lieu de le laisser voir. La
+   * bordure claire fait la tranche du verre - c'est elle qui donne
+   * l'epaisseur, pas l'ombre.
+   */
+  --glass-bg: rgba(255, 255, 255, 0.66);
+  --glass-blur: blur(16px) saturate(1.4);
+  --glass-edge: rgba(255, 255, 255, 0.85);
   color-scheme: light;
 }
 
@@ -101,6 +120,16 @@ body[data-theme="dark"] {
   --one-shadow: 0 2px 6px rgba(0, 0, 0, 0.32), 0 12px 32px rgba(0, 0, 0, 0.34);
   --one-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.28), 0 2px 8px rgba(0, 0, 0, 0.24);
   --flux-glow: 0 0 0 1px rgba(129, 140, 248, 0.28), 0 6px 22px rgba(99, 102, 241, 0.26);
+
+  /*
+   * Le verre sombre ne se regle pas comme le clair. Une surface plus
+   * transparente laisserait passer le fond presque noir et le texte
+   * perdrait son contraste, donc on ferme; et la tranche s'eclaire d'un
+   * blanc tres faible, la ou en clair elle etait presque opaque.
+   */
+  --glass-bg: rgba(19, 25, 48, 0.74);
+  --glass-blur: blur(16px) saturate(1.3);
+  --glass-edge: rgba(255, 255, 255, 0.08);
   color-scheme: dark;
 }
 
@@ -108,16 +137,27 @@ body[data-theme="dark"] {
  * Voile colore de l'arriere-plan.
  *
  * Il donne sa couleur a l'application, mais entre en concurrence avec le
- * contenu des qu'un ecran est dense: les teintes sont ramenees a la moitie
- * de leur intensite, assez pour rester perceptibles derriere les surfaces
- * claires, plus assez pour rivaliser avec un tableau ou un formulaire.
+ * contenu des qu'un ecran est dense: les teintes restent basses, assez pour
+ * etre perceptibles derriere les surfaces claires, pas assez pour rivaliser
+ * avec un tableau ou un formulaire.
+ *
+ * Elles ont ete remontees d'un cran avec le passage au verre: un flou n'a
+ * de sens que s'il a quelque chose a refracter. Sur un fond uniforme, la
+ * transparence ne se voit pas et le verre ne paie que son cout.
  */
 body[data-theme] {
   background-image:
-    radial-gradient(900px 460px at 8% -6%, rgba(99, 102, 241, 0.06), transparent 60%),
-    radial-gradient(760px 420px at 96% 4%, rgba(6, 182, 212, 0.05), transparent 55%),
-    radial-gradient(720px 520px at 55% 108%, rgba(139, 92, 246, 0.05), transparent 60%) !important;
+    radial-gradient(900px 460px at 8% -6%, rgba(99, 102, 241, 0.10), transparent 60%),
+    radial-gradient(760px 420px at 96% 4%, rgba(6, 182, 212, 0.09), transparent 55%),
+    radial-gradient(720px 520px at 55% 108%, rgba(139, 92, 246, 0.09), transparent 60%) !important;
   background-attachment: fixed !important;
+}
+
+body[data-theme="dark"] {
+  background-image:
+    radial-gradient(900px 460px at 8% -6%, rgba(99, 102, 241, 0.16), transparent 60%),
+    radial-gradient(760px 420px at 96% 4%, rgba(6, 182, 212, 0.13), transparent 55%),
+    radial-gradient(720px 520px at 55% 108%, rgba(139, 92, 246, 0.13), transparent 60%) !important;
 }
 
 body[data-theme] .wrapper {
@@ -173,8 +213,9 @@ body[data-theme] :focus-visible {
 
 body[data-theme] #navbar,
 body[data-theme] .navbar {
-  backdrop-filter: blur(20px) saturate(1.35);
-  -webkit-backdrop-filter: blur(20px) saturate(1.35);
+  background: var(--glass-bg) !important;
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
   border-bottom: 1px solid var(--one-line) !important;
 }
 
@@ -198,7 +239,7 @@ body[data-theme] #cpage {
   color: var(--one-text-soft) !important;
   background: var(--one-surface-soft);
   border: 1px solid var(--one-line);
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   height: 34px;
   padding: 0 16px;
   font-size: 13px;
@@ -210,8 +251,9 @@ body[data-theme] #cpage {
 
 body[data-theme] #sidenav,
 body[data-theme] .sidenav {
-  backdrop-filter: blur(22px) saturate(1.3);
-  -webkit-backdrop-filter: blur(22px) saturate(1.3);
+  background: var(--glass-bg) !important;
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
   border-right: 1px solid var(--one-line) !important;
   box-shadow: none;
 }
@@ -220,7 +262,7 @@ body[data-theme] .sidenav .menu,
 body[data-theme] .sidenav a,
 body[data-theme] .sidenav .dropdown-btn {
   margin: 2px 10px;
-  border-radius: 10px;
+  border-radius: var(--r-ctl);
   font-weight: 500;
   font-size: 13.5px;
 }
@@ -260,16 +302,38 @@ body[data-theme] .sidenav .card-header h3 {
 /* Cartes et panneaux                                                  */
 /* ------------------------------------------------------------------ */
 
+/*
+ * Toutes les surfaces flottantes recoivent la meme recette de verre. Elles
+ * etaient opaques pendant que la barre et le menu etaient translucides:
+ * deux traitements sur le meme ecran, ce qui se lit comme une negligence
+ * plutot que comme une intention.
+ *
+ * La bordure claire passe avant la ligne de separation: c'est la tranche
+ * du verre, et c'est elle qui donne l'epaisseur.
+ */
 body[data-theme] .card,
 body[data-theme] .tikras-panel,
 body[data-theme] .box,
 body[data-theme] .report-panel,
 body[data-theme] .tikras-storage-panel,
 body[data-theme] .tikras-tickets-panel {
-  border: 1px solid var(--one-line) !important;
+  background: var(--glass-bg) !important;
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-edge) !important;
   border-radius: var(--one-radius) !important;
   box-shadow: var(--one-shadow-sm) !important;
   transition: box-shadow var(--flux-speed) ease, transform var(--flux-speed) ease, border-color var(--flux-speed) ease;
+}
+
+/*
+ * Les en-tetes de carte heritaient d'un fond plein qui reintroduisait une
+ * bande opaque en haut de chaque surface en verre.
+ */
+body[data-theme] .card > .card-header,
+body[data-theme] .tikras-panel > .card-header {
+  background: transparent !important;
+  border-bottom: 1px solid var(--one-line) !important;
 }
 
 body[data-theme] .tikras-panel:hover,
@@ -282,14 +346,22 @@ body[data-theme] .card-header {
   border-radius: var(--one-radius) var(--one-radius) 0 0 !important;
 }
 
-/* Tuiles statistiques du tableau de bord */
+/*
+ * Tuiles statistiques du tableau de bord.
+ *
+ * Elles portaient une bordure en degrade de marque. Repete sur quatre
+ * tuiles cote a cote, le degrade cessait de signifier quoi que ce soit et
+ * tirait l'oeil vers le cadre plutot que vers le chiffre. Il est desormais
+ * reserve au logo et a l'action principale; les tuiles prennent le meme
+ * verre que les autres surfaces, et leur couleur vit sur l'icone.
+ */
 body[data-theme] .box-group > div,
 body[data-theme] .report-stat {
   border-radius: var(--one-radius) !important;
-  border: 1px solid var(--one-line);
-  background:
-    linear-gradient(var(--one-surface-strong), var(--one-surface-strong)) padding-box,
-    var(--flux-grad) border-box;
+  background: var(--glass-bg) !important;
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-edge) !important;
   transition: transform var(--flux-speed) ease, box-shadow var(--flux-speed) ease;
 }
 
@@ -303,9 +375,14 @@ body[data-theme] .report-stat:hover {
 /* Boutons                                                             */
 /* ------------------------------------------------------------------ */
 
+/*
+ * Le rayon des controles vient du jeton, pas d'un litteral. Il etait ecrit
+ * 10px ici alors que --r-sm valait 8 et --one-radius 12: trois valeurs pour
+ * un meme registre, visibles des qu'un bouton touche une carte.
+ */
 body[data-theme] .tikras-btn,
 body[data-theme] .btn {
-  border-radius: 10px !important;
+  border-radius: var(--r-ctl) !important;
   font-weight: 600;
   letter-spacing: 0.1px;
 }
@@ -338,7 +415,7 @@ body[data-theme] .btn:active {
 
 body[data-theme] .tikras-btn-danger,
 body[data-theme] .btn.bg-danger {
-  border-radius: 10px !important;
+  border-radius: var(--r-ctl) !important;
 }
 
 /* ------------------------------------------------------------------ */
@@ -350,7 +427,7 @@ body[data-theme] input,
 body[data-theme] select,
 body[data-theme] textarea,
 body[data-theme] .group-item {
-  border-radius: 10px;
+  border-radius: var(--r-ctl);
   border: 1px solid var(--one-line-strong);
   background: var(--one-bg-elevated);
 }
@@ -398,7 +475,7 @@ body[data-theme] .tikras-status {
   align-items: center;
   gap: 5px;
   padding: 2px 10px;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   font-size: 11.5px;
   font-weight: 600;
   vertical-align: middle;
@@ -459,7 +536,7 @@ body[data-theme] .tikras-wg-hub {
   margin-top: 12px;
   padding: 12px 14px;
   border: 1px solid var(--one-line);
-  border-radius: 10px;
+  border-radius: var(--r-ctl);
   background: var(--one-surface-soft);
   font-size: 12.5px;
   color: var(--one-text-soft);
@@ -505,7 +582,7 @@ body[data-theme] .tikras-wg-script {
   margin-top: 16px;
   padding: 14px;
   border: 1px solid var(--one-line);
-  border-radius: 12px;
+  border-radius: var(--r-md);
   background: var(--one-surface-soft);
 }
 
@@ -525,7 +602,7 @@ body[data-theme] .tikras-wg-script textarea {
 body[data-theme] .tikras-wg-attente {
   padding: 14px;
   border: 1px solid var(--one-line);
-  border-radius: 12px;
+  border-radius: var(--r-md);
   background: var(--one-bg-elevated);
 }
 
@@ -602,7 +679,7 @@ body[data-theme] .tikras-auto-list li {
   gap: 10px;
   padding: 10px 12px;
   border: 1px solid var(--one-line);
-  border-radius: 10px;
+  border-radius: var(--r-ctl);
   background: var(--one-bg-elevated);
 }
 
@@ -621,7 +698,7 @@ body[data-theme] .tikras-auto-interval {
 /* ------------------------------------------------------------------ */
 
 body[data-theme] #notify {
-  border-radius: 12px !important;
+  border-radius: var(--r-md) !important;
   backdrop-filter: blur(14px);
   box-shadow: var(--one-shadow) !important;
 }
@@ -659,10 +736,13 @@ body.login-screen[data-theme] .tikras-login-card {
   width: min(380px, 100%) !important;
   max-width: 380px;
   padding: 34px 30px 30px !important;
-  border-radius: 20px !important;
-  border: 1px solid var(--one-line) !important;
-  background: var(--one-surface) !important;
-  backdrop-filter: blur(24px) saturate(1.3);
+  /* La carte de connexion avait son propre verre - rayon 20, flou 24 - la
+     ou tout le reste tient en 16 et 16. Premier ecran vu, premiere
+     impression: elle suit la meme recette que les autres surfaces. */
+  border-radius: var(--r-lg) !important;
+  border: 1px solid var(--glass-edge) !important;
+  background: var(--glass-bg) !important;
+  backdrop-filter: var(--glass-blur);
   -webkit-backdrop-filter: blur(24px) saturate(1.3);
   box-shadow: var(--one-shadow) !important;
   animation: fluxRise 0.45s ease both;
@@ -683,7 +763,7 @@ body.login-screen[data-theme] .tikras-login-mark {
   width: 52px !important;
   height: 52px !important;
   min-width: 52px;
-  border-radius: 16px !important;
+  border-radius: var(--r-lg) !important;
   background: var(--flux-grad) !important;
   color: #ffffff !important;
   font-size: 20px;
@@ -722,7 +802,7 @@ body[data-theme] .tikras-login-form .form-control {
 body[data-theme] .tikras-login-submit,
 body.login-screen[data-theme] .tikras-login-submit {
   height: 46px;
-  border-radius: 12px !important;
+  border-radius: var(--r-md) !important;
   font-size: 14.5px;
   font-weight: 700;
   cursor: pointer;
@@ -744,7 +824,7 @@ body[data-theme] ::-webkit-scrollbar {
 
 body[data-theme] ::-webkit-scrollbar-thumb {
   background: var(--one-line-strong);
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   border: 2px solid transparent;
   background-clip: content-box;
 }
