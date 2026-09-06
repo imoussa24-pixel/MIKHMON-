@@ -801,9 +801,14 @@ body[data-theme] .tikras-login-form .form-control {
 
 body[data-theme] .tikras-login-submit,
 body.login-screen[data-theme] .tikras-login-submit {
+  /* Sa hauteur de 46px est deliberee et reste: les champs de cet ecran
+     font la meme, c'est une cible plus large sur l'ecran d'accueil. Son
+     rayon et son corps de texte, eux, s'ecartaient sans raison du reste
+     des boutons - releve sur les neuf pages: 10px et 14px partout, 12px
+     et 14,5px ici seulement. */
   height: 46px;
-  border-radius: var(--r-md) !important;
-  font-size: 14.5px;
+  border-radius: var(--r-ctl) !important;
+  font-size: 14px;
   font-weight: 700;
   cursor: pointer;
   margin-top: 4px;
