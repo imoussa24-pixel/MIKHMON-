@@ -284,22 +284,45 @@ class RouterosAPI
     {
         $RESPONSE     = array();
         $receiveddone = false;
+        /*
+         * Un routeur qui se tait laissait cette boucle tourner a vide: fread
+         * rend "" a l'expiration du delai du flux, ord("") vaut 0, et aucune
+         * sortie n'etait prevue pour ce cas - la requete tournait sans fin en
+         * immobilisant un processus Apache.
+         *
+         * Mais sortir au PREMIER silence est pire que le mal: une premiere
+         * connexion a un routeur du parc est froide et met couramment plus de
+         * dix secondes a rendre sa premiere reponse, bien au-dela du delai de
+         * deux secondes de la socket. Couper la fait rendre une reponse
+         * TRONQUEE, sans erreur: la liste des profils revenait a un seul, et
+         * les tickets ne pouvaient plus etre generes. Une reponse incomplete
+         * qui se presente comme complete est plus dangereuse qu'une attente.
+         *
+         * On tolere donc les silences successifs jusqu'a un budget total, et
+         * on ne rend la main que sur une fin de flux ou l'epuisement de ce
+         * budget - qui reste tres en deca de la limite d'execution web.
+         */
+        $silences    = 0;
+        $silencesMax = (int) max(8, ceil(30 / max(1, (int) $this->timeout)));
         while (true) {
             // Read the first byte of input which gives us some or all of the length
             // of the remaining reply.
             $FIRST  = fread($this->socket, 1);
-            // Un routeur qui se tait laissait cette boucle tourner a vide:
-            // fread rend "" a l'expiration du delai du flux, ord("") vaut 0,
-            // aucune sortie n'etait prevue pour ce cas et la requete tournait
-            // sans fin en immobilisant un processus Apache. On sort des que le
-            // flux declare son expiration ou sa fin.
             if ($FIRST === "" || $FIRST === false) {
                 $STATUS = socket_get_status($this->socket);
-                if (!empty($STATUS['timed_out']) || !empty($STATUS['eof'])) {
+                if (!empty($STATUS['eof'])) {
                     break;
+                }
+                if (!empty($STATUS['timed_out'])) {
+                    // Le routeur n'a rien dit pendant tout le delai du flux.
+                    // Tant qu'il reste du budget, on lui laisse sa chance.
+                    if (++$silences >= $silencesMax) {
+                        break;
+                    }
                 }
                 continue;
             }
+            $silences = 0;
             $BYTE   = ord($FIRST);
             $LENGTH = 0;
             // If the first bit is set then we need to remove the first four bits, shift left 8
