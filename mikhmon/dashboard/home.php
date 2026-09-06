@@ -428,6 +428,12 @@ if (!isset($_SESSION["mikhmon"])) {
         if (trafficPending) {
           return;
         }
+        // Onglet masque: inutile d'interroger le routeur toutes les 5 s pour
+        // un graphique que personne ne regarde. Le point suivant repart des
+        // que l'onglet revient au premier plan.
+        if (document.hidden) {
+          return;
+        }
         trafficPending = true;
         $.ajax({
           url: "./traffic/traffic.php?session=" + encodeURIComponent(sessionName) + "&iface=" + encodeURIComponent(ifaceSelect.value),
