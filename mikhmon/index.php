@@ -545,77 +545,74 @@ elseif ($ppp == "edit-profile") {
 <?php
 $urlParts = explode("/", $url);
 $urlTail = end($urlParts);
+/*
+ * Les noms de session et de serveur viennent de la configuration et
+ * atterrissent dans des URL a l'interieur de chaines JavaScript. Sans
+ * encodage, un nom porteur d'un espace, d'une apostrophe ou d'un accent
+ * casse la chaine et arrete d'un coup tous les rafraichissements de la page.
+ */
+$sessionUrl = rawurlencode($session);
+$serveractiveUrl = rawurlencode($serveractive);
+$serviceactiveUrl = rawurlencode($serviceactive);
+/*
+ * Plancher a 10 s. tikras_cfg_value rend la valeur enregistree meme vide,
+ * et une valeur vide donnait un intervalle de 0 ms, soit un martelage
+ * continu du routeur.
+ */
+$reloadMs = max(10, (int) $areload) * 1000;
 if ($hotspot == "dashboard" || substr($urlTail, 0, 8) == "?session") {
   echo '<script>
-    $("#r_3").load("./dashboard/aload.php?session=' . $session . '&load=logs #r_3");  
-    var interval1 = "' . ($areload * 1000) . '";
-    var dashboard = setInterval(function() {
-      
-    $("#r_1").load("./dashboard/aload.php?session=' . $session . '&load=sysresource #r_1"); 
-    $("#r_2").load("./dashboard/aload.php?session=' . $session . '&load=hotspot #r_2"); 
-    $("#r_3").load("./dashboard/aload.php?session=' . $session . '&load=logs #r_3"); 
-    
-  }, interval1);
-
+    var dashboardPollers = [];
+    dashboardPollers.push(tikrasPoll("#r_3", "./dashboard/aload.php?session=' . $sessionUrl . '&load=logs #r_3", ' . $reloadMs . ', true));
+    dashboardPollers.push(tikrasPoll("#r_1", "./dashboard/aload.php?session=' . $sessionUrl . '&load=sysresource #r_1", ' . $reloadMs . '));
+    dashboardPollers.push(tikrasPoll("#r_2", "./dashboard/aload.php?session=' . $sessionUrl . '&load=hotspot #r_2", ' . $reloadMs . '));
 ';
 if ($livereport == "enable" || $livereport == "") {
   $sessionDate = tikras_session_get($session.'sdate', '');
   $sessionHourId = tikras_session_get($session.'idhr', '');
   if($sessionDate != $sessionHourId){
     $_SESSION[$session.'totalHr'] = "0";
-    echo '$("#r_4").load("./report/livereport.php?session=' . $session . ' #r_4");';
-    }else if ($sessionDate == $sessionHourId){  
-    }else{
-      echo '$("#r_4").load("./report/livereport.php?session=' . $session . ' #r_4");';
     }
-  echo  '
-    var interval2 = "65432";
-    var livereport = setInterval(function() {
-    $("#r_4").load("./report/livereport.php?session=' . $session . ' #r_4"); 
-  }, interval2);
+  /*
+   * Le releve horaire est lourd et change lentement: il garde sa cadence
+   * propre (~65 s) au lieu de suivre celle du tableau de bord.
+   */
+  echo '
+    dashboardPollers.push(tikrasPoll("#r_4", "./report/livereport.php?session=' . $sessionUrl . ' #r_4", 65432, true));
  ';}
-  echo ' 
+  echo '
   function cancelPage(){
     window.stop();
-    clearInterval(dashboard);';
-    if ($livereport == "enable" || $livereport == "") {
-    echo '
-    clearInterval(livereport);';
-    }
-  echo '
-    }
+    tikrasStopPolling();
+  }
 </script>';
 
 } elseif ($hotspot == "active" && $serveractive != "") {
   echo '<script>
   $(document).ready(function(){
-    var interval = "' . ($areload * 1000) . '";
-    setInterval(function() {
-    $("#reloadHotspotActive").load("./hotspot/hotspotactive.php?server=' . $serveractive . '&session=' . $session . '"); }, interval);})
+    tikrasPoll("#reloadHotspotActive", "./hotspot/hotspotactive.php?server=' . $serveractiveUrl . '&session=' . $sessionUrl . '", ' . $reloadMs . ');
+  })
 </script>
 ';
 } elseif ($hotspot == "active" && $serveractive == "") {
   echo '<script>
   $(document).ready(function(){
-    var interval = "' . ($areload * 1000) . '";
-    setInterval(function() {
-    $("#reloadHotspotActive").load("./hotspot/hotspotactive.php?session=' . $session . '"); }, interval);})
+    tikrasPoll("#reloadHotspotActive", "./hotspot/hotspotactive.php?session=' . $sessionUrl . '", ' . $reloadMs . ');
+  })
 </script>
 ';
 } elseif ($ppp == "active" && $serviceactive != "") {
   echo '<script>
   $(document).ready(function(){
-    var interval = "' . ($areload * 1000) . '";
-    setInterval(function() {
-    $("#reloadPPPActive").load("./ppp/pppactive.php?service=' . $serviceactive . '&session=' . $session . '"); }, interval);})
+    tikrasPoll("#reloadPPPActive", "./ppp/pppactive.php?service=' . $serviceactiveUrl . '&session=' . $sessionUrl . '", ' . $reloadMs . ');
+  })
 </script>
 ';
 } elseif ($ppp == "active" && $serviceactive == "") {
   echo '<script>
   $(document).ready(function(){
-    var interval = "' . ($areload * 1000) . '";
-    setInterval(function() {
-    $("#reloadPPPActive").load("./ppp/pppactive.php?session=' . $session . '"); }, interval);})
+    tikrasPoll("#reloadPPPActive", "./ppp/pppactive.php?session=' . $sessionUrl . '", ' . $reloadMs . ');
+  })
 </script>
 ';
 } elseif ($userprofile == "add" || substr($userprofile, 0, 1) == "*" || $userprofile != "") {

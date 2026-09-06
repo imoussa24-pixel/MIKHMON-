@@ -111,6 +111,18 @@ if (!function_exists('tikras_roaming_has_trap')) {
   }
 }
 
+if (!function_exists('tikras_roaming_raw_has_trap')) {
+  /*
+   * Meme controle, sur une reponse non analysee. commBatch rend les mots
+   * bruts du routeur: "!trap" y est une valeur de la liste, pas une cle,
+   * et tikras_roaming_has_trap ne le verrait pas.
+   */
+  function tikras_roaming_raw_has_trap($mots)
+  {
+    return is_array($mots) && in_array('!trap', $mots, true);
+  }
+}
+
 if (!function_exists('tikras_roaming_profile_payload')) {
   function tikras_roaming_profile_payload($profileRow)
   {
@@ -361,6 +373,24 @@ if (!function_exists('tikras_roaming_sync_one_router')) {
       }
     }
 
+    /*
+     * Les tickets partent par tranches, toutes les commandes d'une tranche
+     * etant envoyees avant qu'on lise la moindre reponse.
+     *
+     * Un comm() par ticket payait un aller-retour complet chacun. Sur ce parc
+     * un aller-retour vaut environ 300 ms de latence reseau: 100 tickets
+     * prenaient 30 s, 300 tickets 95 s, soit le seuil ou le bord Cloudflare
+     * coupe et rend sa propre page d'erreur. Groupees, les memes commandes ne
+     * paient la latence qu'une fois par tranche - mesure a x29 sur 30
+     * commandes.
+     *
+     * La tranche reste petite a dessein. Envoyer des milliers de commandes
+     * sans jamais lire remplirait les tampons des deux cotes: le routeur
+     * bloquerait en ecrivant ses reponses pendant que nous bloquerions en
+     * ecrivant nos commandes, et personne ne lirait. Cent commandes tiennent
+     * largement dans les tampons.
+     */
+    $aEnvoyer = array();
     for ($i = 0; $i < count($tickets); $i++) {
       $username = isset($tickets[$i]['username']) ? $tickets[$i]['username'] : "";
       $password = isset($tickets[$i]['password']) ? $tickets[$i]['password'] : "";
@@ -370,36 +400,56 @@ if (!function_exists('tikras_roaming_sync_one_router')) {
       }
 
       if (isset($existingUsers[$username]) && $existingUsers[$username] != "") {
-        $response = $api->comm("/ip/hotspot/user/set", array(
-          ".id" => $existingUsers[$username],
-          "server" => $server,
-          "password" => $password,
-          "profile" => $profile,
-          "limit-uptime" => $timelimit,
-          "limit-bytes-total" => $datalimit,
-          "comment" => $comment,
-          "disabled" => "no",
-        ));
-        if (tikras_roaming_has_trap($response)) {
-          $status['failed']++;
-        } else {
-          $status['updated']++;
-        }
+        $aEnvoyer[] = array(
+          'type' => 'set',
+          'username' => $username,
+          'cmd' => "/ip/hotspot/user/set",
+          'args' => array(
+            ".id" => $existingUsers[$username],
+            "server" => $server,
+            "password" => $password,
+            "profile" => $profile,
+            "limit-uptime" => $timelimit,
+            "limit-bytes-total" => $datalimit,
+            "comment" => $comment,
+            "disabled" => "no",
+          ),
+        );
       } else {
-        $response = $api->comm("/ip/hotspot/user/add", array(
-          "server" => $server,
-          "name" => $username,
-          "password" => $password,
-          "profile" => $profile,
-          "limit-uptime" => $timelimit,
-          "limit-bytes-total" => $datalimit,
-          "comment" => $comment,
-        ));
-        if (tikras_roaming_has_trap($response)) {
+        $aEnvoyer[] = array(
+          'type' => 'add',
+          'username' => $username,
+          'cmd' => "/ip/hotspot/user/add",
+          'args' => array(
+            "server" => $server,
+            "name" => $username,
+            "password" => $password,
+            "profile" => $profile,
+            "limit-uptime" => $timelimit,
+            "limit-bytes-total" => $datalimit,
+            "comment" => $comment,
+          ),
+        );
+        // Marque tout de suite: deux tickets homonymes dans le meme lot ne
+        // doivent pas produire deux ajouts.
+        $existingUsers[$username] = true;
+      }
+    }
+
+    $tranches = array_chunk($aEnvoyer, 100);
+    foreach ($tranches as $tranche) {
+      $reponses = $api->commBatch($tranche);
+      for ($j = 0; $j < count($tranche); $j++) {
+        $reponse = isset($reponses[$j]) ? $reponses[$j] : array();
+        if (tikras_roaming_raw_has_trap($reponse)) {
           $status['failed']++;
+          if ($tranche[$j]['type'] == 'add') {
+            unset($existingUsers[$tranche[$j]['username']]);
+          }
+        } elseif ($tranche[$j]['type'] == 'set') {
+          $status['updated']++;
         } else {
           $status['created']++;
-          $existingUsers[$username] = true;
         }
       }
     }

@@ -26,6 +26,13 @@ lanceur.exe
 *.exe
 
 # ==========================================================================
+#  Outillage local (specifique a la machine, pas au projet)
+# ==========================================================================
+# Configurations de lancement de l'agent: elles pointent vers php8/, qui est
+# lui-meme ignore, et vers des dossiers temporaires propres a une session.
+.claude/
+
+# ==========================================================================
 #  Noise
 # ==========================================================================
 *.log

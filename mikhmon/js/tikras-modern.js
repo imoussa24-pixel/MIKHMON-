@@ -252,4 +252,107 @@
       tikrasBoot(document);
     });
   }
+
+  /*
+   * Rafraichissement apres une action.
+   *
+   * Les suppressions, activations et desactivations passent par loadpage(),
+   * qui charge l'adresse dans un conteneur invisible: l'action s'execute bien
+   * cote serveur, mais l'ecran continue d'afficher l'etat precedent. On
+   * supprime un routeur, il reste dans la liste; on desactive un compte, il
+   * parait toujours actif. L'utilisateur recharge alors a la main, ou croit
+   * que rien ne s'est passe et recommence.
+   *
+   * Ces fonctions sont redefinies ici, apres mikhmon.js, plutot que dans ce
+   * fichier minifie.
+   */
+  if (window.jQuery) {
+    var rechargerApresAction = function (adresse) {
+      var cible = window.jQuery("#temp");
+      if (cible.length === 0) {
+        window.location.href = adresse;
+        return;
+      }
+      cible.load(adresse, function () {
+        // Un court delai laisse au routeur le temps d'appliquer avant que la
+        // page ne relise son etat, sans quoi elle afficherait encore l'ancien.
+        window.setTimeout(function () {
+          window.location.reload();
+        }, 350);
+      });
+    };
+
+    window.loadpage = rechargerApresAction;
+    window.dellSelected = rechargerApresAction;
+    // Le changement de theme rend une page entiere: on la recharge de meme.
+    window.stheme = rechargerApresAction;
+  }
+
+  /*
+   * Rafraichissement automatique enchaine, en remplacement de setInterval.
+   *
+   * L'ancien code lancait trois requetes toutes les N secondes sans jamais
+   * attendre les precedentes. Chacune interroge le routeur; sur un routeur
+   * lent ou eteint elle met plusieurs secondes, et les requetes s'empilent
+   * plus vite qu'elles ne se vident. Apache sature, tout le panneau devient
+   * lent, et les zones cessent de se mettre a jour: le symptome ressemble a
+   * un rafraichissement en panne alors que c'est un embouteillage.
+   *
+   * Ici le tour suivant n'est arme qu'une fois le precedent termine. On saute
+   * les tours quand l'onglet est masque - inutile de charger le routeur pour
+   * un ecran que personne ne regarde - et on rafraichit aussitot au retour,
+   * sans quoi l'utilisateur retrouverait un ecran fige le temps d'un cycle.
+   */
+  if (window.jQuery) {
+    var pollers = [];
+
+    window.tikrasPoll = function (selecteur, adresse, intervalle, chargerTout1Suite) {
+      var arrete = false;
+      var minuteur = null;
+      // Plancher a 5 s: une valeur vide ou nulle en configuration donnait
+      // setInterval(fn, 0), soit un martelage continu du routeur.
+      var delai = Math.max(5000, parseInt(intervalle, 10) || 10000);
+
+      function armer() {
+        if (arrete) { return; }
+        minuteur = window.setTimeout(executer, delai);
+      }
+
+      function executer() {
+        minuteur = null;
+        if (arrete) { return; }
+        if (window.document.hidden) { armer(); return; }
+        var cible = window.jQuery(selecteur);
+        if (cible.length === 0) { armer(); return; }
+        cible.load(adresse, function () { armer(); });
+      }
+
+      var poller = {
+        stop: function () {
+          arrete = true;
+          if (minuteur) { window.clearTimeout(minuteur); minuteur = null; }
+        },
+        reveiller: function () {
+          if (arrete || minuteur === null) { return; }
+          window.clearTimeout(minuteur);
+          minuteur = null;
+          executer();
+        }
+      };
+
+      pollers.push(poller);
+      if (chargerTout1Suite) { executer(); } else { armer(); }
+      return poller;
+    };
+
+    window.tikrasStopPolling = function () {
+      for (var i = 0; i < pollers.length; i++) { pollers[i].stop(); }
+      pollers = [];
+    };
+
+    window.document.addEventListener('visibilitychange', function () {
+      if (window.document.hidden) { return; }
+      for (var i = 0; i < pollers.length; i++) { pollers[i].reveiller(); }
+    });
+  }
 })();

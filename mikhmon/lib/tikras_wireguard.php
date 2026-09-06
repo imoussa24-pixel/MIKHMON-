@@ -95,6 +95,40 @@ if (!function_exists('tikras_wg_table')) {
         updated_at TEXT NOT NULL
       )
     ");
+
+    /*
+     * Colonnes ajoutees apres coup: une installation existante conserve sa
+     * table, on complete donc au lieu de la recreer.
+     *
+     *   peer_type   'routeur' ou 'appareil'. Un ordinateur ou un telephone
+     *               rejoint le meme tunnel qu'un routeur, mais on ne lui
+     *               applique aucune configuration RouterOS.
+     *   lan_subnet  reseau local situe derriere un routeur (ses antennes,
+     *               ses points d'acces). Sans lui, le tunnel ne mene qu'au
+     *               routeur lui-meme et rien de ce qu'il dessert n'est
+     *               joignable.
+     *   label       nom lisible, l'identifiant technique etant impose par
+     *               la session du routeur.
+     */
+    $colonnes = array();
+    foreach ($pdo->query('PRAGMA table_info(wireguard_peers)') as $colonne) {
+      $colonnes[(string) $colonne['name']] = true;
+    }
+    $ajouts = array(
+      'peer_type' => "ALTER TABLE wireguard_peers ADD COLUMN peer_type TEXT NOT NULL DEFAULT 'routeur'",
+      'lan_subnet' => "ALTER TABLE wireguard_peers ADD COLUMN lan_subnet TEXT NOT NULL DEFAULT ''",
+      'label' => "ALTER TABLE wireguard_peers ADD COLUMN label TEXT NOT NULL DEFAULT ''",
+    );
+    foreach ($ajouts as $nom => $sql) {
+      if (!isset($colonnes[$nom])) {
+        try {
+          $pdo->exec($sql);
+        } catch (Exception $e) {
+          // Une colonne deja presente ne doit pas empecher l'application de
+          // demarrer: on poursuit avec le schema en place.
+        }
+      }
+    }
     return true;
   }
 }

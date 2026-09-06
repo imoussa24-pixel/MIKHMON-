@@ -428,6 +428,12 @@ if (!isset($_SESSION["mikhmon"])) {
         if (trafficPending) {
           return;
         }
+        // Onglet masque: inutile d'interroger le routeur toutes les 5 s pour
+        // un graphique que personne ne regarde. Le point suivant repart des
+        // que l'onglet revient au premier plan.
+        if (document.hidden) {
+          return;
+        }
         trafficPending = true;
         $.ajax({
           url: "./traffic/traffic.php?session=" + encodeURIComponent(sessionName) + "&iface=" + encodeURIComponent(ifaceSelect.value),
@@ -570,7 +576,7 @@ if (!isset($_SESSION["mikhmon"])) {
         <div class="col-12">
           <div class="card tikras-follow-card">
             <div class="card-header">
-              <h3><i class="fa fa-line-chart"></i> RESSOURCES ROUTEUR</h3>
+              <h3><i class="fa fa-line-chart"></i> Ressources du routeur</h3>
             </div>
             <div class="card-body">
               <div class="tikras-follow-grid">
@@ -614,7 +620,7 @@ if (!isset($_SESSION["mikhmon"])) {
         <div class="col-12">
           <div class="card tikras-sales-card">
             <div class="card-header">
-              <h3><i class="fa fa-money"></i> RAPPORT JOURNALIER</h3>
+              <h3><i class="fa fa-money"></i> Rapport journalier</h3>
               <a class="btn bg-primary tikras-card-action" href="./?report=selling&idbl=<?= $monthSalesId; ?>&session=<?= $session; ?>"><i class="fa fa-table"></i> <?= $_report ?></a>
             </div>
             <div class="card-body">
@@ -649,7 +655,7 @@ if (!isset($_SESSION["mikhmon"])) {
         <div class="col-12">
           <div class="card tikras-roaming-dashboard-card">
             <div class="card-header">
-              <h3><i class="fa fa-random"></i> TICKETS ROAMING</h3>
+              <h3><i class="fa fa-random"></i> Tickets roaming</h3>
               <a class="btn bg-primary tikras-card-action" href="./?hotspot-user=generate-roaming&session=<?= $session; ?>"><i class="fa fa-ticket"></i> Generer roaming</a>
             </div>
             <div class="card-body">

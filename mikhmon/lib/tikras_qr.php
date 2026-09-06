@@ -6,12 +6,15 @@
  * le serveur ne peut pas s'appuyer dessus. Cet encodeur produit la matrice en
  * PHP pur, que le PDF dessine ensuite en rectangles vectoriels.
  *
- * Portee volontairement reduite au besoin: mode octet, correction M, versions
- * 1 a 6, soit 106 caracteres. C'est largement suffisant pour une adresse de
- * portail suivie d'un code d'acces, et cela evite le bloc d'information de
- * version qu'exigent les versions 7 et suivantes: chaque version couverte est
- * verifiee par un decodeur reel, plutot que d'etendre la portee sans preuve.
- * Au-dela de 106 caracteres, la fonction renvoie null et l'appelant se
+ * Portee: mode octet, correction M, versions 1 a 10, soit 213 caracteres.
+ * Les versions 1 a 6 servent aux tickets (adresse du portail et code
+ * d'acces); les suivantes ont ete ajoutees pour la configuration d'un
+ * appareil WireGuard, qui approche les 210 caracteres.
+ *
+ * A partir de la version 7, la norme impose un bloc d'information de version
+ * de 18 bits, recopie a deux endroits de la matrice. Sans lui, un lecteur
+ * refuse le code: c'est la raison pour laquelle la portee s'arretait a 6.
+ * Au-dela de 213 caracteres, la fonction renvoie null et l'appelant se
  * contente de ne pas afficher de QR.
  */
 
@@ -19,7 +22,70 @@ if (!function_exists('tikras_qr_capacites')) {
   /* Capacite en octets par version, pour le niveau de correction M. */
   function tikras_qr_capacites()
   {
-    return array(1 => 14, 2 => 26, 3 => 42, 4 => 62, 5 => 84, 6 => 106);
+    return array(
+      1 => 14, 2 => 26, 3 => 42, 4 => 62, 5 => 84, 6 => 106,
+      7 => 122, 8 => 152, 9 => 180, 10 => 213,
+    );
+  }
+}
+
+if (!function_exists('tikras_qr_svg')) {
+  /*
+   * Rend le QR en SVG, pour un affichage a l'ecran.
+   *
+   * Le SVG est prefere a une image matricielle: il reste net a l'impression
+   * comme sur un ecran a forte densite, et un QR flou ne se scanne pas.
+   * Retourne une chaine vide si le texte depasse la capacite couverte.
+   */
+  function tikras_qr_svg($texte, $modulePx = 6, $margeModules = 4)
+  {
+    $matrice = tikras_qr_matrice($texte);
+    if (!is_array($matrice) || count($matrice) < 1) {
+      return '';
+    }
+    $taille = count($matrice);
+    $cote = ($taille + (2 * $margeModules)) * $modulePx;
+
+    // Un seul chemin pour tous les modules noirs: le navigateur en dessine
+    // des milliers sans peine, la ou autant de rectangles alourdiraient la page.
+    $chemin = '';
+    for ($ligne = 0; $ligne < $taille; $ligne++) {
+      for ($colonne = 0; $colonne < $taille; $colonne++) {
+        if ((int) $matrice[$ligne][$colonne] === 1) {
+          $x = ($colonne + $margeModules) * $modulePx;
+          $y = ($ligne + $margeModules) * $modulePx;
+          $chemin .= 'M' . $x . ' ' . $y . 'h' . $modulePx . 'v' . $modulePx . 'h-' . $modulePx . 'z';
+        }
+      }
+    }
+
+    /*
+     * Fond blanc explicite et couleurs en dur: un QR affiche sur fond sombre
+     * ou avec des couleurs de theme ne se scanne pas de facon fiable.
+     */
+    return '<svg xmlns="http://www.w3.org/2000/svg" width="' . $cote . '" height="' . $cote . '"'
+      . ' viewBox="0 0 ' . $cote . ' ' . $cote . '" role="img" aria-label="Code QR de configuration">'
+      . '<rect width="' . $cote . '" height="' . $cote . '" fill="#ffffff"/>'
+      . '<path d="' . $chemin . '" fill="#000000"/></svg>';
+  }
+}
+
+if (!function_exists('tikras_qr_info_version')) {
+  /*
+   * Bloc d'information de version, obligatoire des la version 7.
+   *
+   * Dix-huit bits: six de numero de version et douze de correction BCH.
+   * Les valeurs sont celles de la norme; les recalculer n'apporterait rien
+   * et exposerait a une erreur de transcription du polynome.
+   */
+  function tikras_qr_info_version()
+  {
+    return array(
+      7 => '000111110010010100',
+      8 => '001000010110111100',
+      9 => '001001101010011001',
+      10 => '001010010011010011',
+    );
   }
 }
 
@@ -194,6 +260,30 @@ if (!function_exists('tikras_qr_motifs')) {
     for ($i = 0; $i < 8; $i++) {
       $reserve[8][$taille - 1 - $i] = 1;
       $reserve[$taille - 1 - $i][8] = 1;
+    }
+
+    /*
+     * Information de version (versions 7 et suivantes): deux blocs de trois
+     * modules sur six, l'un au-dessus du chercheur inferieur gauche, l'autre
+     * a gauche du chercheur superieur droit. Les deux portent les memes bits,
+     * transposes, ce qui permet au lecteur de retrouver la version meme si
+     * une zone est abimee.
+     */
+    if ($version >= 7) {
+      $infos = tikras_qr_info_version();
+      if (isset($infos[$version])) {
+        $bits = $infos[$version];
+        for ($i = 0; $i < 18; $i++) {
+          // Le bit de poids fort de la chaine occupe la derniere position.
+          $bit = (int) $bits[17 - $i];
+          $ligne = (int) ($i / 3);
+          $colonne = $i % 3;
+          $matrice[$taille - 11 + $colonne][$ligne] = $bit;
+          $reserve[$taille - 11 + $colonne][$ligne] = 1;
+          $matrice[$ligne][$taille - 11 + $colonne] = $bit;
+          $reserve[$ligne][$taille - 11 + $colonne] = 1;
+        }
+      }
     }
   }
 }

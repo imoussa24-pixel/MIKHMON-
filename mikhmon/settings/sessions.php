@@ -85,13 +85,27 @@ if (!isset($_SESSION["mikhmon"])) {
 <?php
 include_once(dirname(__DIR__) . '/lib/tikras_storage.php');
 include_once(dirname(__DIR__) . '/lib/tikras_automation.php');
+include_once(dirname(__DIR__) . '/lib/tikras_favoris.php');
+
+/*
+ * Bascule d'un favori. La page se recharge a la meme place: la liste est
+ * longue, et repartir du haut apres chaque marquage serait penible.
+ */
+if (tikras_has_post('favori')) {
+  $cibleFavori = (string) tikras_post('session');
+  tikras_favoris_basculer($cibleFavori);
+  tikras_redirect('./admin.php?id=sessions#routeur-' . rawurlencode($cibleFavori));
+  return;
+}
 
 $routerStatuses = tikras_storage_all_router_statuses();
+$routerFavoris = tikras_favoris_liste();
 $routerTotal = 0;
 $routerOnline = 0;
 $routerOffline = 0;
 $routerCards = '';
-foreach ($data as $value => $routerConfig) {
+// Les favoris passent en tete; le reste garde son ordre d'origine.
+foreach (tikras_favoris_trier($data) as $value => $routerConfig) {
   if ($value == "" || $value == "mikhmon") {
     continue;
   }
@@ -109,7 +123,8 @@ foreach ($data as $value => $routerConfig) {
     tikras_cfg_value($data, $value, 4, '%', ''),
     tikras_cfg_value($data, $value, 5, '^', ''),
     tikras_cfg_value($data, $value, 6, '&', ''),
-    $routerStatus
+    $routerStatus,
+    in_array((string) $value, $routerFavoris, true)
   );
 }
 $autoStatus = tikras_automation_status();
@@ -153,9 +168,29 @@ $routerSubtitle = $routerTotal . ' routeur(s) · ' . $routerOnline . ' en ligne 
     <div class="tikras-panel-body">
       <div class="tikras-router-tools">
         <input id="adminRouterSearch" class="form-control" type="search" placeholder="<?= $_search ?> routeur, session, DNS">
+        <?php if (count($routerFavoris) > 0) { ?>
+        <button id="filtreFavoris" class="tikras-btn tikras-btn-muted" type="button"
+          aria-pressed="false" title="N'afficher que les routeurs favoris">
+          <i class="fa fa-star-o"></i><span>Favoris (<?= count($routerFavoris); ?>)</span>
+        </button>
+        <?php } ?>
       </div>
       <div class="tikras-router-list">
         <?= $routerCards; ?>
+      </div>
+      <?php
+      /*
+       * Au-dela d'une trentaine de routeurs, la page s'etirait sur pres de
+       * vingt mille pixels. On n'en montre qu'une partie a l'ouverture; la
+       * recherche et le filtre favoris, eux, portent toujours sur la totalite
+       * du parc, sinon masquer reviendrait a cacher des routeurs a qui les
+       * cherche.
+       */
+      ?>
+      <div id="zoneVoirTout" class="tikras-router-plus" hidden>
+        <button id="voirTousRouteurs" class="tikras-btn tikras-btn-muted" type="button">
+          <i class="fa fa-chevron-down"></i><span>Afficher les <span id="resteRouteurs"></span> autres routeurs</span>
+        </button>
       </div>
     </div>
   </section>
@@ -226,13 +261,62 @@ $routerSubtitle = $routerTotal . ' routeur(s) · ' . $routerOnline . ' en ligne 
   </section>
 </div>
 <script>
-  $("#adminRouterSearch").on("input", function(){
-    var term = $(this).val().toLowerCase();
+  /*
+   * Recherche et filtre favoris se combinent: filtrer sur les favoris puis
+   * taper un nom doit chercher parmi les favoris, et non tout reafficher.
+   */
+  var favorisSeuls = false;
+  var LIMITE_INITIALE = 30;
+  var toutAffiche = false;
+
+  function appliquerFiltres() {
+    var term = ($("#adminRouterSearch").val() || "").toLowerCase();
+    // Des qu'on cherche ou qu'on filtre, la limite d'affichage n'a plus lieu
+    // d'etre: on cherche dans tout le parc, pas dans les trente premiers.
+    var limiter = !toutAffiche && term === "" && !favorisSeuls;
+    var visibles = 0;
     $(".tikras-router-row").each(function(){
-      var router = $(this).data("router");
-      $(this).toggle(router.indexOf(term) !== -1);
+      var correspond = String($(this).data("router")).indexOf(term) !== -1;
+      if (favorisSeuls && String($(this).data("favori")) !== "1") {
+        correspond = false;
+      }
+      if (correspond && limiter && visibles >= LIMITE_INITIALE) {
+        correspond = false;
+      }
+      $(this).toggle(correspond);
+      if (correspond) { visibles++; }
     });
-  });
+    var total = $(".tikras-router-row").length;
+    var reste = total - visibles;
+    $("#zoneVoirTout").prop("hidden", !(limiter && reste > 0));
+    $("#resteRouteurs").text(reste);
+    return visibles;
+  }
+
+  var boutonVoirTout = document.getElementById("voirTousRouteurs");
+  if (boutonVoirTout) {
+    boutonVoirTout.addEventListener("click", function(){
+      toutAffiche = true;
+      appliquerFiltres();
+    });
+  }
+
+  $("#adminRouterSearch").on("input", appliquerFiltres);
+
+  // Applique la limite d'affichage des l'ouverture de la page.
+  appliquerFiltres();
+
+  var boutonFavoris = document.getElementById("filtreFavoris");
+  if (boutonFavoris) {
+    boutonFavoris.addEventListener("click", function(){
+      favorisSeuls = !favorisSeuls;
+      this.setAttribute("aria-pressed", favorisSeuls ? "true" : "false");
+      this.classList.toggle("est-actif", favorisSeuls);
+      var icone = this.querySelector("i");
+      if (icone) { icone.className = favorisSeuls ? "fa fa-star" : "fa fa-star-o"; }
+      appliquerFiltres();
+    });
+  }
 
   document.getElementById("runAutomations").addEventListener("click", function(){
     var btn = this;

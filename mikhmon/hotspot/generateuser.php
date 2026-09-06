@@ -754,9 +754,12 @@ tikras_apply_session_timezone();
     <a class="btn bg-info" href="./?hotspot-user=generate-roaming&session=<?= $session; ?>" title="Tickets roaming"> <i class="fa fa-random"></i> Tickets roaming</a>
     <?php } ?>
     <button type="submit" name="save" onclick="loader()" class="btn bg-primary" title="Generate User"> <i class="fa fa-save"></i> <?= $_generate ?></button>
+    <?php /* Trois formats d'une meme impression: meme famille, meme aspect.
+             Le rouge portait ici sur un simple apercu QR, ou il annonce
+             ailleurs une suppression. */ ?>
     <a class="btn bg-secondary" title="Print Default" href="./voucher/print.php?id=<?= $urlprint; ?>&qr=no&session=<?= $session; ?>" target="_blank"> <i class="fa fa-print"></i> <?= $_print ?></a>
-    <a class="btn bg-danger" title="Print QR" href="./voucher/print.php?id=<?= $urlprint; ?>&qr=yes&session=<?= $session; ?>" target="_blank"> <i class="fa fa-qrcode"></i> <?= $_print_qr ?></a>
-    <a class="btn bg-info" title="Print Small" href="./voucher/print.php?id=<?= $urlprint; ?>&small=yes&session=<?= $session; ?>" target="_blank"> <i class="fa fa-print"></i> <?= $_print_small ?></a>
+    <a class="btn bg-secondary" title="Print QR" href="./voucher/print.php?id=<?= $urlprint; ?>&qr=yes&session=<?= $session; ?>" target="_blank"> <i class="fa fa-qrcode"></i> <?= $_print_qr ?></a>
+    <a class="btn bg-secondary" title="Print Small" href="./voucher/print.php?id=<?= $urlprint; ?>&small=yes&session=<?= $session; ?>" target="_blank"> <i class="fa fa-print"></i> <?= $_print_small ?></a>
 </div>
 <?php if ($ticketGenerationError != "") { ?>
 <div class="box bg-warning pd-5 mr-t-10">
@@ -1217,7 +1220,7 @@ tikras_apply_session_timezone();
 			<?php } ?>
 			<div class="tikras-ticket-actions">
 				<?php if ($ticketPdfUrl != "") { ?>
-				<a class="btn bg-danger" target="_blank" href="<?= tikras_ticket_h($ticketPdfRelative); ?>"><i class="fa fa-file-pdf-o"></i> PDF petit</a>
+				<a class="btn bg-secondary" target="_blank" href="<?= tikras_ticket_h($ticketPdfRelative); ?>"><i class="fa fa-file-pdf-o"></i> PDF petit</a>
 				<?php } ?>
 				<a class="btn <?= $ticketShareChannel == "email" ? "bg-primary" : ($ticketShareChannel == "telegram" ? "bg-info" : "bg-green"); ?>" target="_blank" href="<?= tikras_ticket_h($ticketShareHref); ?>"><i class="fa <?= tikras_ticket_h($ticketShareIcon); ?>"></i> <?= tikras_ticket_h($ticketShareLabel); ?></a>
 				<button class="btn bg-info" type="button" onclick="copyTicketLink();"><i class="fa fa-link"></i> Copier lien</button>

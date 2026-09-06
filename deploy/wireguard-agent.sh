@@ -56,6 +56,26 @@ publier_adresses() {
   chmod 644 "${ETAT}/adresses.json"
 }
 
+publier_adresses_tunnel() {
+  mkdir -p "$ETAT"
+  # Adresses reellement occupees sur l'interface, y compris celles de pairs
+  # ajoutes a la main hors du panneau. Sans cette liste, l'application
+  # attribuerait une adresse deja prise et couperait l'acces du pair en place.
+  {
+    echo "["
+    local premier=1
+    while read -r reseau; do
+      [ -z "$reseau" ] && continue
+      [ "$premier" = "0" ] && echo ","
+      premier=0
+      printf '"%s"' "$reseau"
+    done < <(wg show wg0 allowed-ips 2>/dev/null | cut -f2- | tr ',\t ' '\n\n\n' | grep -E '^[0-9]+\.')
+    echo ""
+    echo "]"
+  } > "${ETAT}/adresses_tunnel.json"
+  chmod 644 "${ETAT}/adresses_tunnel.json"
+}
+
 publier_pairs() {
   mkdir -p "$ETAT"
   # Etat de chaque pair: dernier handshake et volumes echanges.
@@ -84,12 +104,17 @@ traiter_demandes() {
     # "/" que l'encodage echappe en "\/", et une cle mal decodee rend le
     # fichier de configuration invalide, ce qui ferait tomber tout le tunnel.
     champs=$(python3 - "$fichier" <<'PYEOF' 2>/dev/null
-import json, sys
+import json, sys, re
 try:
     d = json.load(open(sys.argv[1]))
     print(d.get("public_key", ""))
     print(d.get("tunnel_ip", ""))
     print(d.get("session", ""))
+    # Reseau local declare derriere un routeur: il rend joignables les
+    # antennes et points d'acces du site, que le tunnel seul n'atteint pas.
+    lan = str(d.get("lan_subnet", "") or "")
+    print(lan if re.match(r'^\d{1,3}(\.\d{1,3}){3}/\d{1,2}$', lan) else "")
+    print(str(d.get("action", "")))
 except Exception:
     pass
 PYEOF
@@ -97,6 +122,25 @@ PYEOF
     cle=$(echo "$champs" | sed -n 1p)
     ip=$(echo "$champs" | sed -n 2p)
     session=$(echo "$champs" | sed -n 3p)
+    lan=$(echo "$champs" | sed -n 4p)
+    action=$(echo "$champs" | sed -n 5p)
+
+    # Retrait: l'appareil revoque dans le panneau doit perdre son acces au
+    # parc immediatement, pas au prochain redemarrage du tunnel.
+    if [ "$action" = "retrait" ]; then
+      if echo "$cle" | grep -qE '^[A-Za-z0-9+/]{43}=$'; then
+        wg set wg0 peer "$cle" remove 2>/dev/null || true
+        python3 - "$CONF" "$cle" <<'PYEOF' 2>/dev/null || true
+import re, sys
+chemin, cle = sys.argv[1], sys.argv[2]
+blocs = re.split(r'\n(?=\[Peer\])', open(chemin).read())
+open(chemin, 'w').write('\n'.join(b for b in blocs if cle not in b))
+PYEOF
+        echo "$(date '+%F %T') pair retire: ${session}"
+      fi
+      rm -f "$fichier"
+      continue
+    fi
 
     # Une cle WireGuard valide fait 44 caracteres base64 terminés par "=".
     if ! echo "$cle" | grep -qE '^[A-Za-z0-9+/]{43}=$'; then
@@ -110,8 +154,36 @@ PYEOF
       continue
     fi
 
+    # Reseaux joignables a travers ce pair: son adresse dans le tunnel, plus
+    # le reseau local du site s'il a ete declare.
+    RESEAUX="${ip}/32"
+    [ -n "$lan" ] && RESEAUX="${ip}/32,${lan}"
+
     if grep -qF "$cle" "$CONF" 2>/dev/null; then
-      echo "$(date '+%F %T') pair deja present: ${session}"
+      # Le pair existe deja: seule sa liste de reseaux peut avoir change,
+      # lorsqu'on declare apres coup le reseau local d'un site. Sans cette
+      # mise a jour, la declaration resterait sans effet et les equipements
+      # du site demeureraient injoignables.
+      ACTUELS=$(wg show wg0 allowed-ips 2>/dev/null | grep -F "$cle" | cut -f2 | tr -d ' ')
+      VOULUS=$(echo "$RESEAUX" | tr ',' ' ' | tr ' ' '\n' | sort | tr '\n' ' ')
+      COURANTS=$(echo "$ACTUELS" | tr ',' ' ' | tr ' ' '\n' | sort | tr '\n' ' ')
+      if [ "$VOULUS" != "$COURANTS" ]; then
+        wg set wg0 peer "$cle" allowed-ips "$RESEAUX" 2>/dev/null || true
+        python3 - "$CONF" "$cle" "$RESEAUX" <<'PYEOF' 2>/dev/null || true
+import re, sys
+chemin, cle, reseaux = sys.argv[1], sys.argv[2], sys.argv[3]
+blocs = re.split(r'\n(?=\[Peer\])', open(chemin).read())
+sortie = []
+for bloc in blocs:
+    if cle in bloc:
+        bloc = re.sub(r'AllowedIPs\s*=.*', 'AllowedIPs = ' + reseaux, bloc)
+    sortie.append(bloc)
+open(chemin, 'w').write('\n'.join(sortie))
+PYEOF
+        echo "$(date '+%F %T') reseaux mis a jour: ${session} -> ${RESEAUX}"
+      else
+        echo "$(date '+%F %T') pair deja present: ${session}"
+      fi
     else
       # Une adresse reattribuee ne doit pas rester sur un ancien pair, ni dans
       # le fichier, ni sur l'interface active (sinon un pair fantome subsiste).
@@ -145,10 +217,10 @@ PYEOF
         echo "[Peer]"
         echo "# ${session}"
         echo "PublicKey = ${cle}"
-        echo "AllowedIPs = ${ip}/32"
+        echo "AllowedIPs = ${RESEAUX}"
       } >> "$CONF"
       # Application a chaud: pas de coupure des tunnels deja etablis.
-      if wg set wg0 peer "$cle" allowed-ips "${ip}/32" 2>/dev/null; then
+      if wg set wg0 peer "$cle" allowed-ips "${RESEAUX}" 2>/dev/null; then
         echo "$(date '+%F %T') pair ajoute: ${session} -> ${ip}"
       else
         # Un fichier invalide empecherait l'interface de redemarrer: on verifie
@@ -186,6 +258,7 @@ if [ "${1:-}" = "--boucle" ]; then
     publier_adresses
     traiter_demandes
     publier_pairs
+    publier_adresses_tunnel
     sleep 10
   done
 else
@@ -193,5 +266,6 @@ else
   publier_adresses
   traiter_demandes
   publier_pairs
+  publier_adresses_tunnel
   echo "Traitement termine."
 fi

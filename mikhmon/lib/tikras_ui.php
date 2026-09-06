@@ -68,7 +68,7 @@ if (!function_exists('tikras_ui_status_badge')) {
 }
 
 if (!function_exists('tikras_ui_router_card')) {
-  function tikras_ui_router_card($session, $hotspotName, $dnsName, $currency, $status = null)
+  function tikras_ui_router_card($session, $hotspotName, $dnsName, $currency, $status = null, $favori = false)
   {
     $sessionUrl = rawurlencode($session);
     $safeSession = tikras_h($session);
@@ -78,8 +78,24 @@ if (!function_exists('tikras_ui_router_card')) {
     $displayName = $safeHotspot != '' ? $safeHotspot : $safeSession;
     $confirm = "if(confirm('Voulez-vous vraiment supprimer ce routeur " . tikras_js_string($session) . " (" . tikras_js_string($hotspotName) . ") ?')){loadpage('./admin.php?id=remove-session&session=" . tikras_js_string($sessionUrl) . "')}else{}";
 
-    $html = '<article class="tikras-router-card tikras-router-row" data-router="' . tikras_h(strtolower($session . ' ' . $hotspotName . ' ' . $dnsName)) . '">';
+    $html = '<article id="routeur-' . $safeSession . '" class="tikras-router-card tikras-router-row'
+      . ($favori ? ' tikras-router-favori' : '')
+      . '" data-favori="' . ($favori ? '1' : '0')
+      . '" data-router="' . tikras_h(strtolower($session . ' ' . $hotspotName . ' ' . $dnsName)) . '">';
     $html .= '<div class="tikras-router-main">';
+    /*
+     * L'etoile est un bouton de formulaire et non un lien: marquer un favori
+     * modifie un etat, ce qu'une adresse ouverte par erreur ne doit pas faire.
+     */
+    $html .= '<form method="post" action="./admin.php?id=sessions" class="tikras-router-favori-forme">';
+    $html .= '<input type="hidden" name="session" value="' . $safeSession . '">';
+    $html .= '<button type="submit" name="favori" value="1" class="tikras-favori-btn'
+      . ($favori ? ' est-favori' : '') . '"'
+      . ' title="' . ($favori ? 'Retirer des favoris' : 'Ajouter aux favoris') . '"'
+      . ' aria-label="' . ($favori ? 'Retirer ' : 'Ajouter ') . $displayName . ' des favoris"'
+      . ' aria-pressed="' . ($favori ? 'true' : 'false') . '">'
+      . tikras_ui_icon($favori ? 'star' : 'star-o') . '</button>';
+    $html .= '</form>';
     $html .= '<span class="tikras-router-icon">' . tikras_ui_icon('server') . '</span>';
     $html .= '<div class="tikras-router-copy">';
     $html .= '<h3 title="' . $displayName . '">' . $displayName . ' ' . tikras_ui_status_badge($status) . '</h3>';
@@ -93,11 +109,23 @@ if (!function_exists('tikras_ui_router_card')) {
     }
     $html .= '</div>';
     $html .= '</div></div>';
+    /*
+     * Seules les deux actions courantes portent leur libelle; les autres
+     * gardent leur icone et passent leur libelle en infobulle et en nom
+     * accessible. Sur un parc de cent routeurs, cinq libelles par ligne
+     * feraient tenir la liste sur une trentaine d'ecrans.
+     *
+     * "Tickets" mene directement au formulaire de generation. C'est le geste
+     * du quotidien, et il demandait jusqu'ici de traverser quatre ecrans:
+     * ouvrir le routeur, deplier le menu Hotspot, entrer dans Utilisateurs,
+     * puis choisir Generer.
+     */
     $html .= '<div class="tikras-router-actions">';
-    $html .= '<a class="tikras-btn tikras-btn-primary connect" id="' . $safeSession . '" href="./admin.php?id=connect&session=' . $sessionUrl . '">' . tikras_ui_icon('external-link') . '<span>Ouvrir</span></a>';
-    $html .= '<a class="tikras-btn tikras-btn-muted" href="./admin.php?id=settings&session=' . $sessionUrl . '">' . tikras_ui_icon('edit') . '<span>Éditer</span></a>';
-    $html .= '<a class="tikras-btn tikras-btn-muted" href="./?system=script-generator&session=' . $sessionUrl . '">' . tikras_ui_icon('code') . '<span>Scripts</span></a>';
-    $html .= '<a class="tikras-btn tikras-btn-danger" href="javascript:void(0)" onclick="' . tikras_h($confirm) . '">' . tikras_ui_icon('trash') . '<span>Supprimer</span></a>';
+    $html .= '<a class="tikras-btn tikras-btn-primary" href="./?hotspot-user=generate&session=' . $sessionUrl . '">' . tikras_ui_icon('ticket') . '<span>Tickets</span></a>';
+    $html .= '<a class="tikras-btn tikras-btn-muted connect" id="' . $safeSession . '" href="./admin.php?id=connect&session=' . $sessionUrl . '">' . tikras_ui_icon('external-link') . '<span>Ouvrir</span></a>';
+    $html .= '<a class="tikras-btn tikras-btn-muted tikras-btn-icon" title="Éditer" aria-label="Éditer ' . $displayName . '" href="./admin.php?id=settings&session=' . $sessionUrl . '">' . tikras_ui_icon('edit') . '<span>Éditer</span></a>';
+    $html .= '<a class="tikras-btn tikras-btn-muted tikras-btn-icon" title="Scripts" aria-label="Scripts de ' . $displayName . '" href="./?system=script-generator&session=' . $sessionUrl . '">' . tikras_ui_icon('code') . '<span>Scripts</span></a>';
+    $html .= '<a class="tikras-btn tikras-btn-danger tikras-btn-icon" title="Supprimer" aria-label="Supprimer ' . $displayName . '" href="javascript:void(0)" onclick="' . tikras_h($confirm) . '">' . tikras_ui_icon('trash') . '<span>Supprimer</span></a>';
     $html .= '</div>';
     $html .= '</article>';
     return $html;

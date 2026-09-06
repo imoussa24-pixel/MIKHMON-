@@ -14,9 +14,11 @@ RUN apt-get update \
 # Application
 COPY mikhmon/ /var/www/html/
 COPY docker/tikras-php.ini /usr/local/etc/php/conf.d/tikras.ini
+COPY docker/tikras-cache.conf /etc/apache2/conf-available/tikras-cache.conf
 COPY docker/entrypoint.sh /usr/local/bin/tikras-entrypoint
 
-RUN chmod +x /usr/local/bin/tikras-entrypoint \
+RUN a2enconf tikras-cache \
+    && chmod +x /usr/local/bin/tikras-entrypoint \
     && chown -R www-data:www-data /var/www/html
 
 # Donnees persistantes (config locale, SQLite, sauvegardes) sur /data.

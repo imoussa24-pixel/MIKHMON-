@@ -1,4 +1,20 @@
-/* TIKRAS global interface refresh. */
+/*
+ * MIKHMON CUSTOM - part vivante.
+ *
+ * Cette feuille etait la premiere couche projet chargee, et les trois
+ * suivantes la recouvraient: 80,5 % de ses declarations n'atteignaient
+ * jamais l'ecran. Elles ont ete retirees; ce qui reste est ce qu'aucune
+ * feuille posterieure ne redefinit.
+ *
+ * Sa position dans l'ordre de chargement est inchangee, donc la cascade
+ * est exactement celle d'avant. Les blocs @media et @keyframes sont
+ * conserves tels quels: une regle conditionnelle ne peut pas condamner
+ * une regle de premier niveau.
+ *
+ * Regenere par outils/reduire.mjs - ne pas editer a la main sans refaire
+ * le releve de styles calcules.
+ */
+
 
 :root {
   --ui-radius: 8px;
@@ -15,7 +31,6 @@
 }
 
 html {
-  min-height: 100%;
   color-scheme: light;
 }
 
@@ -41,16 +56,8 @@ body[data-theme] {
   --ui-side: #ffffff;
   --ui-shadow: 0 18px 45px rgba(15, 23, 42, 0.1);
   --ui-shadow-sm: 0 8px 22px rgba(15, 23, 42, 0.07);
-  min-height: 100vh;
   margin: 0;
-  color: var(--ui-text);
-  font-family: "Segoe UI", Roboto, Arial, sans-serif;
-  font-size: 14px;
   line-height: 1.5;
-  letter-spacing: 0;
-  text-rendering: optimizeLegibility;
-  background: var(--ui-bg) !important;
-  -webkit-font-smoothing: antialiased;
 }
 
 body[data-theme="dark"] {
@@ -75,7 +82,6 @@ body[data-theme="dark"] {
   --ui-side: #131a22;
   --ui-shadow: 0 22px 48px rgba(0, 0, 0, 0.34);
   --ui-shadow-sm: 0 10px 26px rgba(0, 0, 0, 0.24);
-  color-scheme: dark;
 }
 
 body[data-theme="blue"] {
@@ -128,149 +134,36 @@ body[data-theme]::after {
 }
 
 body[data-theme] a {
-  color: var(--ui-accent);
   text-decoration: none;
-  transition: color var(--ui-motion), background-color var(--ui-motion), border-color var(--ui-motion);
-}
-
-body[data-theme] a:hover {
-  color: var(--ui-accent-2);
 }
 
 body[data-theme] ::selection {
   color: #ffffff;
-  background: var(--ui-accent);
-}
-
-body[data-theme] ::placeholder {
-  color: var(--ui-muted);
-  opacity: 1;
-}
-
-body[data-theme] ::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
-}
-
-body[data-theme] ::-webkit-scrollbar-track {
-  background: var(--ui-surface-soft);
-}
-
-body[data-theme] ::-webkit-scrollbar-thumb {
-  background: var(--ui-border-strong);
-  border: 2px solid var(--ui-surface-soft);
-  border-radius: 999px;
-}
-
-body[data-theme] ::-webkit-scrollbar-thumb:hover {
-  background: var(--ui-muted);
-}
-
-body[data-theme] .wrapper {
-  min-height: 100vh;
 }
 
 body[data-theme] #navbar,
 body[data-theme] .navbar {
-  position: fixed;
   top: 0;
   right: 0;
   left: 0;
-  z-index: 20;
-  display: flex;
-  align-items: center;
-  height: var(--ui-navbar);
-  overflow: visible;
-  color: var(--ui-nav-text);
-  background: var(--ui-nav) !important;
-  border-bottom: 1px solid var(--ui-border) !important;
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.2), var(--ui-shadow-sm);
-}
-
-body[data-theme] .navbar-left,
-body[data-theme] .navbar-right {
-  display: flex;
-  align-items: center;
-  min-width: 0;
-  height: var(--ui-navbar);
-}
-
-body[data-theme] .navbar-left {
-  flex: 1 1 auto;
 }
 
 body[data-theme] .navbar-right {
-  flex: 0 1 auto;
-  justify-content: flex-end;
-  gap: 8px;
-  padding-right: 10px;
   overflow-x: auto;
   overflow-y: hidden;
 }
 
-body[data-theme] .navbar-left a,
-body[data-theme] .navbar-right a,
-body[data-theme] .navbar a {
-  display: inline-flex;
-  float: none !important;
-  align-items: center;
-  justify-content: center;
-  min-width: 42px;
-  height: var(--ui-navbar);
-  padding: 0 14px;
-  color: var(--ui-nav-text) !important;
-  font-size: 14px;
-  line-height: 1;
-  white-space: nowrap;
-}
-
-body[data-theme] .navbar-hover:hover,
-body[data-theme] .navbar a:hover {
-  color: var(--ui-accent) !important;
-  background: rgba(var(--ui-accent-rgb), 0.1) !important;
-}
-
 body[data-theme] #brand {
-  flex: 0 0 var(--ui-sidebar);
-  min-width: var(--ui-sidebar);
-  justify-content: flex-start;
   padding-left: 18px;
-  color: var(--ui-nav-text) !important;
-  font-size: 0;
-  font-weight: 900;
 }
 
 body[data-theme] #brand::before {
-  width: 12px;
-  height: 12px;
   margin-right: 10px;
-  content: "";
-  background: var(--ui-accent);
-  border-radius: 4px;
   transform: rotate(45deg);
 }
 
 body[data-theme] #brand::after {
-  content: "TIKRAS IT";
-  color: var(--ui-nav-text);
-  font-size: 16px;
   letter-spacing: 0;
-}
-
-body[data-theme] #openNav,
-body[data-theme] #closeNav {
-  width: 48px;
-  padding: 0;
-}
-
-body[data-theme] #cpage {
-  flex: 1 1 auto;
-  justify-content: flex-start;
-  min-width: 0;
-  overflow: hidden;
-  color: var(--ui-text-soft) !important;
-  font-weight: 800;
-  text-overflow: ellipsis;
 }
 
 body[data-theme="blue"] #cpage,
@@ -281,79 +174,22 @@ body[data-theme="dark"] #cpage {
 body[data-theme] .ses,
 body[data-theme] .dropd,
 body[data-theme] .router-search {
-  float: none !important;
-  flex: 0 0 auto;
-  height: 36px;
-  margin: 0 !important;
-  padding: 6px 10px !important;
-  color: var(--ui-text) !important;
-  background: var(--ui-surface) !important;
-  border: 1px solid var(--ui-border-strong) !important;
-  border-radius: var(--ui-radius) !important;
   outline: none;
-  box-shadow: none !important;
-}
-
-body[data-theme] .router-search {
-  width: clamp(130px, 18vw, 210px);
-}
-
-body[data-theme] #sidenav,
-body[data-theme] .sidenav {
-  position: fixed;
-  top: 0;
-  left: 0;
-  z-index: 18;
-  width: 0;
-  height: calc(100% - var(--ui-navbar));
-  margin-top: var(--ui-navbar);
-  overflow-x: hidden;
-  overflow-y: auto;
-  color: var(--ui-text);
-  background: var(--ui-side) !important;
-  border-right: 1px solid var(--ui-border) !important;
-  box-shadow: var(--ui-shadow-sm);
-  transition: width var(--ui-motion), box-shadow var(--ui-motion), border-color var(--ui-motion);
 }
 
 body[data-theme] .sidenav .card-header,
 body[data-theme] .sidenav .menu.text-center {
-  display: flex;
-  align-items: center;
   justify-content: center;
-  min-height: 48px;
-  color: var(--ui-text);
-  background: var(--ui-surface-soft) !important;
   border-bottom: 1px solid var(--ui-border) !important;
-  border-radius: 0 !important;
 }
 
 body[data-theme] .sidenav h3 {
-  overflow: hidden;
   max-width: 100%;
-  color: inherit;
-  font-size: 13px;
-  font-weight: 900;
-  text-overflow: ellipsis;
-  text-transform: uppercase;
-  white-space: nowrap;
 }
 
 body[data-theme] .sidenav a,
 body[data-theme] .dropdown-btn {
   display: flex !important;
-  align-items: center;
-  width: calc(100% - 16px);
-  min-height: 38px;
-  margin: 4px 8px;
-  padding: 6px 10px;
-  color: var(--ui-text-soft) !important;
-  font-size: 14px;
-  line-height: 1.25;
-  text-align: left;
-  background: transparent !important;
-  border: 1px solid transparent !important;
-  border-radius: var(--ui-radius);
   box-shadow: none;
   cursor: pointer;
   outline: none;
@@ -362,34 +198,15 @@ body[data-theme] .dropdown-btn {
 
 body[data-theme] .sidenav i,
 body[data-theme] .dropdown-btn i {
-  flex: 0 0 28px;
   width: 28px;
   margin-right: 6px;
-  padding: 0;
-  color: var(--ui-accent);
-  font-size: 17px;
-  text-align: center;
-}
-
-body[data-theme] .dropdown-container i {
-  padding-left: 0;
 }
 
 body[data-theme] .fa-caret-down,
 body[data-theme] .fa-caret-left {
   flex: 0 0 auto;
   width: auto;
-  margin-left: auto;
   margin-right: 0;
-  color: var(--ui-muted) !important;
-}
-
-body[data-theme] .dropdown-btn:hover,
-body[data-theme] .sidenav a:hover,
-body[data-theme] .active {
-  color: var(--ui-text) !important;
-  background: rgba(var(--ui-accent-rgb), 0.1) !important;
-  border-color: rgba(var(--ui-accent-rgb), 0.22) !important;
 }
 
 body[data-theme] .dropdown-btn:hover,
@@ -397,31 +214,22 @@ body[data-theme] .sidenav a:hover {
   transform: translateX(2px);
 }
 
-body[data-theme] .dropdown-container {
-  margin: 0 0 4px;
-}
-
 body[data-theme] .menu-open {
   display: block;
 }
 
 body[data-theme] #main {
-  min-height: calc(100vh - var(--ui-navbar));
-  margin-top: calc(var(--ui-navbar) + 10px);
   transition: margin-left var(--ui-motion), margin-top var(--ui-motion);
 }
 
 body[data-theme] .main-container {
   display: none;
-  padding: 14px;
 }
 
 body[data-theme] .row {
   display: flex;
   flex-wrap: wrap;
   align-items: stretch;
-  margin-right: -6px;
-  margin-left: -6px;
 }
 
 body[data-theme] .row::after,
@@ -454,7 +262,6 @@ body[data-theme] .tikras-script-note {
   background: var(--ui-surface) !important;
   border: 1px solid var(--ui-border) !important;
   border-radius: var(--ui-radius) !important;
-  box-shadow: var(--ui-shadow-sm);
 }
 
 body[data-theme] .card::before,
@@ -469,12 +276,6 @@ body[data-theme] .report-table-wrap::before {
   display: none !important;
 }
 
-body[data-theme] .card,
-body[data-theme] .box {
-  margin: 6px;
-  transition: border-color var(--ui-motion), box-shadow var(--ui-motion), transform var(--ui-motion);
-}
-
 body[data-theme] .card:hover,
 body[data-theme] .box:hover {
   border-color: var(--ui-border-strong) !important;
@@ -482,23 +283,9 @@ body[data-theme] .box:hover {
   transform: translateY(-1px);
 }
 
-body[data-theme] .card .card {
-  background: var(--ui-surface-raised) !important;
-  box-shadow: none;
-}
-
 body[data-theme] .card-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
   gap: 10px;
-  min-height: 48px;
-  padding: 12px 14px;
   margin-bottom: 0;
-  color: var(--ui-text);
-  background: var(--ui-surface-soft) !important;
-  border-bottom: 1px solid var(--ui-border) !important;
-  border-radius: var(--ui-radius) var(--ui-radius) 0 0 !important;
 }
 
 body[data-theme] .card-header h3,
@@ -509,30 +296,17 @@ body[data-theme] .report-panel h3 {
   align-items: center;
   gap: 8px;
   min-width: 0;
-  margin: 0;
-  color: var(--ui-text);
-  font-size: 16px;
-  font-weight: 900;
-  line-height: 1.25;
   letter-spacing: 0;
-}
-
-body[data-theme] .card-header h3 i,
-body[data-theme] .card-title i,
-body[data-theme] .report-title i {
-  color: var(--ui-accent);
 }
 
 body[data-theme] .card-body {
   min-width: 0;
-  padding: 14px;
   margin-bottom: 0;
   overflow-x: auto;
 }
 
 body[data-theme] .box {
   min-width: 0;
-  padding: 13px;
   overflow: hidden;
 }
 
@@ -547,33 +321,16 @@ body[data-theme] .box-group-area {
 
 body[data-theme] .box h1 {
   margin: 0 0 3px;
-  font-size: 28px;
   line-height: 1.08;
-}
-
-body[data-theme] .box-group {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-body[data-theme] .box-group > div {
-  display: block;
 }
 
 body[data-theme] .box-group-icon {
   flex: 0 0 54px;
-  width: 54px;
-  min-width: 54px;
   margin: 0;
   padding: 10px 8px;
-  color: var(--ui-accent) !important;
   font-size: 27px;
   line-height: 1;
   text-align: center;
-  background: var(--ui-surface-soft);
-  border: 1px solid var(--ui-border);
-  border-radius: var(--ui-radius);
 }
 
 body[data-theme] .box-group-icon i {
@@ -589,35 +346,6 @@ body[data-theme] .box-group-area span {
   color: var(--ui-text-soft);
 }
 
-body[data-theme] .bg-primary,
-body[data-theme] .bg-blue,
-body[data-theme] .bg-info,
-body[data-theme] .bg-light-blue,
-body[data-theme] .bg-cyan {
-  color: #ffffff !important;
-  background: var(--ui-accent) !important;
-}
-
-body[data-theme] .bg-success,
-body[data-theme] .bg-green,
-body[data-theme] .bg-teal {
-  color: #ffffff !important;
-  background: var(--ui-success) !important;
-}
-
-body[data-theme] .bg-warning,
-body[data-theme] .bg-yellow,
-body[data-theme] .bg-orange {
-  color: #1f2937 !important;
-  background: #facc15 !important;
-}
-
-body[data-theme] .bg-danger,
-body[data-theme] .bg-red {
-  color: #ffffff !important;
-  background: var(--ui-danger) !important;
-}
-
 body[data-theme] .bg-secondary,
 body[data-theme] .bg-grey,
 body[data-theme] .bg-grey-dark,
@@ -627,12 +355,6 @@ body[data-theme] .bg-indigo,
 body[data-theme] .bg-pink {
   color: #ffffff !important;
   background: var(--ui-neutral) !important;
-}
-
-body[data-theme] .bg-light,
-body[data-theme] .bg-white {
-  color: var(--ui-text) !important;
-  background: var(--ui-surface-soft) !important;
 }
 
 body[data-theme] .box[class*="bg-"] {
@@ -677,20 +399,7 @@ body[data-theme] .btn,
 body[data-theme] .btn-login,
 body[data-theme] button,
 body[data-theme] input[type="submit"].group-item {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 36px;
-  padding: 8px 12px;
-  font-weight: 800;
-  line-height: 1.25;
   letter-spacing: 0;
-  white-space: nowrap;
-  border: 1px solid transparent !important;
-  border-radius: var(--ui-radius) !important;
-  box-shadow: none;
-  cursor: pointer;
-  transition: transform var(--ui-motion), filter var(--ui-motion), box-shadow var(--ui-motion), border-color var(--ui-motion);
 }
 
 body[data-theme] .btn:hover,
@@ -699,7 +408,6 @@ body[data-theme] button:hover,
 body[data-theme] input[type="submit"].group-item:hover {
   filter: brightness(0.98) saturate(1.05);
   box-shadow: 0 10px 20px rgba(var(--ui-accent-rgb), 0.16);
-  transform: translateY(-1px);
 }
 
 body[data-theme] .btn i,
@@ -711,7 +419,6 @@ body[data-theme] button i {
 body[data-theme] input[type="submit"].group-item {
   width: auto;
   min-width: 128px;
-  white-space: normal;
 }
 
 body[data-theme] .form-control,
@@ -720,38 +427,14 @@ body[data-theme] input,
 body[data-theme] select,
 body[data-theme] textarea {
   max-width: 100%;
-  color: var(--ui-text) !important;
-  background: var(--ui-surface-raised) !important;
-  border: 1px solid var(--ui-border-strong) !important;
-  border-radius: var(--ui-radius) !important;
   outline: none;
-  box-shadow: none !important;
   transition: border-color var(--ui-motion), box-shadow var(--ui-motion), background-color var(--ui-motion);
-}
-
-body[data-theme] .form-control,
-body[data-theme] .group-item {
-  min-height: 36px;
-}
-
-body[data-theme] .form-control:focus,
-body[data-theme] .group-item:focus,
-body[data-theme] input:focus,
-body[data-theme] select:focus,
-body[data-theme] textarea:focus {
-  border-color: var(--ui-accent) !important;
-  box-shadow: 0 0 0 3px rgba(var(--ui-accent-rgb), 0.16) !important;
 }
 
 body[data-theme] .group-item-l,
 body[data-theme] .group-item-r,
 body[data-theme] .group-item-md {
   border-radius: var(--ui-radius) !important;
-}
-
-body[data-theme] .input-group {
-  display: flex;
-  align-items: stretch;
 }
 
 body[data-theme] .input-group [class*="input-group-"] {
@@ -761,45 +444,24 @@ body[data-theme] .input-group [class*="input-group-"] {
 }
 
 body[data-theme] .table {
-  width: 100%;
-  color: var(--ui-text);
-  background: var(--ui-surface) !important;
   border: 1px solid var(--ui-border);
-  border-collapse: separate !important;
-  border-spacing: 0;
   border-radius: var(--ui-radius);
 }
 
 body[data-theme] .table th,
 body[data-theme] th {
-  padding: 9px 8px;
-  color: var(--ui-text-soft) !important;
-  font-size: 12px;
-  font-weight: 900;
   letter-spacing: 0;
-  text-transform: uppercase;
   vertical-align: middle;
-  background: var(--ui-surface-soft) !important;
-  border-color: var(--ui-border) !important;
 }
 
 body[data-theme] .table td {
-  padding: 8px;
-  color: var(--ui-text) !important;
   vertical-align: middle;
   background: var(--ui-surface) !important;
-  border-color: var(--ui-border) !important;
-}
-
-body[data-theme] .table-hover:hover tbody tr:hover,
-body[data-theme] .table-hover tbody tr:hover td {
-  background: rgba(var(--ui-accent-rgb), 0.08) !important;
 }
 
 body[data-theme] .overflow,
 body[data-theme] .report-table-scroll {
   max-width: 100%;
-  border-radius: var(--ui-radius);
 }
 
 body[data-theme] .overflow .table,
@@ -840,16 +502,10 @@ body[data-theme] .progress-bar-red {
 }
 
 body[data-theme] #notify {
-  top: calc(var(--ui-navbar) + 12px);
   z-index: 40;
   width: min(320px, calc(100vw - 32px));
   margin-left: 0;
   padding: 10px 12px;
-  color: #ffffff;
-  background: #111827 !important;
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  border-radius: var(--ui-radius);
-  box-shadow: var(--ui-shadow);
   transform: translateX(-50%);
 }
 
@@ -909,30 +565,6 @@ body[data-theme] .login-box img {
   border-radius: var(--ui-radius);
 }
 
-body[data-theme] .text-primary,
-body[data-theme] .text-blue,
-body[data-theme] .text-info,
-body[data-theme] .text-cyan {
-  color: var(--ui-accent) !important;
-}
-
-body[data-theme] .text-success,
-body[data-theme] .text-green,
-body[data-theme] .text-teal {
-  color: var(--ui-success) !important;
-}
-
-body[data-theme] .text-warning,
-body[data-theme] .text-yellow,
-body[data-theme] .text-orange {
-  color: var(--ui-warning) !important;
-}
-
-body[data-theme] .text-danger,
-body[data-theme] .text-red {
-  color: var(--ui-danger) !important;
-}
-
 body[data-theme] .text-secondary,
 body[data-theme] .text-grey,
 body[data-theme] .text-grey-dark,
@@ -945,14 +577,6 @@ body[data-theme] .text-pink {
 
 body[data-theme] .tikras-follow-card .card-body {
   padding: 12px;
-}
-
-body[data-theme] .tikras-follow-grid,
-body[data-theme] .tikras-sales-grid,
-body[data-theme] .report-stat-grid,
-body[data-theme] .report-insights {
-  display: grid;
-  gap: 12px;
 }
 
 body[data-theme] .tikras-follow-grid {
@@ -972,8 +596,6 @@ body[data-theme] .tikras-follow-item,
 body[data-theme] .tikras-sales-item,
 body[data-theme] .tikras-script-note {
   min-height: 88px;
-  padding: 12px;
-  box-shadow: none;
 }
 
 body[data-theme] .tikras-follow-item span,
@@ -1003,8 +625,6 @@ body[data-theme] .tikras-follow-item strong,
 body[data-theme] .tikras-sales-item strong,
 body[data-theme] .report-stat strong {
   display: block;
-  color: var(--ui-text);
-  font-size: 21px;
   line-height: 1.15;
 }
 
@@ -1015,27 +635,7 @@ body[data-theme] .tikras-card-action {
 }
 
 body[data-theme] .tikras-meter {
-  width: 100%;
-  height: 8px;
-  overflow: hidden;
-  background: var(--ui-surface-soft);
   border: 1px solid var(--ui-border);
-  border-radius: 999px;
-}
-
-body[data-theme] .tikras-meter i {
-  display: block;
-  height: 100%;
-  background: var(--ui-warning);
-  border-radius: inherit;
-}
-
-body[data-theme] .tikras-meter-green i {
-  background: var(--ui-success);
-}
-
-body[data-theme] .tikras-meter-blue i {
-  background: var(--ui-accent);
 }
 
 body[data-theme] .tikras-script-actions,
@@ -1055,87 +655,42 @@ body[data-theme] .tikras-script-actions {
 }
 
 body[data-theme] .tikras-script-hero {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 18px;
   margin: 6px;
-  padding: 18px;
   color: var(--ui-text);
   background: var(--ui-surface) !important;
-  border: 1px solid var(--ui-border);
-  border-radius: var(--ui-radius);
-  box-shadow: var(--ui-shadow-sm);
 }
 
 body[data-theme] .tikras-script-kicker {
-  display: block;
-  margin-bottom: 6px;
-  color: var(--ui-accent);
-  font-size: 12px;
-  font-weight: 900;
   letter-spacing: 0;
-  text-transform: uppercase;
 }
 
 body[data-theme] .tikras-script-hero h2 {
-  margin: 0 0 6px;
-  color: var(--ui-text);
-  font-size: 24px;
   line-height: 1.15;
 }
 
 body[data-theme] .tikras-script-hero p {
   max-width: 760px;
-  margin: 0;
-  color: var(--ui-text-soft);
 }
 
 body[data-theme] .tikras-script-hero-meta,
 body[data-theme] .tikras-script-toolbar {
-  display: flex;
-  flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
 }
 
 body[data-theme] .tikras-script-hero-meta span,
 body[data-theme] .tikras-risk {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  min-height: 32px;
-  padding: 6px 9px;
-  color: var(--ui-text);
-  background: var(--ui-surface-soft);
-  border: 1px solid var(--ui-border);
-  border-radius: var(--ui-radius);
   white-space: nowrap;
 }
 
-body[data-theme] .tikras-script-diagnostics,
-body[data-theme] .tikras-script-model-grid,
-body[data-theme] .tikras-script-summary {
-  display: grid;
-  gap: 10px;
-}
-
 body[data-theme] .tikras-script-diagnostics {
-  grid-template-columns: repeat(6, minmax(0, 1fr));
   margin: 6px;
 }
 
 body[data-theme] .tikras-script-diag {
-  display: flex;
   align-items: flex-start;
-  gap: 10px;
-  min-width: 0;
-  padding: 12px;
   color: var(--ui-text);
   background: var(--ui-surface) !important;
-  border: 1px solid var(--ui-border);
   border-left: 4px solid var(--ui-success);
-  border-radius: var(--ui-radius);
   box-shadow: var(--ui-shadow-sm);
 }
 
@@ -1157,40 +712,21 @@ body[data-theme] .tikras-script-diag > i {
 body[data-theme] .tikras-script-diag span,
 body[data-theme] .tikras-script-summary span {
   display: block;
-  color: var(--ui-text-soft);
-  font-size: 11px;
-  font-weight: 900;
-  text-transform: uppercase;
 }
 
 body[data-theme] .tikras-script-diag strong,
 body[data-theme] .tikras-script-summary strong {
-  display: block;
-  overflow-wrap: anywhere;
-  color: var(--ui-text);
   line-height: 1.2;
 }
 
 body[data-theme] .tikras-script-diag small {
   display: block;
   overflow-wrap: anywhere;
-  color: var(--ui-text-soft);
-}
-
-body[data-theme] .tikras-script-model-grid {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  margin-bottom: 12px;
 }
 
 body[data-theme] .tikras-script-model-card {
-  display: grid;
   grid-template-columns: 34px minmax(0, 1fr);
-  gap: 3px 10px;
   align-items: center;
-  min-height: 76px;
-  padding: 10px;
-  color: var(--ui-text);
-  text-align: left;
   white-space: normal;
   background: var(--ui-surface-soft) !important;
   border: 1px solid var(--ui-border) !important;
@@ -1200,26 +736,20 @@ body[data-theme] .tikras-script-model-card {
 
 body[data-theme] .tikras-script-model-card i {
   grid-row: span 2;
-  color: var(--ui-accent);
-  font-size: 20px;
   text-align: center;
 }
 
 body[data-theme] .tikras-script-model-card span {
   overflow-wrap: anywhere;
-  font-weight: 900;
-  line-height: 1.2;
 }
 
 body[data-theme] .tikras-script-model-card small {
-  color: var(--ui-text-soft);
   line-height: 1.25;
 }
 
 body[data-theme] .tikras-script-model-card.active {
   background: rgba(var(--ui-accent-rgb), 0.1) !important;
   border-color: rgba(var(--ui-accent-rgb), 0.34) !important;
-  box-shadow: 0 10px 22px rgba(var(--ui-accent-rgb), 0.12);
 }
 
 body[data-theme] .tikras-risk-border-faible {
@@ -1230,41 +760,8 @@ body[data-theme] .tikras-risk-border-modere {
   border-left-color: var(--ui-warning) !important;
 }
 
-body[data-theme] .tikras-risk-modere,
-body[data-theme] .tikras-risk-text-modere {
-  color: var(--ui-warning) !important;
-}
-
 body[data-theme] .tikras-risk-border-eleve {
   border-left-color: var(--ui-danger) !important;
-}
-
-body[data-theme] .tikras-risk-eleve,
-body[data-theme] .tikras-risk-text-eleve {
-  color: var(--ui-danger) !important;
-}
-
-body[data-theme] .tikras-risk-faible,
-body[data-theme] .tikras-risk-text-faible {
-  color: var(--ui-success) !important;
-}
-
-body[data-theme] .tikras-script-summary {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  margin-bottom: 10px;
-}
-
-body[data-theme] .tikras-script-summary > div {
-  min-width: 0;
-  padding: 10px;
-  background: var(--ui-surface-soft);
-  border: 1px solid var(--ui-border);
-  border-radius: var(--ui-radius);
-}
-
-body[data-theme] .tikras-script-toolbar {
-  justify-content: flex-end;
-  margin-bottom: 10px;
 }
 
 body[data-theme] .tikras-ticket-actions {
@@ -1272,9 +769,7 @@ body[data-theme] .tikras-ticket-actions {
 }
 
 body[data-theme] .tikras-script-note {
-  display: flex;
   align-items: flex-start;
-  gap: 12px;
   margin: 6px;
 }
 
@@ -1283,7 +778,6 @@ body[data-theme] .tikras-script-note i {
   width: 38px;
   height: 38px;
   padding-top: 10px;
-  color: #ffffff;
   text-align: center;
   background: var(--ui-accent);
   border-radius: var(--ui-radius);
@@ -1292,8 +786,6 @@ body[data-theme] .tikras-script-note i {
 body[data-theme] .tikras-script-help {
   display: block;
   margin-top: 5px;
-  color: var(--ui-text-soft);
-  line-height: 1.35;
 }
 
 body[data-theme] .tikras-script-preview,
@@ -1311,7 +803,6 @@ body[data-theme] .tikras-script-preview {
   color: #dbeafe !important;
   background: #081424 !important;
   border-color: #243247 !important;
-  white-space: pre;
 }
 
 body[data-theme] .tikras-ticket-share-text {
@@ -1348,26 +839,12 @@ body[data-theme] .report-page {
   padding: 2px;
 }
 
-body[data-theme] .report-hero {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  margin: 6px;
-  padding: 18px;
-}
-
 body[data-theme] .report-eyebrow {
   color: var(--ui-accent);
   font-size: 12px;
   font-weight: 900;
   letter-spacing: 0;
   text-transform: uppercase;
-}
-
-body[data-theme] .report-title {
-  margin: 4px 0;
-  font-size: 24px;
 }
 
 body[data-theme] .report-stat-grid,
@@ -1377,7 +854,6 @@ body[data-theme] .report-insights {
 
 body[data-theme] .report-stat {
   min-height: 104px;
-  padding: 15px;
 }
 
 body[data-theme] .report-stat.report-stat-income {
@@ -1416,7 +892,6 @@ body[data-theme] .report-toolbar .btn {
 }
 
 body[data-theme] .report-search {
-  min-width: 220px;
   max-width: 320px;
 }
 
@@ -1424,14 +899,6 @@ body[data-theme] .report-filters select,
 body[data-theme] .report-filters input,
 body[data-theme] .report-toolbar input {
   min-height: 36px;
-}
-
-body[data-theme] .report-filter-field {
-  min-width: 115px;
-}
-
-body[data-theme] .report-filter-field-wide {
-  min-width: 170px;
 }
 
 body[data-theme] .report-panel h3 {
@@ -1749,7 +1216,6 @@ body[data-theme] .CodeMirror {
   }
 }
 
-/* TIKRAS IT interface skin. */
 :root {
   --ui-radius: 6px;
   --ui-sidebar: 214px;
@@ -1779,10 +1245,6 @@ body[data-theme] {
   --ui-shadow: 0 18px 38px rgba(0, 18, 48, 0.34);
   --ui-shadow-sm: 0 9px 22px rgba(0, 18, 48, 0.24);
   background-color: #07599d !important;
-  background-image:
-    radial-gradient(ellipse at 44% 44%, rgba(86, 181, 255, 0.46) 0, rgba(86, 181, 255, 0.12) 28%, rgba(86, 181, 255, 0) 54%),
-    linear-gradient(140deg, rgba(6, 72, 135, 0.96) 0%, rgba(13, 116, 205, 0.92) 52%, rgba(4, 60, 119, 0.98) 100%) !important;
-  background-attachment: fixed;
 }
 
 body[data-theme] .wrapper {
@@ -1791,14 +1253,6 @@ body[data-theme] .wrapper {
     radial-gradient(ellipse at 78% 28%, rgba(255, 255, 255, 0.18), transparent 28%),
     radial-gradient(ellipse at 61% 83%, rgba(0, 30, 78, 0.28), transparent 36%);
   background-size: 18px 18px, auto, auto;
-  min-height: 100vh;
-}
-
-body[data-theme] #navbar,
-body[data-theme] .navbar {
-  background: linear-gradient(180deg, #0c4b86, #063b70) !important;
-  border-bottom: 1px solid rgba(159, 213, 255, 0.34) !important;
-  box-shadow: 0 10px 25px rgba(0, 27, 67, 0.24);
 }
 
 body[data-theme] #brand {
@@ -1806,65 +1260,13 @@ body[data-theme] #brand {
 }
 
 body[data-theme] #brand::before {
-  width: 26px;
-  height: 26px;
   margin-right: 8px;
-  background:
-    linear-gradient(135deg, #ffffff 0 34%, transparent 35%),
-    linear-gradient(225deg, #48c7ff 0 48%, #0f6ab8 49% 100%);
-  border: 1px solid rgba(255, 255, 255, 0.65);
-  border-radius: 7px;
-  box-shadow: 0 6px 14px rgba(0, 22, 56, 0.24);
   transform: none;
-}
-
-body[data-theme] #brand::after {
-  content: "TIKRAS IT";
-  font-size: 15px;
-  font-weight: 900;
-}
-
-body[data-theme] #cpage {
-  color: rgba(244, 251, 255, 0.84) !important;
-  font-size: 13px;
-  text-transform: uppercase;
-}
-
-body[data-theme] .sidenav,
-body[data-theme] #sidenav {
-  background:
-    linear-gradient(180deg, rgba(8, 57, 105, 0.98), rgba(4, 33, 66, 0.98)) !important;
-  border-right: 1px solid rgba(144, 211, 255, 0.28) !important;
 }
 
 body[data-theme] .sidenav .card-header,
 body[data-theme] .sidenav .menu.text-center {
-  color: #ffffff;
-  background: rgba(3, 30, 62, 0.72) !important;
   border-bottom: 1px solid rgba(144, 211, 255, 0.24) !important;
-}
-
-body[data-theme] .sidenav h3 {
-  color: #ffffff;
-}
-
-body[data-theme] .sidenav a,
-body[data-theme] .dropdown-btn {
-  color: #cce8ff !important;
-  border-radius: 4px;
-}
-
-body[data-theme] .sidenav i,
-body[data-theme] .dropdown-btn i {
-  color: #78d4ff;
-}
-
-body[data-theme] .dropdown-btn:hover,
-body[data-theme] .sidenav a:hover,
-body[data-theme] .active {
-  color: #ffffff !important;
-  background: linear-gradient(90deg, rgba(37, 147, 255, 0.34), rgba(37, 147, 255, 0.1)) !important;
-  border-color: rgba(142, 210, 255, 0.34) !important;
 }
 
 body[data-theme] .card,
@@ -1881,31 +1283,9 @@ body[data-theme] .tikras-sales-item,
 body[data-theme] .tikras-script-note {
   background: linear-gradient(180deg, rgba(21, 122, 215, 0.76), rgba(7, 78, 151, 0.74)) !important;
   border: 1px solid rgba(170, 223, 255, 0.34) !important;
-  box-shadow: 0 12px 28px rgba(0, 28, 73, 0.23);
-}
-
-body[data-theme] .card-header {
-  color: #ffffff;
-  background: linear-gradient(180deg, rgba(11, 86, 163, 0.92), rgba(6, 61, 124, 0.9)) !important;
-  border-bottom: 1px solid rgba(178, 226, 255, 0.32) !important;
-}
-
-body[data-theme] .card-header h3,
-body[data-theme] .card-title,
-body[data-theme] .report-title,
-body[data-theme] .report-panel h3 {
-  color: #ffffff;
-}
-
-body[data-theme] .card-header h3 i,
-body[data-theme] .card-title i,
-body[data-theme] .report-title i {
-  color: #8fe0ff;
 }
 
 body[data-theme] .box-group-icon {
-  color: #ffffff !important;
-  background: rgba(255, 255, 255, 0.14) !important;
   border-color: rgba(255, 255, 255, 0.2) !important;
 }
 
@@ -1919,35 +1299,6 @@ body[data-theme] .box-group-area span,
 body[data-theme] .card,
 body[data-theme] .card a {
   color: #f4fbff !important;
-}
-
-body[data-theme] .bg-primary,
-body[data-theme] .bg-blue,
-body[data-theme] .bg-info,
-body[data-theme] .bg-light-blue,
-body[data-theme] .bg-cyan {
-  background: linear-gradient(135deg, #0ea5e9, #2563eb) !important;
-  color: #ffffff !important;
-}
-
-body[data-theme] .bg-success,
-body[data-theme] .bg-green,
-body[data-theme] .bg-teal {
-  background: linear-gradient(135deg, #22c55e, #0f9f76) !important;
-  color: #ffffff !important;
-}
-
-body[data-theme] .bg-warning,
-body[data-theme] .bg-yellow,
-body[data-theme] .bg-orange {
-  background: linear-gradient(135deg, #fbbf24, #f97316) !important;
-  color: #1f2937 !important;
-}
-
-body[data-theme] .bg-danger,
-body[data-theme] .bg-red {
-  background: linear-gradient(135deg, #ef4444, #e11d48) !important;
-  color: #ffffff !important;
 }
 
 body[data-theme] .box[class*="bg-"] {
@@ -1964,27 +1315,11 @@ body[data-theme] .box[class*="bg-"] div {
 }
 
 body[data-theme] .table {
-  color: #eaf7ff;
-  background: rgba(5, 59, 117, 0.62) !important;
   border-color: rgba(169, 224, 255, 0.32);
 }
 
-body[data-theme] .table th,
-body[data-theme] th {
-  color: #dff4ff !important;
-  background: rgba(4, 45, 91, 0.78) !important;
-  border-color: rgba(162, 219, 255, 0.28) !important;
-}
-
 body[data-theme] .table td {
-  color: #f3fbff !important;
   background: rgba(12, 92, 173, 0.38) !important;
-  border-color: rgba(162, 219, 255, 0.24) !important;
-}
-
-body[data-theme] .table td a,
-body[data-theme] .table th a {
-  color: #ffffff !important;
 }
 
 body[data-theme] .form-control,
@@ -1995,22 +1330,12 @@ body[data-theme] textarea,
 body[data-theme] .ses,
 body[data-theme] .dropd,
 body[data-theme] .router-search {
-  color: #f6fbff !important;
-  background: rgba(4, 45, 91, 0.78) !important;
   border-color: rgba(170, 224, 255, 0.42) !important;
 }
 
 body[data-theme] select option {
   color: #12213a;
   background: #ffffff;
-}
-
-body[data-theme] .btn,
-body[data-theme] .btn-login,
-body[data-theme] button,
-body[data-theme] input[type="submit"].group-item {
-  min-height: 34px;
-  border-radius: 4px !important;
 }
 
 body[data-theme] .CodeMirror,
@@ -2024,24 +1349,11 @@ body[data-theme] .tikras-follow-grid {
   grid-template-columns: repeat(6, minmax(112px, 1fr));
 }
 
-body[data-theme] .tikras-follow-item,
-body[data-theme] .tikras-sales-item {
-  background: rgba(5, 61, 121, 0.66) !important;
-}
-
 body[data-theme] .tikras-meter {
-  background: rgba(3, 34, 70, 0.74);
   border-color: rgba(167, 221, 255, 0.26);
 }
 
-body.login-screen[data-theme] {
-  background:
-    linear-gradient(115deg, rgba(241, 246, 252, 0.98), rgba(224, 221, 248, 0.98) 55%, rgba(246, 248, 252, 1)) !important;
-  color: #17355d;
-}
-
 body.login-screen[data-theme]::before {
-  display: block !important;
   position: fixed;
   inset: 0;
   content: "";
@@ -2052,15 +1364,12 @@ body.login-screen[data-theme]::before {
 }
 
 body.login-screen[data-theme] .wrapper {
-  display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 100vh;
   background-image: none;
 }
 
 body.login-screen[data-theme] .login-box {
-  width: min(430px, 92vw);
   padding-top: 0 !important;
 }
 
@@ -2247,8 +1556,6 @@ body[data-theme] .ppp-invoice-table th {
   }
 }
 
-/* Light and dark theme repairs: the blue skin above stays available, but these
-   rules make the light/dark selections visually distinct and usable. */
 body[data-theme="light"] {
   --ui-bg: #f4f7fb;
   --ui-surface: #ffffff;
@@ -2272,7 +1579,6 @@ body[data-theme="light"] {
   --ui-shadow: 0 18px 45px rgba(15, 23, 42, 0.1);
   --ui-shadow-sm: 0 8px 22px rgba(15, 23, 42, 0.07);
   color: var(--ui-text);
-  color-scheme: light;
   background: #f4f7fb !important;
 }
 
@@ -2299,7 +1605,6 @@ body[data-theme="dark"] {
   --ui-shadow: 0 22px 48px rgba(0, 0, 0, 0.34);
   --ui-shadow-sm: 0 10px 26px rgba(0, 0, 0, 0.24);
   color: var(--ui-text);
-  color-scheme: dark;
   background: #0f141b !important;
 }
 
@@ -2562,21 +1867,6 @@ body[data-theme="dark"] .box[class*="bg-warning"] {
   border-left-color: var(--ui-warning) !important;
 }
 
-body.login-screen[data-theme="light"] {
-  color: #172033;
-  background: #f4f7fb !important;
-}
-
-body.login-screen[data-theme="dark"] {
-  color: #e8eef6;
-  background: #0f141b !important;
-}
-
-body.login-screen[data-theme="light"]::before,
-body.login-screen[data-theme="dark"]::before {
-  display: none !important;
-}
-
 body.login-screen[data-theme="light"] .login-box .card,
 body.login-screen[data-theme="dark"] .login-box .card {
   color: var(--ui-text);
@@ -2812,10 +2102,6 @@ body[data-theme] #trafficMonitor {
     width: 118px;
     height: 72px;
   }
-}
-
-body[data-theme] #cpage {
-  max-width: 190px;
 }
 
 body[data-theme] .navbar-right .ses {

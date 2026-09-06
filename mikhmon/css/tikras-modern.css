@@ -12,7 +12,8 @@ body[data-theme] {
   --modern-border-strong: #cbd5e1;
   --modern-text: #172033;
   --modern-muted: #64748b;
-  --modern-accent: #0b63ff;
+  /* Suit la couleur d'accent commune plutot que de figer l'ancien bleu. */
+  --modern-accent: var(--one-primary, #6366f1);
   --modern-danger: #be123c;
   --modern-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
 }
@@ -265,8 +266,8 @@ body.login-screen[data-theme] .tikras-login-card {
 
 body.login-screen[data-theme] .tikras-login-submit {
   color: #ffffff !important;
-  background: #0b63ff !important;
-  border-color: #0b63ff !important;
+  background: var(--one-primary) !important;
+  border-color: var(--one-primary) !important;
 }
 
 .tikras-admin-grid {
@@ -329,12 +330,18 @@ body.login-screen[data-theme] .tikras-login-submit {
   color: var(--modern-muted) !important;
 }
 
+/*
+ * La liste defile avec la page, et non dans son propre cadre.
+ *
+ * Elle etait enfermee dans une fenetre de 70 % de la hauteur d'ecran avec
+ * son defilement interne: sur cent six routeurs on n'en voyait que cinq, et
+ * deux barres de defilement se disputaient la molette. Rien n'indiquait non
+ * plus l'etendue reelle de la liste. La recherche et les favoris sont les
+ * bons outils pour s'y retrouver; enfermer la liste n'en etait pas un.
+ */
 .tikras-router-list {
   display: grid;
   gap: 10px;
-  max-height: 70vh;
-  overflow: auto;
-  padding-right: 4px;
 }
 
 .tikras-router-card {
@@ -553,8 +560,9 @@ body[data-theme] .tikras-ticket-page .card-header h3 {
   font-weight: 700;
 }
 
+/* Etat "pret": le vert de reussite, et non un bleu d'accent sur fond vert. */
 .tikras-ticket-preview-note.is-ready {
-  color: #0b63ff;
+  color: #0f766e;
   background: rgba(20, 184, 166, 0.10);
   border-color: rgba(20, 184, 166, 0.30);
 }
@@ -910,9 +918,6 @@ body[data-theme] #reloadHome .box[class*="bg-"] div {
     padding: 12px;
   }
 
-  .tikras-router-list {
-    max-height: none;
-    overflow: visible;
-    padding-right: 0;
-  }
+  /* Le cadre a defilement interne a ete retire pour tous les ecrans:
+     cette annulation propre au mobile n'a plus d'objet. */
 }

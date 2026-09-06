@@ -63,6 +63,28 @@ if ($_SESSION['theme'] == "") {
 }
 
 
+/*
+ * Telechargement du fichier de configuration d'un appareil du concentrateur.
+ *
+ * Traite avant toute autre chose: headhtml.php ci-dessous ouvre la page HTML,
+ * et le fichier partirait alors precede de toute l'interface - WireGuard le
+ * refuserait. La session est deja ouverte, l'acces reste donc protege.
+ */
+if ($id == 'wireguard' && tikras_get('config_appareil') != '' && isset($_SESSION['mikhmon'])) {
+  include_once('./lib/tikras_wg_appareils.php');
+  $wgCible = (string) tikras_get('config_appareil');
+  $wgContenu = tikras_wga_configuration($wgCible);
+  if ($wgContenu !== '') {
+    header('Content-Type: text/plain; charset=utf-8');
+    header('Content-Disposition: attachment; filename="'
+      . preg_replace('/[^A-Za-z0-9_.-]/', '-', $wgCible) . '.conf"');
+    // Ce fichier porte une cle privee: aucun cache, nulle part.
+    header('Cache-Control: no-store, no-cache, must-revalidate');
+    echo $wgContenu;
+    exit;
+  }
+}
+
 // load config
 include_once('./include/headhtml.php');
 include('./include/config.php');
@@ -107,7 +129,9 @@ if ($tikrasLoginRequest) {
         tikras_login_throttle('success');
         tikras_session_regenerate();
         $_SESSION["mikhmon"] = $effectiveUser;
-        tikras_redirect('./admin.php?id=sessions');
+        // On ouvre sur la vue d'ensemble: la liste des routeurs ne repond a
+        // aucune des questions qu'on se pose en arrivant.
+        tikras_redirect('./admin.php?id=bord');
       } else {
         tikras_login_throttle('failure');
         $error = '<div style="width: 100%; padding:5px 0px 5px 0px; border-radius:5px;" class="bg-danger"><i class="fa fa-ban"></i> Alert!<br>Invalid username or password.</div>';
@@ -121,6 +145,11 @@ if ($tikrasLoginRequest) {
   tikras_redirect('./admin.php?id=login');
 } elseif (substr($url, -1) == "/" || substr($url, -4) == ".php") {
   tikras_redirect('./admin.php?id=sessions');
+
+} elseif ($id == "bord") {
+  $_SESSION["connect"] = "";
+  include_once('./include/menu.php');
+  include_once('./settings/bord.php');
 
 } elseif ($id == "sessions") {
   $_SESSION["connect"] = "";
@@ -187,6 +216,8 @@ if ($tikrasLoginRequest) {
   include_once('./include/menu.php');
   include_once('./settings/radius.php');
 } elseif ($id == "wireguard") {
+  // Le telechargement d'une configuration d'appareil est intercepte plus haut,
+  // avant l'ouverture de la page HTML.
   include_once('./include/menu.php');
   include_once('./settings/wireguard.php');
 } elseif ($id == "radius-serveur") {

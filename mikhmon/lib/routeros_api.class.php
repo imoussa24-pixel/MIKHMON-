@@ -287,7 +287,20 @@ class RouterosAPI
         while (true) {
             // Read the first byte of input which gives us some or all of the length
             // of the remaining reply.
-            $BYTE   = ord(fread($this->socket, 1));
+            $FIRST  = fread($this->socket, 1);
+            // Un routeur qui se tait laissait cette boucle tourner a vide:
+            // fread rend "" a l'expiration du delai du flux, ord("") vaut 0,
+            // aucune sortie n'etait prevue pour ce cas et la requete tournait
+            // sans fin en immobilisant un processus Apache. On sort des que le
+            // flux declare son expiration ou sa fin.
+            if ($FIRST === "" || $FIRST === false) {
+                $STATUS = socket_get_status($this->socket);
+                if (!empty($STATUS['timed_out']) || !empty($STATUS['eof'])) {
+                    break;
+                }
+                continue;
+            }
+            $BYTE   = ord($FIRST);
             $LENGTH = 0;
             // If the first bit is set then we need to remove the first four bits, shift left 8
             // and then read another byte in.
@@ -424,6 +437,126 @@ class RouterosAPI
         }
 
         return $this->read();
+    }
+
+    /**
+     * Envoie plusieurs commandes d'affilee, puis lit toutes les reponses.
+     *
+     * comm() paie un aller-retour complet par commande: il ecrit, puis attend
+     * la reponse avant d'ecrire la suivante. Sur ce parc, un aller-retour vers
+     * un routeur mesure environ 300 ms - c'est de la latence reseau, pas du
+     * calcul. Creer les tickets un par un coutait donc 300 ms chacun: 100
+     * tickets en 30 s, 300 tickets en 95 s, soit le seuil ou le bord Cloudflare
+     * coupe et renvoie sa propre page d'erreur.
+     *
+     * Ici les commandes partent toutes avant qu'on lise quoi que ce soit. La
+     * latence n'est plus payee qu'une fois pour le lot entier. Chaque commande
+     * porte un .tag, ce qui permet de rendre les reponses dans l'ordre d'envoi
+     * meme si le routeur les entrelace.
+     *
+     * @param array $commands Liste de array('cmd' => '/chemin', 'args' => array())
+     *
+     * @return array Une entree par commande, dans l'ordre d'envoi, chacune
+     *               etant le tableau de mots bruts renvoyes par le routeur.
+     */
+    public function commBatch($commands)
+    {
+        $resultats = array();
+        if (!is_array($commands) || count($commands) < 1) {
+            return $resultats;
+        }
+        if (!$this->connected) {
+            return $resultats;
+        }
+
+        $attendus = 0;
+        foreach ($commands as $index => $commande) {
+            $chemin = isset($commande['cmd']) ? $commande['cmd'] : '';
+            if ($chemin === '') {
+                continue;
+            }
+            $args = isset($commande['args']) && is_array($commande['args']) ? $commande['args'] : array();
+            // Le .tag doit rester distinct de zero: write() teste le type
+            // entier, et une valeur nulle passerait pour une absence de tag.
+            $tag = $index + 1;
+
+            if (count($args) < 1) {
+                $this->write($chemin, $tag);
+            } else {
+                $this->write($chemin, false);
+                $i = 0;
+                $dernier = count($args) - 1;
+                foreach ($args as $cle => $valeur) {
+                    switch ($cle[0]) {
+                        case "?":
+                            $el = "$cle=$valeur";
+                            break;
+                        case "~":
+                            $el = "$cle~$valeur";
+                            break;
+                        default:
+                            $el = "=$cle=$valeur";
+                            break;
+                    }
+                    // Le tag ferme la commande: il accompagne le dernier
+                    // argument, comme le terminateur dans comm().
+                    $this->write($el, $i == $dernier ? $tag : false);
+                    $i++;
+                }
+            }
+            $attendus++;
+        }
+
+        if ($attendus < 1) {
+            return $resultats;
+        }
+
+        /*
+         * Chaque commande envoyee produit exactement un !done, et les reponses
+         * reviennent dans l'ordre d'envoi sur une meme connexion. On decoupe
+         * donc sur les !done.
+         *
+         * On ne se sert pas du .tag pour regrouper: le routeur le place a la
+         * fin de la phrase qu'il conclut, pas au debut. S'en servir comme
+         * marqueur d'ouverture rattachait les premiers mots d'une reponse a la
+         * precedente - un !re se retrouvait dans le lot d'avant.
+         */
+        $courantMots = array();
+        $termines = 0;
+        $tours = 0;
+        while ($termines < $attendus) {
+            $mots = $this->read(false);
+            if (!is_array($mots) || count($mots) < 1) {
+                // Plus rien ne vient: le routeur a coupe ou expire. On rend ce
+                // qu'on a plutot que de tourner sans fin.
+                break;
+            }
+            foreach ($mots as $mot) {
+                if (strpos($mot, '.tag=') === 0) {
+                    continue;
+                }
+                if ($mot == '!done') {
+                    $resultats[] = $courantMots;
+                    $courantMots = array();
+                    $termines++;
+                    continue;
+                }
+                $courantMots[] = $mot;
+            }
+            // Garde-fou: sans lui, un routeur qui repondrait sans jamais
+            // conclure ferait boucler indefiniment.
+            if (++$tours > $attendus * 4 + 16) {
+                break;
+            }
+        }
+
+        // Une reponse manquante reste une entree vide, pour que l'appelant
+        // garde la correspondance avec sa liste de depart.
+        while (count($resultats) < $attendus) {
+            $resultats[] = array();
+        }
+
+        return $resultats;
     }
 
     /**

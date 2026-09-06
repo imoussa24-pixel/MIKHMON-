@@ -217,6 +217,15 @@ if (!function_exists('tikras_storage_migrate')) {
       'CREATE UNIQUE INDEX IF NOT EXISTS idx_routeros_logs_unique ON routeros_logs(session, router_time, topic, message)',
       'CREATE INDEX IF NOT EXISTS idx_routeros_logs_session_time ON routeros_logs(session, captured_at)',
       'CREATE INDEX IF NOT EXISTS idx_sales_cache_month ON sales_cache(report_month, session)',
+      /*
+       * Le tableau de bord interroge les ventes par date, et les dedoublonne
+       * par (routeur, ticket, date) - une meme vente pouvant etre enregistree
+       * sous la cle du mois et sous celle du jour. Sans ces index, chaque
+       * chiffre affiche impose un parcours complet des dizaines de milliers
+       * de lignes.
+       */
+      'CREATE INDEX IF NOT EXISTS idx_sales_dedup ON sales_cache(session, ticket_code, sold_at)',
+      'CREATE INDEX IF NOT EXISTS idx_sales_date ON sales_cache(sold_at)',
       'CREATE INDEX IF NOT EXISTS idx_audit_logs_created ON audit_logs(created_at)'
     );
     foreach ($indexes as $sql) {

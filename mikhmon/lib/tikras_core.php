@@ -8,6 +8,26 @@ if (isset($_SERVER["REQUEST_URI"]) && substr($_SERVER["REQUEST_URI"], -15) == "t
   exit;
 }
 
+/*
+ * Budget de temps des requetes web.
+ *
+ * php.ini laisse max_execution_time a 0: une requete qui attend un routeur
+ * injoignable ne rend jamais la main. Elle immobilise un processus Apache,
+ * et il n'y en a qu'un nombre fini: quelques requetes bloquees suffisent a
+ * ralentir tout le panneau pour tout le monde.
+ *
+ * Devant le tunnel Cloudflare, le bord coupe de toute facon vers 100 s et
+ * renvoie sa propre page d'erreur, sans rien laisser dans nos journaux. On
+ * s'arrete donc un peu avant: l'incident devient une erreur PHP datee et
+ * tracable plutot qu'une page opaque.
+ *
+ * Le cron passe par la ligne de commande, ou PHP ignore cette limite: les
+ * cycles longs des automatisations ne sont pas touches.
+ */
+if (PHP_SAPI !== 'cli' && (int) ini_get('max_execution_time') === 0) {
+  @set_time_limit(90);
+}
+
 if (!function_exists('tikras_is_https')) {
   function tikras_is_https()
   {
