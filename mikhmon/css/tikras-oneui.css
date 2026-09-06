@@ -1,15 +1,20 @@
 /*
- * TIKRAS One UI inspired skin.
- * Loaded last so legacy PHP screens receive a cohesive modern interface.
+ * TIKRAS-ONEUI - part vivante.
+ *
+ * Cette feuille etait la premiere couche projet chargee, et les trois
+ * suivantes la recouvraient: 80,5 % de ses declarations n'atteignaient
+ * jamais l'ecran. Elles ont ete retirees; ce qui reste est ce qu'aucune
+ * feuille posterieure ne redefinit.
+ *
+ * Sa position dans l'ordre de chargement est inchangee, donc la cascade
+ * est exactement celle d'avant. Les blocs @media et @keyframes sont
+ * conserves tels quels: une regle conditionnelle ne peut pas condamner
+ * une regle de premier niveau.
+ *
+ * Regenere par outils/reduire.mjs - ne pas editer a la main sans refaire
+ * le releve de styles calcules.
  */
 
-/*
- * Les jetons de style (couleurs, rayons, espacements, typographie) sont
- * declares une seule fois, dans tikras-flux.css. Ils l'etaient aussi ici,
- * mais ce fichier etant charge avant, chacune de ces valeurs etait
- * silencieusement remplacee: deux jeux concurrents pour un seul rendu, et
- * toute retouche faite ici restait sans effet.
- */
 
 html,
 body[data-theme] {
@@ -29,7 +34,6 @@ body[data-theme] *::after {
 
 body[data-theme] .wrapper {
   min-height: 100vh;
-  background: var(--one-bg) !important;
 }
 
 body[data-theme] a {
@@ -50,10 +54,7 @@ body[data-theme] .navbar {
   height: var(--one-navbar);
   overflow: visible;
   color: var(--one-text) !important;
-  background: var(--one-nav) !important;
-  border-bottom: 1px solid var(--one-line) !important;
   box-shadow: var(--one-shadow-sm);
-  backdrop-filter: blur(16px);
 }
 
 body[data-theme] .navbar-left,
@@ -112,13 +113,9 @@ body[data-theme] #brand {
   gap: 10px;
   height: var(--one-navbar);
   padding: 0 18px !important;
-  color: var(--one-text) !important;
-  font-size: 0;
-  font-weight: 900;
 }
 
 body[data-theme] #brand::before {
-  display: inline-flex;
   flex: 0 0 auto;
   width: 30px;
   height: 30px;
@@ -150,9 +147,6 @@ body[data-theme] #cpage {
   min-width: 72px;
   max-width: 240px;
   overflow: hidden;
-  color: var(--one-text) !important;
-  font-size: 13px;
-  font-weight: 900;
   text-overflow: ellipsis;
   text-transform: uppercase;
 }
@@ -196,9 +190,6 @@ body[data-theme] .sidenav {
   overflow-x: hidden;
   overflow-y: auto;
   color: var(--one-text);
-  background: var(--one-side) !important;
-  border-right: 1px solid var(--one-line) !important;
-  box-shadow: 10px 0 28px rgba(16, 24, 40, 0.06);
   transition: width .22s ease, transform .22s ease;
 }
 
@@ -357,7 +348,6 @@ body[data-theme] .card-header {
   background: transparent !important;
   border: 0 !important;
   border-bottom: 1px solid var(--one-line) !important;
-  border-radius: var(--one-radius) var(--one-radius) 0 0 !important;
 }
 
 body[data-theme] .card-header h3,
@@ -540,9 +530,7 @@ body[data-theme] .group-item:focus,
 body[data-theme] input:focus,
 body[data-theme] select:focus,
 body[data-theme] textarea:focus {
-  border-color: var(--one-primary) !important;
   outline: 0 !important;
-  box-shadow: 0 0 0 3px rgba(99, 102, 241,0.14) !important;
 }
 
 body[data-theme] .form-control:disabled,
@@ -673,11 +661,7 @@ body[data-theme] .tikras-router-list {
 
 body[data-theme] .tikras-router-card {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(118px, auto);
-  align-items: stretch;
-  gap: 14px;
   margin: 0;
-  padding: 14px;
 }
 
 body[data-theme] .tikras-router-copy {
@@ -688,8 +672,6 @@ body[data-theme] .tikras-router-copy h3 {
   margin: 0 0 4px;
   overflow-wrap: anywhere;
   color: var(--one-text) !important;
-  font-size: 18px;
-  font-weight: 900;
   line-height: 1.2;
   text-overflow: clip;
   white-space: normal;
@@ -699,7 +681,6 @@ body[data-theme] .tikras-router-copy p {
   margin: 0;
   overflow-wrap: anywhere;
   color: var(--one-text-soft) !important;
-  font-size: 13px;
   line-height: 1.35;
   text-overflow: clip;
   white-space: normal;
@@ -713,8 +694,6 @@ body[data-theme] .tikras-router-copy p span {
 body[data-theme] .tikras-router-meta {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 8px;
 }
 
 body[data-theme] .tikras-router-meta span {
@@ -722,26 +701,19 @@ body[data-theme] .tikras-router-meta span {
   align-items: center;
   gap: 5px;
   max-width: 100%;
-  padding: 4px 7px;
   color: var(--one-text-soft) !important;
   background: var(--one-surface-soft);
-  border-radius: var(--one-radius);
   overflow-wrap: anywhere;
   white-space: normal;
 }
 
 body[data-theme] .tikras-router-actions {
   align-content: flex-start;
-  align-items: stretch;
-  flex-direction: column;
-  flex-wrap: nowrap;
   justify-content: flex-start;
 }
 
 body[data-theme] .tikras-router-actions .tikras-btn {
   justify-content: center;
-  min-height: 38px;
-  width: 100%;
 }
 
 body[data-theme] .report-toolbar-row,
@@ -801,7 +773,6 @@ body[data-theme] #notify {
   color: #ffffff !important;
   background: rgba(99, 102, 241,0.90) !important;
   border: 0 !important;
-  border-radius: var(--one-radius) !important;
 }
 
 body[data-theme] .tikras-dashboard-modern,
@@ -1832,8 +1803,6 @@ body.login-screen[data-theme] {
 body.login-screen[data-theme] .wrapper {
   display: grid !important;
   place-items: center;
-  min-height: 100vh;
-  padding: 24px;
 }
 
 body.login-screen[data-theme] .login-box,
@@ -1885,19 +1854,8 @@ body[data-theme] .text-red {
   color: var(--one-red) !important;
 }
 
-body[data-theme] ::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
-}
-
 body[data-theme] ::-webkit-scrollbar-track {
   background: var(--one-bg);
-}
-
-body[data-theme] ::-webkit-scrollbar-thumb {
-  background: var(--one-line-strong);
-  border: 2px solid var(--one-bg);
-  border-radius: 999px;
 }
 
 @media screen and (max-width: 1180px) {
@@ -2083,7 +2041,6 @@ body[data-theme] ::-webkit-scrollbar-thumb {
   }
 }
 
-/* Accessibilite : anneau de focus clavier visible (ajout TIKRAS) */
 a:focus-visible,
 button:focus-visible,
 .btn:focus-visible,
