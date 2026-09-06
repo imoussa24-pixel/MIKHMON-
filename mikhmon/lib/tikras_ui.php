@@ -78,10 +78,27 @@ if (!function_exists('tikras_ui_router_card')) {
     $displayName = $safeHotspot != '' ? $safeHotspot : $safeSession;
     $confirm = "if(confirm('Voulez-vous vraiment supprimer ce routeur " . tikras_js_string($session) . " (" . tikras_js_string($hotspotName) . ") ?')){loadpage('./admin.php?id=remove-session&session=" . tikras_js_string($sessionUrl) . "')}else{}";
 
+    /*
+     * L'etat du dernier controle voyage avec la carte. Il etait affiche mais
+     * pas exploitable: sur un parc ou une majorite de routeurs est eteinte a
+     * un instant donne, "ne me montre que ceux qui repondent" est la question
+     * la plus frequente, et il fallait la resoudre a l'oeil en parcourant la
+     * liste entiere.
+     */
+    $etat = 'inconnu';
+    if (is_array($status) && isset($status['last_state'])) {
+      if ($status['last_state'] == 'online') {
+        $etat = 'online';
+      } elseif ($status['last_state'] == 'offline') {
+        $etat = 'offline';
+      }
+    }
+
     $html = '<article id="routeur-' . $safeSession . '" class="tikras-router-card tikras-router-row'
       . ($favori ? ' tikras-router-favori' : '')
       . '" data-favori="' . ($favori ? '1' : '0')
-      . '" data-router="' . tikras_h(strtolower($session . ' ' . $hotspotName . ' ' . $dnsName)) . '">';
+      . '" data-etat="' . $etat . '"'
+      . ' data-router="' . tikras_h(strtolower($session . ' ' . $hotspotName . ' ' . $dnsName)) . '">';
     $html .= '<div class="tikras-router-main">';
     /*
      * L'etoile est un bouton de formulaire et non un lien: marquer un favori

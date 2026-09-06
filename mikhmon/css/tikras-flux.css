@@ -903,11 +903,26 @@ body[data-theme] .tikras-router-card.tikras-router-favori {
 }
 
 /* Le filtre actif doit se voir: sinon on cherche un routeur absent de la
-   liste sans comprendre qu'on l'a soi-meme masque. */
+   liste sans comprendre qu'on l'a soi-meme masque. Chaque filtre prend la
+   couleur de ce qu'il montre - l'ambre des favoris, le vert des joignables,
+   le gris des injoignables - pour qu'un coup d'oeil suffise a savoir ce qui
+   est masque. */
 body[data-theme] #filtreFavoris.est-actif {
   color: #ffffff !important;
   background: var(--one-amber) !important;
   border-color: var(--one-amber) !important;
+}
+
+body[data-theme] #filtreEnLigne.est-actif {
+  color: #ffffff !important;
+  background: var(--one-green) !important;
+  border-color: var(--one-green) !important;
+}
+
+body[data-theme] #filtreHorsLigne.est-actif {
+  color: #ffffff !important;
+  background: var(--one-muted) !important;
+  border-color: var(--one-muted) !important;
 }
 
 /* ------------------------------------------------------------------ */

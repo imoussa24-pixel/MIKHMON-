@@ -174,6 +174,26 @@ $routerSubtitle = $routerTotal . ' routeur(s) · ' . $routerOnline . ' en ligne 
           <i class="fa fa-star-o"></i><span>Favoris (<?= count($routerFavoris); ?>)</span>
         </button>
         <?php } ?>
+        <?php
+        /*
+         * Filtre par etat du dernier controle. L'etat etait deja affiche sur
+         * chaque carte mais restait a lire une par une; sur ce parc, une
+         * majorite de routeurs est eteinte a un instant donne et la question
+         * courante est "lesquels repondent maintenant".
+         *
+         * Les boutons ne s'affichent que si l'information existe: sans releve
+         * en base, ils ne filtreraient rien et ne feraient qu'encombrer.
+         */
+        if ($routerOnline > 0 || $routerOffline > 0) { ?>
+        <button id="filtreEnLigne" class="tikras-btn tikras-btn-muted" type="button"
+          aria-pressed="false" title="N'afficher que les routeurs qui repondaient au dernier controle">
+          <i class="fa fa-check-circle"></i><span>En ligne (<?= $routerOnline; ?>)</span>
+        </button>
+        <button id="filtreHorsLigne" class="tikras-btn tikras-btn-muted" type="button"
+          aria-pressed="false" title="N'afficher que les routeurs injoignables au dernier controle">
+          <i class="fa fa-times-circle"></i><span>Hors ligne (<?= $routerOffline; ?>)</span>
+        </button>
+        <?php } ?>
       </div>
       <div class="tikras-router-list">
         <?= $routerCards; ?>
@@ -266,6 +286,8 @@ $routerSubtitle = $routerTotal . ' routeur(s) · ' . $routerOnline . ' en ligne 
    * taper un nom doit chercher parmi les favoris, et non tout reafficher.
    */
   var favorisSeuls = false;
+  // "", "online" ou "offline": l'etat du dernier controle qu'on veut voir.
+  var etatVoulu = "";
   var LIMITE_INITIALE = 30;
   var toutAffiche = false;
 
@@ -273,11 +295,14 @@ $routerSubtitle = $routerTotal . ' routeur(s) · ' . $routerOnline . ' en ligne 
     var term = ($("#adminRouterSearch").val() || "").toLowerCase();
     // Des qu'on cherche ou qu'on filtre, la limite d'affichage n'a plus lieu
     // d'etre: on cherche dans tout le parc, pas dans les trente premiers.
-    var limiter = !toutAffiche && term === "" && !favorisSeuls;
+    var limiter = !toutAffiche && term === "" && !favorisSeuls && etatVoulu === "";
     var visibles = 0;
     $(".tikras-router-row").each(function(){
       var correspond = String($(this).data("router")).indexOf(term) !== -1;
       if (favorisSeuls && String($(this).data("favori")) !== "1") {
+        correspond = false;
+      }
+      if (etatVoulu !== "" && String($(this).data("etat")) !== etatVoulu) {
         correspond = false;
       }
       if (correspond && limiter && visibles >= LIMITE_INITIALE) {
@@ -317,6 +342,30 @@ $routerSubtitle = $routerTotal . ' routeur(s) · ' . $routerOnline . ' en ligne 
       appliquerFiltres();
     });
   }
+
+  /*
+   * Les deux filtres d'etat s'excluent l'un l'autre: demander a la fois les
+   * joignables et les injoignables ne veut rien dire. Recliquer sur celui qui
+   * est actif le relache.
+   */
+  function brancherFiltreEtat(id, etat) {
+    var bouton = document.getElementById(id);
+    if (!bouton) { return; }
+    bouton.addEventListener("click", function(){
+      etatVoulu = (etatVoulu === etat) ? "" : etat;
+      var boutons = { "filtreEnLigne": "online", "filtreHorsLigne": "offline" };
+      for (var autreId in boutons) {
+        var autre = document.getElementById(autreId);
+        if (!autre) { continue; }
+        var actif = (etatVoulu === boutons[autreId]);
+        autre.setAttribute("aria-pressed", actif ? "true" : "false");
+        autre.classList.toggle("est-actif", actif);
+      }
+      appliquerFiltres();
+    });
+  }
+  brancherFiltreEtat("filtreEnLigne", "online");
+  brancherFiltreEtat("filtreHorsLigne", "offline");
 
   document.getElementById("runAutomations").addEventListener("click", function(){
     var btn = this;
