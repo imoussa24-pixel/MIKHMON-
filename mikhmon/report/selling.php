@@ -93,6 +93,24 @@ if (!isset($_SESSION["mikhmon"])) {
 
 	$idhr = tikras_get('idhr');
 	$idbl = tikras_get('idbl');
+
+	/*
+	 * Sans periode demandee, le rapport partait sur la totalite de
+	 * l'historique. Sur un parc actif cela veut dire tous les tickets jamais
+	 * vendus rendus dans une seule table: 16 180 lignes et 4,8 Mo de HTML
+	 * mesures sur un routeur du parc, contre 140 Ko pour le mois courant.
+	 * Un telephone ne finit pas d'afficher cette page - c'est ce qui la
+	 * rendait illisible depuis le terrain.
+	 *
+	 * Le mois courant devient donc la vue par defaut. La totalite reste
+	 * accessible, mais en la demandant: le bouton "Tous" de la barre d'outils
+	 * porte desormais tout=1, et lui seul ouvre la vue complete.
+	 */
+	if ($idhr == "" && $idbl == "" && tikras_get('tout') == "" && tikras_get('prefix') == ""
+		&& tikras_get('comment') == "" && tikras_get('range') == "") {
+		$idbl = date("mY");
+	}
+
 	$idblParts = explode("-", $idhr);
 	$idbl2 = (count($idblParts) >= 2) ? $idblParts[1] . $idblParts[0] : date("mY");
 	if ($idhr != ""){
@@ -623,7 +641,7 @@ $(document).ready(function(){
   <div class="report-toolbar">
     <div class="report-toolbar-row">
       <input id="tableSearch" type="text" class="form-control report-search" placeholder="<?= $_search ?> ticket, profil, commentaire">
-      <button class="btn bg-primary" onclick="location.href='./?report=selling&session=<?= mikhmon_report_h($session); ?>';" title="Toutes les données"><i class="fa fa-list"></i> <?= $_all ?></button>
+      <button class="btn bg-primary" onclick="location.href='./?report=selling&tout=1&session=<?= mikhmon_report_h($session); ?>';" title="Toutes les données — page lourde sur mobile"><i class="fa fa-list"></i> <?= $_all ?></button>
       <button class="btn bg-info" onclick="location.href='./?report=selling&idhr=<?= date("Y-m-d"); ?>&session=<?= mikhmon_report_h($session); ?>';" title="<?= $_today ?>"><i class="fa fa-calendar-check-o"></i> <?= $_today ?></button>
     </div>
     <div class="report-meta">
